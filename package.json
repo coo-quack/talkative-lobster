@@ -20,13 +20,17 @@
     "build:mac": "electron-vite build && electron-builder --mac",
     "build:linux": "electron-vite build && electron-builder --linux",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test --config e2e/playwright.config.ts"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "@elevenlabs/elevenlabs-js": "^2.36.0",
+    "@ricky0123/vad-react": "^0.0.36",
+    "@ricky0123/vad-web": "^0.0.30",
     "@xstate/react": "^6.0.0",
+    "onnxruntime-web": "^1.24.2",
     "ws": "^8.19.0",
     "xstate": "^5.28.0"
   },
@@ -34,6 +38,7 @@
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
+    "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^22.19.1",
