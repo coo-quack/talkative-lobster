@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest'
 import { OpenClawClient } from '../openclaw-client'
 
 // Mock ws module
@@ -44,7 +44,8 @@ describe('OpenClawClient', () => {
     await client.connect()
     client.sendMessage('hello')
     const ws = client['ws']!
-    const lastCall = ws.send.mock.calls[ws.send.mock.calls.length - 1][0]
+    const send = ws.send as unknown as Mock
+    const lastCall = send.mock.calls[send.mock.calls.length - 1][0]
     const parsed = JSON.parse(lastCall)
     expect(parsed.method).toBe('chat.send')
     expect(parsed.params.text).toBe('hello')
@@ -80,8 +81,9 @@ describe('OpenClawClient', () => {
     client.sendMessage('a')
     client.sendMessage('b')
     const ws = client['ws']!
-    const call1 = JSON.parse(ws.send.mock.calls[1][0])
-    const call2 = JSON.parse(ws.send.mock.calls[2][0])
+    const send = ws.send as unknown as Mock
+    const call1 = JSON.parse(send.mock.calls[1][0])
+    const call2 = JSON.parse(send.mock.calls[2][0])
     expect(call2.id).toBe(call1.id + 1)
   })
 })

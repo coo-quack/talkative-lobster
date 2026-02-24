@@ -8,10 +8,15 @@ let orchestrator: Orchestrator | null = null
 
 function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 400,
+    height: 600,
+    minWidth: 320,
+    minHeight: 480,
     show: false,
     autoHideMenuBar: true,
+    titleBarStyle: 'hiddenInset',
+    vibrancy: 'under-window',
+    backgroundColor: '#1a1a2e',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

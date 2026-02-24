@@ -59,17 +59,17 @@ export class SttEngine {
 
   private async transcribeElevenlabs(wav: Buffer): Promise<string> {
     const client = new ElevenLabsClient({ apiKey: this.config.elevenlabsApiKey! })
-    const file = new Blob([wav], { type: 'audio/wav' })
+    const file = new Blob([new Uint8Array(wav)], { type: 'audio/wav' })
     const result = await client.speechToText.convert({
       file,
-      model_id: 'scribe_v2',
+      modelId: 'scribe_v2',
     })
     return (result as any).text
   }
 
   private async transcribeOpenaiWhisper(wav: Buffer): Promise<string> {
     const formData = new FormData()
-    formData.append('file', new Blob([wav], { type: 'audio/wav' }), 'audio.wav')
+    formData.append('file', new Blob([new Uint8Array(wav)], { type: 'audio/wav' }), 'audio.wav')
     formData.append('model', 'whisper-1')
 
     const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {

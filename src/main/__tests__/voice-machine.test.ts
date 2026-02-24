@@ -5,7 +5,8 @@ import { voiceMachine } from '../voice-machine'
 function actorSnapshot(events: string[]) {
   const actor = createActor(voiceMachine)
   actor.start()
-  for (const e of events) actor.send({ type: e })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const e of events) actor.send({ type: e } as any)
   const snap = actor.getSnapshot()
   actor.stop()
   return snap.value

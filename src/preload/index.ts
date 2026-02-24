@@ -15,6 +15,11 @@ const api = {
     return () => ipcRenderer.removeListener(IPC.VOICE_STATE_CHANGED, handler)
   },
 
+  // Audio data
+  sendAudioChunk: (audio: Float32Array): void => {
+    ipcRenderer.send(IPC.AUDIO_CHUNK, audio)
+  },
+
   // Audio level
   onAudioLevel: (callback: (level: number) => void): UnsubscribeFn => {
     const handler = (_event: Electron.IpcRendererEvent, level: number): void => callback(level)

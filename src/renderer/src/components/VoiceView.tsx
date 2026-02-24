@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Waveform } from './Waveform'
 import { useVoiceState } from '../hooks/useVoiceState'
 import { useAudioLevel } from '../hooks/useAudioLevel'
+import { useVAD } from '../hooks/useVAD'
 
 type InputMode = 'hands-free' | 'push-to-talk'
 
@@ -25,6 +26,22 @@ export function VoiceView({ compact, onToggleChat, onOpenSettings }: Props) {
   const [micOn, setMicOn] = useState(true)
   const [mode, setMode] = useState<InputMode>('hands-free')
 
+  const vadEnabled = micOn && mode === 'hands-free' && (state === 'idle' || state === 'listening')
+
+  const handleSpeechStart = useCallback(() => {
+    window.budgie.voiceStart()
+  }, [])
+
+  const handleSpeechEnd = useCallback((audio: Float32Array) => {
+    window.budgie.sendAudioChunk(audio)
+  }, [])
+
+  const { listening: vadListening } = useVAD({
+    enabled: vadEnabled,
+    onSpeechStart: handleSpeechStart,
+    onSpeechEnd: handleSpeechEnd,
+  })
+
   const toggleMic = () => {
     if (micOn) {
       window.budgie.voiceStop()
@@ -34,10 +51,12 @@ export function VoiceView({ compact, onToggleChat, onOpenSettings }: Props) {
     setMicOn(!micOn)
   }
 
+  const statusLabel = vadListening && state === 'idle' ? 'Listening (hands-free)' : STATUS_LABELS[state]
+
   return (
     <div className={`voice-view ${compact ? 'compact' : ''}`}>
       <Waveform state={state} level={level} compact={compact} />
-      <div className="status-label">{STATUS_LABELS[state]}</div>
+      <div className="status-label">{statusLabel}</div>
       <div className="controls">
         <button className={`mic-btn ${micOn ? 'active' : ''}`} onClick={toggleMic}>
           {micOn ? 'Mic ON' : 'Mic OFF'}

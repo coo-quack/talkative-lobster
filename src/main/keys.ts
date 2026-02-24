@@ -5,7 +5,6 @@ import { homedir } from 'node:os'
 import type { KeyInfo } from '../shared/types'
 
 const MANAGED_KEYS = ['ELEVENLABS_API_KEY', 'OPENAI_API_KEY', 'GATEWAY_TOKEN'] as const
-type ManagedKey = (typeof MANAGED_KEYS)[number]
 
 interface StoredKey {
   encrypted: string // base64 encoded encrypted buffer

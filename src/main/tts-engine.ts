@@ -26,16 +26,16 @@ export class TtsEngine {
     this.stopped = false
     const audio = await this.client.textToSpeech.convert(this.voiceId, {
       text,
-      model_id: this.modelId,
+      modelId: this.modelId,
     })
-    return Buffer.from(audio as ArrayBuffer)
+    return Buffer.from(audio as unknown as ArrayBuffer)
   }
 
   async *stream(text: string): AsyncGenerator<Buffer> {
     this.stopped = false
     const audioStream = await this.client.textToSpeech.stream(this.voiceId, {
       text,
-      model_id: this.modelId,
+      modelId: this.modelId,
     })
     for await (const chunk of audioStream) {
       if (this.stopped) return
