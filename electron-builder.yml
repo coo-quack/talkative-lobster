@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: react-ts
+appId: com.cooq.budgie
+productName: Budgie
 directories:
   buildResources: build
 files:
@@ -12,19 +12,23 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: react-ts
+  executableName: budgie
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
+  category: public.app-category.productivity
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+  target:
+    - target: dmg
+      arch: [arm64]
   notarize: false
 dmg:
   artifactName: ${name}-${version}.${ext}
