@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, desktopCapturer, session } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -50,6 +50,14 @@ app.whenReady().then(async () => {
   })
 
   const mainWindow = createWindow()
+
+  // Auto-approve getDisplayMedia requests for system audio capture (speaker monitor).
+  // 'loopback' captures system audio output without showing a screen-share dialog.
+  mainWindow.webContents.session.setDisplayMediaRequestHandler((_request, callback) => {
+    desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {
+      callback({ video: sources[0] ?? null, audio: 'loopback', enableLocalEcho: false })
+    })
+  })
 
   orchestrator = new Orchestrator(mainWindow)
   await orchestrator.start()

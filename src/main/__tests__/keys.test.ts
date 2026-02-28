@@ -29,8 +29,8 @@ describe('KeyManager', () => {
     const keys = km.getAll()
     expect(keys).toEqual([
       { name: 'ELEVENLABS_API_KEY', isSet: false, source: null },
-      { name: 'OPENAI_API_KEY', isSet: false, source: null },
       { name: 'GATEWAY_TOKEN', isSet: false, source: null },
+      { name: 'OPENAI_API_KEY', isSet: false, source: null },
     ])
   })
 
@@ -67,7 +67,7 @@ describe('KeyManager', () => {
     vi.mocked(fs.existsSync).mockReturnValue(true)
     vi.mocked(fs.readFileSync).mockReturnValue(
       JSON.stringify({
-        gateway: { token: 'gw_token_123' },
+        gateway: { auth: { token: 'gw_token_123' } },
       })
     )
     const value = km.readFromOpenclaw('GATEWAY_TOKEN')

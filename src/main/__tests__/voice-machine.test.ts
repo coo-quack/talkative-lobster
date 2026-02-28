@@ -48,4 +48,16 @@ describe('voiceMachine', () => {
   it('listening → idle on CANCEL', () => {
     expect(actorSnapshot(['SPEECH_START', 'CANCEL'])).toBe('idle')
   })
+
+  it('thinking → listening on SPEECH_START (user interruption)', () => {
+    expect(actorSnapshot(['SPEECH_START', 'SPEECH_END', 'STT_DONE', 'SPEECH_START'])).toBe('listening')
+  })
+
+  it('thinking → idle on CANCEL', () => {
+    expect(actorSnapshot(['SPEECH_START', 'SPEECH_END', 'STT_DONE', 'CANCEL'])).toBe('idle')
+  })
+
+  it('ignores SPEECH_START in processing', () => {
+    expect(actorSnapshot(['SPEECH_START', 'SPEECH_END', 'SPEECH_START'])).toBe('processing')
+  })
 })

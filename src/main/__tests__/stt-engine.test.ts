@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { http, HttpResponse } from 'msw'
+import { server } from './msw/server'
 import { SttEngine } from '../stt-engine'
 
 describe('SttEngine', () => {
@@ -17,21 +19,56 @@ describe('SttEngine', () => {
     expect(engine).toBeDefined()
   })
 
-  it('falls back to next provider on failure', async () => {
-    const mockElevenlabs = vi.spyOn(engine as any, 'transcribeElevenlabs').mockRejectedValue(new Error('timeout'))
-    const mockWhisper = vi.spyOn(engine as any, 'transcribeOpenaiWhisper').mockResolvedValue('hello world')
+  it('transcribes via ElevenLabs STT (MSW mock)', async () => {
+    engine = new SttEngine({
+      elevenlabsApiKey: 'sk_test',
+      openaiApiKey: null,
+      localWhisperPath: null,
+      providers: { elevenlabs: true, openaiWhisper: false, localWhisper: false, webSpeech: false },
+    })
 
     const audio = new Float32Array(16000)
     const result = await engine.transcribe(audio, 16000)
 
-    expect(mockElevenlabs).toHaveBeenCalled()
-    expect(mockWhisper).toHaveBeenCalled()
+    expect(result).toBe('こんにちは')
+  })
+
+  it('transcribes via OpenAI Whisper (MSW mock)', async () => {
+    engine = new SttEngine({
+      elevenlabsApiKey: null,
+      openaiApiKey: 'sk_openai_test',
+      localWhisperPath: null,
+      providers: { elevenlabs: false, openaiWhisper: true, localWhisper: false, webSpeech: false },
+    })
+
+    const audio = new Float32Array(16000)
+    const result = await engine.transcribe(audio, 16000)
+
+    expect(result).toBe('hello world')
+  })
+
+  it('falls back to OpenAI Whisper when ElevenLabs fails', async () => {
+    server.use(
+      http.post('https://api.elevenlabs.io/v1/speech-to-text', () =>
+        HttpResponse.json({ error: 'Server Error' }, { status: 500 }),
+      ),
+    )
+
+    const audio = new Float32Array(16000)
+    const result = await engine.transcribe(audio, 16000)
+
     expect(result).toBe('hello world')
   })
 
   it('returns null when all providers fail', async () => {
-    vi.spyOn(engine as any, 'transcribeElevenlabs').mockRejectedValue(new Error('fail'))
-    vi.spyOn(engine as any, 'transcribeOpenaiWhisper').mockRejectedValue(new Error('fail'))
+    server.use(
+      http.post('https://api.elevenlabs.io/v1/speech-to-text', () =>
+        HttpResponse.json({ error: 'fail' }, { status: 500 }),
+      ),
+      http.post('https://api.openai.com/v1/audio/transcriptions', () =>
+        HttpResponse.json({ error: 'fail' }, { status: 500 }),
+      ),
+    )
 
     const audio = new Float32Array(16000)
     const result = await engine.transcribe(audio, 16000)
@@ -46,13 +83,20 @@ describe('SttEngine', () => {
       localWhisperPath: null,
       providers: { elevenlabs: false, openaiWhisper: true, localWhisper: false, webSpeech: false },
     })
-    const mockElevenlabs = vi.spyOn(engine as any, 'transcribeElevenlabs')
-    const mockWhisper = vi.spyOn(engine as any, 'transcribeOpenaiWhisper').mockResolvedValue('test')
+
+    // Override ElevenLabs to track if it's called
+    let elevenlabsCalled = false
+    server.use(
+      http.post('https://api.elevenlabs.io/v1/speech-to-text', () => {
+        elevenlabsCalled = true
+        return HttpResponse.json({ text: 'should not be called' })
+      }),
+    )
 
     const audio = new Float32Array(16000)
-    await engine.transcribe(audio, 16000)
+    const result = await engine.transcribe(audio, 16000)
 
-    expect(mockElevenlabs).not.toHaveBeenCalled()
-    expect(mockWhisper).toHaveBeenCalled()
+    expect(elevenlabsCalled).toBe(false)
+    expect(result).toBe('hello world')
   })
 })

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-
-type VoiceState = 'idle' | 'listening' | 'processing' | 'thinking' | 'speaking'
+import type { VoiceState } from '../../../shared/types'
 
 export function useVoiceState() {
   const [state, setState] = useState<VoiceState>('idle')

@@ -1,8 +1,12 @@
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js'
 import { execFileSync } from 'node:child_process'
+import { writeFileSync, mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { homedir, tmpdir } from 'node:os'
 import type { SttProviderConfig } from '../shared/types'
 
-const TIMEOUT_MS = 5_000
+const API_TIMEOUT_MS = 5_000
+const LOCAL_WHISPER_TIMEOUT_MS = 60_000
 
 export interface SttEngineConfig {
   elevenlabsApiKey: string | null
@@ -21,20 +25,23 @@ export class SttEngine {
   async transcribe(audio: Float32Array, sampleRate: number): Promise<string | null> {
     const wav = this.float32ToWav(audio, sampleRate)
 
-    const chain: Array<{ name: string; enabled: boolean; fn: (wav: Buffer) => Promise<string> }> = [
+    const chain: Array<{ name: string; enabled: boolean; timeoutMs: number; fn: (wav: Buffer) => Promise<string> }> = [
       {
         name: 'elevenlabs',
         enabled: this.config.providers.elevenlabs,
+        timeoutMs: API_TIMEOUT_MS,
         fn: (w) => this.transcribeElevenlabs(w),
       },
       {
         name: 'openaiWhisper',
         enabled: this.config.providers.openaiWhisper,
+        timeoutMs: API_TIMEOUT_MS,
         fn: (w) => this.transcribeOpenaiWhisper(w),
       },
       {
         name: 'localWhisper',
         enabled: this.config.providers.localWhisper,
+        timeoutMs: LOCAL_WHISPER_TIMEOUT_MS,
         fn: (w) => this.transcribeLocalWhisper(w),
       },
     ]
@@ -45,7 +52,7 @@ export class SttEngine {
         const result = await Promise.race([
           provider.fn(wav),
           new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error(`${provider.name} timeout`)), TIMEOUT_MS),
+            setTimeout(() => reject(new Error(`${provider.name} timeout`)), provider.timeoutMs),
           ),
         ])
         return result
@@ -64,7 +71,10 @@ export class SttEngine {
       file,
       modelId: 'scribe_v2',
     })
-    return (result as any).text
+    if ('text' in result && typeof result.text === 'string') {
+      return result.text
+    }
+    throw new Error('Unexpected STT response format')
   }
 
   private async transcribeOpenaiWhisper(wav: Buffer): Promise<string> {
@@ -86,18 +96,26 @@ export class SttEngine {
   private async transcribeLocalWhisper(wav: Buffer): Promise<string> {
     if (!this.config.localWhisperPath) throw new Error('localWhisperPath not configured')
 
-    const { writeFileSync, mkdtempSync, rmSync } = await import('node:fs')
-    const { join } = await import('node:path')
-    const { tmpdir } = await import('node:os')
-
     const dir = mkdtempSync(join(tmpdir(), 'budgie-stt-'))
     const wavPath = join(dir, 'audio.wav')
     try {
       writeFileSync(wavPath, wav)
-      const output = execFileSync(this.config.localWhisperPath, [wavPath, '--output-txt'], {
-        timeout: TIMEOUT_MS,
+      const modelPath = join(homedir(), '.config', 'budgie', 'models', 'ggml-medium.bin')
+      const output = execFileSync(this.config.localWhisperPath, [
+        wavPath,
+        '--model', modelPath,
+        '--language', 'ja',
+        '--no-prints',
+        '--output-txt',
+      ], {
+        timeout: LOCAL_WHISPER_TIMEOUT_MS,
         encoding: 'utf-8',
       })
+      // --output-txt writes audio.wav.txt next to the input file
+      const txtPath = wavPath + '.txt'
+      if (existsSync(txtPath)) {
+        return readFileSync(txtPath, 'utf-8').trim()
+      }
       return output.trim()
     } finally {
       rmSync(dir, { recursive: true, force: true })

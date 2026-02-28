@@ -1,7 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { OpenClawClient } from '../openclaw-client'
 
-// Mock ws module
+// Mock crypto for deterministic device identity
+vi.mock('node:fs', () => ({
+  existsSync: vi.fn().mockReturnValue(false),
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn(),
+  mkdirSync: vi.fn(),
+}))
+
+// Mock ws module with challenge-response simulation
 vi.mock('ws', () => {
   const { EventEmitter } = require('node:events')
   class MockWebSocket extends EventEmitter {
@@ -12,12 +20,67 @@ vi.mock('ws', () => {
 
     constructor() {
       super()
-      // Auto-emit 'open' on next tick so connect() promise resolves
-      process.nextTick(() => this.emit('open'))
+      // 1. Emit 'open'
+      // 2. Emit connect.challenge with nonce
+      process.nextTick(() => {
+        this.emit('open')
+        process.nextTick(() => {
+          this.emit(
+            'message',
+            JSON.stringify({
+              type: 'event',
+              event: 'connect.challenge',
+              payload: { nonce: 'test-nonce-123' },
+            })
+          )
+        })
+      })
+    }
+
+    /** Helper: simulate server responding OK to the first pending request (connect) */
+    resolveConnect(): void {
+      const calls = (this.send as ReturnType<typeof vi.fn>).mock.calls
+      const connectCall = calls.find((c: string[]) => {
+        const parsed = JSON.parse(c[0])
+        return parsed.method === 'connect'
+      })
+      if (connectCall) {
+        const parsed = JSON.parse(connectCall[0])
+        this.emit(
+          'message',
+          JSON.stringify({ type: 'res', id: parsed.id, ok: true, payload: {} })
+        )
+      }
+    }
+
+    /** Helper: respond OK to a chat.send request with a runId */
+    resolveChatSend(runId: string): void {
+      const calls = (this.send as ReturnType<typeof vi.fn>).mock.calls
+      const chatCall = [...calls].reverse().find((c: string[]) => {
+        const parsed = JSON.parse(c[0])
+        return parsed.method === 'chat.send'
+      })
+      if (chatCall) {
+        const parsed = JSON.parse(chatCall[0])
+        this.emit(
+          'message',
+          JSON.stringify({ type: 'res', id: parsed.id, ok: true, payload: { runId } })
+        )
+      }
     }
   }
   return { default: MockWebSocket, WebSocket: MockWebSocket }
 })
+
+async function connectClient(client: OpenClawClient): Promise<any> {
+  const connectPromise = client.connect()
+  // Wait for challenge to arrive and connect request to be sent
+  await new Promise((r) => setTimeout(r, 10))
+  const ws = client['ws'] as any
+  ws.resolveConnect()
+  await connectPromise
+  return ws
+}
 
 describe('OpenClawClient', () => {
   let client: OpenClawClient
@@ -34,56 +97,119 @@ describe('OpenClawClient', () => {
     expect(client.sessionKey).toBe('agent:main:budgie')
   })
 
-  it('sends auth on connect', async () => {
-    await client.connect()
-    const ws = client['ws']!
-    expect(ws.send).toHaveBeenCalledWith(expect.stringContaining('"method":"auth"'))
+  it('sends connect request after receiving challenge', async () => {
+    const ws = await connectClient(client)
+    const calls = ws.send.mock.calls.map((c: string[]) => JSON.parse(c[0]))
+    const connectReq = calls.find((c: any) => c.method === 'connect')
+    expect(connectReq).toBeDefined()
+    expect(connectReq.params.auth.token).toBe('test-token')
+    expect(connectReq.params.device.nonce).toBe('test-nonce-123')
+    expect(connectReq.params.client.displayName).toBe('Budgie')
   })
 
-  it('sends chat message with session key', async () => {
-    await client.connect()
+  it('sends chat.send with session key and message', async () => {
+    const ws = await connectClient(client)
     client.sendMessage('hello')
-    const ws = client['ws']!
-    const send = ws.send as unknown as Mock
-    const lastCall = send.mock.calls[send.mock.calls.length - 1][0]
-    const parsed = JSON.parse(lastCall)
-    expect(parsed.method).toBe('chat.send')
-    expect(parsed.params.text).toBe('hello')
-    expect(parsed.params.sessionKey).toBe('agent:main:budgie')
+    await new Promise((r) => setTimeout(r, 5))
+    const calls = ws.send.mock.calls.map((c: string[]) => JSON.parse(c[0]))
+    const chatReq = calls.find((c: any) => c.method === 'chat.send')
+    expect(chatReq).toBeDefined()
+    expect(chatReq.params.message).toBe('hello')
+    expect(chatReq.params.sessionKey).toBe('agent:main:budgie')
   })
 
-  it('emits stream events', async () => {
-    await client.connect()
+  it('emits stream events for tracked runId', async () => {
+    const ws = await connectClient(client)
     const streamHandler = vi.fn()
     client.on('stream', streamHandler)
-    const ws = client['ws']!
-    ws.emit('message', JSON.stringify({
-      type: 'event', event: 'agent',
-      payload: { streaming: true, text: 'Hello' }
-    }))
+
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+    ws.resolveChatSend('run-1')
+    await new Promise((r) => setTimeout(r, 5))
+
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: { state: 'delta', runId: 'run-1', message: { text: 'Hello' } },
+      })
+    )
     expect(streamHandler).toHaveBeenCalledWith('Hello')
   })
 
-  it('emits done event', async () => {
-    await client.connect()
+  it('emits done event for tracked runId', async () => {
+    const ws = await connectClient(client)
     const doneHandler = vi.fn()
     client.on('done', doneHandler)
-    const ws = client['ws']!
-    ws.emit('message', JSON.stringify({
-      type: 'event', event: 'agent',
-      payload: { done: true, text: 'Full response' }
-    }))
+
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+    ws.resolveChatSend('run-2')
+    await new Promise((r) => setTimeout(r, 5))
+
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: { state: 'final', runId: 'run-2', message: { text: 'Full response' } },
+      })
+    )
     expect(doneHandler).toHaveBeenCalledWith('Full response')
   })
 
-  it('increments request ids', async () => {
-    await client.connect()
-    client.sendMessage('a')
-    client.sendMessage('b')
-    const ws = client['ws']!
-    const send = ws.send as unknown as Mock
-    const call1 = JSON.parse(send.mock.calls[1][0])
-    const call2 = JSON.parse(send.mock.calls[2][0])
-    expect(call2.id).toBe(call1.id + 1)
+  it('rejects pending requests on disconnect', async () => {
+    const ws = await connectClient(client)
+
+    // Access internal request method to create a pending request
+    const requestPromise = (client as any).request('test.method', { data: 'hello' })
+
+    // Disconnect while request is pending
+    client.disconnect()
+
+    await expect(requestPromise).rejects.toThrow('disconnected')
+  })
+
+  it('emits chatError event on chat error state', async () => {
+    const ws = await connectClient(client)
+
+    const errors: string[] = []
+    client.on('chatError', (msg: string) => errors.push(msg))
+
+    // Trigger a chat.send to register the runId
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+    ws.resolveChatSend('run-err')
+    await new Promise((r) => setTimeout(r, 5))
+
+    // Simulate chat error event
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: { state: 'error', runId: 'run-err', errorMessage: 'Rate limit exceeded' },
+      })
+    )
+
+    expect(errors).toEqual(['Rate limit exceeded'])
+  })
+
+  it('ignores chat events with unknown runId', async () => {
+    const ws = await connectClient(client)
+    const streamHandler = vi.fn()
+    client.on('stream', streamHandler)
+
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: { state: 'delta', runId: 'unknown-run', message: { text: 'Ignored' } },
+      })
+    )
+    expect(streamHandler).not.toHaveBeenCalled()
   })
 })

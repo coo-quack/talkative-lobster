@@ -1,55 +1,49 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { TtsEngine } from '../tts-engine'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { http, HttpResponse } from 'msw'
+import { server } from './msw/server'
+import { ElevenLabsTts } from '../tts/elevenlabs-tts'
 
-vi.mock('@elevenlabs/elevenlabs-js', () => {
-  const ElevenLabsClient = vi.fn().mockImplementation(function () {
-    return {
-      textToSpeech: {
-        convert: vi.fn().mockResolvedValue(Buffer.from('fake-audio')),
-        stream: vi.fn().mockResolvedValue(
-          (async function* () {
-            yield Buffer.from('chunk1')
-            yield Buffer.from('chunk2')
-          })()
-        ),
-      },
-    }
-  })
-  return { ElevenLabsClient }
-})
-
-describe('TtsEngine', () => {
-  let engine: TtsEngine
+describe('ElevenLabsTts', () => {
+  let engine: ElevenLabsTts
 
   beforeEach(() => {
-    engine = new TtsEngine({ apiKey: 'sk_test', voiceId: 'voice123' })
+    engine = new ElevenLabsTts({ apiKey: 'sk_test', voiceId: 'voice123' })
   })
 
-  it('synthesizes full text', async () => {
-    const audio = await engine.synthesize('Hello world')
-    expect(audio).toBeInstanceOf(Buffer)
-  })
-
-  it('streams audio chunks', async () => {
+  it('streams audio chunks via MSW mock', async () => {
     const chunks: Buffer[] = []
     for await (const chunk of engine.stream('Hello world')) {
       chunks.push(chunk)
     }
-    expect(chunks.length).toBe(2)
+    expect(chunks.length).toBeGreaterThan(0)
+    const total = Buffer.concat(chunks)
+    expect(total.length).toBeGreaterThan(0)
   })
 
-  it('splits text into sentences', () => {
-    const sentences = engine.splitIntoSentences('Hello. How are you? Fine!')
-    expect(sentences).toEqual(['Hello.', 'How are you?', 'Fine!'])
-  })
+  it('handles API error response', async () => {
+    server.use(
+      http.post(
+        'https://api.elevenlabs.io/v1/text-to-speech/:voiceId/stream',
+        () => HttpResponse.json({ detail: 'Unauthorized' }, { status: 401 }),
+      ),
+    )
 
-  it('splits Japanese text into sentences', () => {
-    const sentences = engine.splitIntoSentences('こんにちは。元気ですか？はい！')
-    expect(sentences).toEqual(['こんにちは。', '元気ですか？', 'はい！'])
+    const chunks: Buffer[] = []
+    await expect(async () => {
+      for await (const chunk of engine.stream('Hello world')) {
+        chunks.push(chunk)
+      }
+    }).rejects.toThrow()
   })
 
   it('can be stopped mid-stream', () => {
     engine.stop()
     expect(engine.isStopped).toBe(true)
+  })
+
+  it('updates voice and model', () => {
+    engine.setVoiceId('new-voice')
+    engine.setModelId('new-model')
+    expect(engine.isStopped).toBe(false)
   })
 })

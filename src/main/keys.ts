@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { homedir } from 'node:os'
 import type { KeyInfo } from '../shared/types'
 
-const MANAGED_KEYS = ['ELEVENLABS_API_KEY', 'OPENAI_API_KEY', 'GATEWAY_TOKEN'] as const
+const MANAGED_KEYS = ['ELEVENLABS_API_KEY', 'GATEWAY_TOKEN', 'OPENAI_API_KEY'] as const
 
 interface StoredKey {
   encrypted: string // base64 encoded encrypted buffer
@@ -51,7 +51,7 @@ export class KeyManager {
     if (!existsSync(configPath)) return null
     try {
       const config = JSON.parse(readFileSync(configPath, 'utf-8'))
-      if (name === 'GATEWAY_TOKEN') return config?.gateway?.token ?? null
+      if (name === 'GATEWAY_TOKEN') return config?.gateway?.auth?.token ?? null
       return config?.env?.[name] ?? null
     } catch {
       return null

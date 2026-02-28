@@ -20,6 +20,9 @@ export const voiceMachine = setup({
       on: { SPEECH_START: 'listening' },
     },
     listening: {
+      after: {
+        10000: 'idle',
+      },
       on: {
         SPEECH_END: 'processing',
         CANCEL: 'idle',
@@ -34,12 +37,15 @@ export const voiceMachine = setup({
     thinking: {
       on: {
         LLM_STREAM_START: 'speaking',
+        SPEECH_START: 'listening',
+        CANCEL: 'idle',
       },
     },
     speaking: {
       on: {
         TTS_DONE: 'idle',
         INTERRUPT: 'idle',
+        SPEECH_START: 'listening',
       },
     },
   },

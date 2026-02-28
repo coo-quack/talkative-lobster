@@ -1,45 +1,55 @@
 import { useState, useEffect } from 'react'
 import { VoiceView } from './components/VoiceView'
-import { ChatView } from './components/ChatView'
 import { SetupModal } from './components/SetupModal'
 import { useTtsPlayback } from './hooks/useTtsPlayback'
+import type { KeyInfo } from '../../shared/types'
 import './App.css'
 
 export default function App() {
-  const { stop: _stopTts } = useTtsPlayback()
-  const [chatOpen, setChatOpen] = useState(false)
-  const [_settingsOpen, setSettingsOpen] = useState(false)
+  useTtsPlayback()
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [needsSetup, setNeedsSetup] = useState(true)
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'error'>(
     'connecting'
   )
 
   useEffect(() => {
-    window.budgie.getKeys().then((keys: any[]) => {
-      const required = keys.filter((k: any) => k.name !== 'OPENAI_API_KEY')
-      setNeedsSetup(!required.every((k: any) => k.isSet))
+    window.budgie.getKeys().then((keys: KeyInfo[]) => {
+      const required = keys.filter((k) => k.name !== 'OPENAI_API_KEY')
+      setNeedsSetup(!required.every((k) => k.isSet))
     })
-    return window.budgie.onConnectionStatus((connected: boolean) => {
-      setConnectionStatus(connected ? 'connected' : 'error')
+    const unsubConnection = window.budgie.onConnectionStatus((status: string) => {
+      if (status === 'connected') setConnectionStatus('connected')
+      else if (status === 'disconnected' || status === 'no-token') setConnectionStatus('connecting')
+      else setConnectionStatus('error')
     })
+    const unsubError = window.budgie.onError((message: string) => {
+      alert(message)
+    })
+    return () => {
+      unsubConnection()
+      unsubError()
+    }
   }, [])
 
-  if (needsSetup) {
-    return <SetupModal onComplete={() => setNeedsSetup(false)} />
+  if (needsSetup || settingsOpen) {
+    return (
+      <SetupModal
+        onComplete={() => {
+          setNeedsSetup(false)
+          setSettingsOpen(false)
+        }}
+      />
+    )
   }
 
   return (
     <div className="app">
       <div className="titlebar">
-        <span>Budgie</span>
+        <span>Talking Budgie</span>
         <span className={`status-dot ${connectionStatus}`} />
       </div>
-      {chatOpen && <ChatView />}
-      <VoiceView
-        compact={chatOpen}
-        onToggleChat={() => setChatOpen((c) => !c)}
-        onOpenSettings={() => setSettingsOpen(true)}
-      />
+      <VoiceView onOpenSettings={() => setSettingsOpen(true)} />
     </div>
   )
 }

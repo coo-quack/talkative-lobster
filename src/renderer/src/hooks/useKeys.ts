@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react'
-
-interface KeyInfo {
-  name: string
-  isSet: boolean
-  source: string | null
-}
+import type { KeyInfo } from '../../../shared/types'
 
 export function useKeys() {
   const [keys, setKeys] = useState<KeyInfo[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    window.budgie.getKeys().then((k: KeyInfo[]) => {
-      setKeys(k)
-      setLoading(false)
-    })
+    window.budgie.getKeys()
+      .then((k: KeyInfo[]) => {
+        setKeys(k)
+        setLoading(false)
+      })
+      .catch(() => {
+        setLoading(false)
+      })
   }, [])
 
   const refresh = async () => {

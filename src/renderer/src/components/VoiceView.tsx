@@ -1,14 +1,11 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { Waveform } from './Waveform'
 import { useVoiceState } from '../hooks/useVoiceState'
 import { useAudioLevel } from '../hooks/useAudioLevel'
 import { useVAD } from '../hooks/useVAD'
-
-type InputMode = 'hands-free' | 'push-to-talk'
+import { useSpeakerMonitor } from '../hooks/useSpeakerMonitor'
 
 interface Props {
-  compact?: boolean
-  onToggleChat: () => void
   onOpenSettings: () => void
 }
 
@@ -20,19 +17,42 @@ const STATUS_LABELS: Record<string, string> = {
   speaking: 'Speaking...'
 }
 
-export function VoiceView({ compact, onToggleChat, onOpenSettings }: Props) {
+export function VoiceView({ onOpenSettings }: Props) {
   const state = useVoiceState()
   const level = useAudioLevel()
   const [micOn, setMicOn] = useState(true)
-  const [mode, setMode] = useState<InputMode>('hands-free')
 
-  const vadEnabled = micOn && mode === 'hands-free' && (state === 'idle' || state === 'listening')
+  // Monitor system audio output — discard speech detected while speakers are playing
+  const { speakerActive } = useSpeakerMonitor(micOn)
+  const speakerActiveRef = useRef(speakerActive)
+  speakerActiveRef.current = speakerActive
+  const stateRef = useRef(state)
+  stateRef.current = state
+
+  const vadEnabled = micOn && (state === 'idle' || state === 'listening' || state === 'speaking')
 
   const handleSpeechStart = useCallback(() => {
+    // During 'speaking', always allow interruption (ignore speaker monitor
+    // since TTS output itself triggers speakerActive)
+    if (stateRef.current !== 'speaking' && speakerActiveRef.current) {
+      console.log('[voice] Ignoring speech start — speaker active')
+      return
+    }
     window.budgie.voiceStart()
   }, [])
 
   const handleSpeechEnd = useCallback((audio: Float32Array) => {
+    // During 'speaking', allow interruption regardless of speaker monitor
+    if (stateRef.current !== 'speaking' && speakerActiveRef.current) {
+      console.log('[voice] Discarding speech — speaker active')
+      window.budgie.voiceStop()
+      return
+    }
+    // Filter out very short audio (< 0.5s at 16kHz)
+    if (audio.length < 16000 * 0.5) {
+      window.budgie.voiceStop()
+      return
+    }
     window.budgie.sendAudioChunk(audio)
   }, [])
 
@@ -45,45 +65,26 @@ export function VoiceView({ compact, onToggleChat, onOpenSettings }: Props) {
   const toggleMic = () => {
     if (micOn) {
       window.budgie.voiceStop()
-    } else {
-      window.budgie.voiceStart()
     }
     setMicOn(!micOn)
   }
 
-  const statusLabel = vadListening && state === 'idle' ? 'Listening (hands-free)' : STATUS_LABELS[state]
+  const statusLabel = !micOn
+    ? 'Standby'
+    : vadListening && state === 'idle'
+      ? 'Listening...'
+      : STATUS_LABELS[state]
 
   return (
-    <div className={`voice-view ${compact ? 'compact' : ''}`}>
-      <Waveform state={state} level={level} compact={compact} />
+    <div className="voice-view">
+      <Waveform state={micOn ? state : 'idle'} level={micOn ? level : 0} />
       <div className="status-label">{statusLabel}</div>
       <div className="controls">
         <button className={`mic-btn ${micOn ? 'active' : ''}`} onClick={toggleMic}>
           {micOn ? 'Mic ON' : 'Mic OFF'}
         </button>
-        <button onClick={onToggleChat}>Chat</button>
         <button onClick={onOpenSettings}>Settings</button>
       </div>
-      {!compact && (
-        <div className="mode-switch">
-          <label>
-            <input
-              type="radio"
-              checked={mode === 'hands-free'}
-              onChange={() => setMode('hands-free')}
-            />
-            Hands-free
-          </label>
-          <label>
-            <input
-              type="radio"
-              checked={mode === 'push-to-talk'}
-              onChange={() => setMode('push-to-talk')}
-            />
-            Push-to-talk
-          </label>
-        </div>
-      )}
     </div>
   )
 }

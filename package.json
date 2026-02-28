@@ -1,5 +1,5 @@
 {
-  "name": "budgie",
+  "name": "talking-budgie",
   "version": "1.0.0",
   "description": "An Electron application with React and TypeScript",
   "main": "./out/main/index.js",
@@ -21,7 +21,8 @@
     "build:linux": "electron-vite build && electron-builder --linux",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test --config e2e/playwright.config.ts"
+    "test:e2e": "playwright test --config e2e/playwright.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
@@ -55,11 +56,13 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "jsdom": "^28.1.0",
+    "msw": "^2.12.10",
     "prettier": "^3.7.4",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "typescript": "^5.9.3",
     "vite": "^7.2.6",
+    "vite-plugin-static-copy": "^3.2.0",
     "vitest": "^4.0.18"
   },
   "pnpm": {

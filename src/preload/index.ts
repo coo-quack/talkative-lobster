@@ -1,24 +1,29 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '../shared/ipc-channels'
-import type { VoiceState, ChatMessage, KeyInfo, AppConfig } from '../shared/types'
+import type { VoiceState, KeyInfo, AppConfig, SttProvider, TtsProviderType } from '../shared/types'
 
 type UnsubscribeFn = () => void
 
 const api = {
   // Voice control
-  voiceStart: (): Promise<void> => ipcRenderer.invoke(IPC.VOICE_START),
-  voiceStop: (): Promise<void> => ipcRenderer.invoke(IPC.VOICE_STOP),
-  voiceInterrupt: (): Promise<void> => ipcRenderer.invoke(IPC.VOICE_INTERRUPT),
+  voiceStart: (): void => ipcRenderer.send(IPC.VOICE_START),
+  voiceStop: (): void => ipcRenderer.send(IPC.VOICE_STOP),
+  voiceInterrupt: (): void => ipcRenderer.send(IPC.VOICE_INTERRUPT),
   onVoiceStateChanged: (callback: (state: VoiceState) => void): UnsubscribeFn => {
     const handler = (_event: Electron.IpcRendererEvent, state: VoiceState): void => callback(state)
     ipcRenderer.on(IPC.VOICE_STATE_CHANGED, handler)
     return () => ipcRenderer.removeListener(IPC.VOICE_STATE_CHANGED, handler)
   },
 
-  // Audio data
+  // Audio data (legacy batch mode)
   sendAudioChunk: (audio: Float32Array): void => {
-    ipcRenderer.send(IPC.AUDIO_CHUNK, audio)
+    ipcRenderer.send(IPC.AUDIO_CHUNK, audio.buffer)
   },
+  // Realtime audio streaming for STT
+  sendAudioChunkRealtime: (audio: Float32Array): void => {
+    ipcRenderer.send(IPC.AUDIO_CHUNK_REALTIME, audio.buffer)
+  },
+  sttCommit: (): void => ipcRenderer.send(IPC.STT_COMMIT),
 
   // Audio level
   onAudioLevel: (callback: (level: number) => void): UnsubscribeFn => {
@@ -26,21 +31,6 @@ const api = {
     ipcRenderer.on(IPC.AUDIO_LEVEL, handler)
     return () => ipcRenderer.removeListener(IPC.AUDIO_LEVEL, handler)
   },
-
-  // Chat
-  chatSend: (text: string): Promise<void> => ipcRenderer.invoke(IPC.CHAT_SEND, text),
-  onChatMessage: (callback: (message: ChatMessage) => void): UnsubscribeFn => {
-    const handler = (_event: Electron.IpcRendererEvent, message: ChatMessage): void =>
-      callback(message)
-    ipcRenderer.on(IPC.CHAT_MESSAGE, handler)
-    return () => ipcRenderer.removeListener(IPC.CHAT_MESSAGE, handler)
-  },
-  onChatStream: (callback: (chunk: string) => void): UnsubscribeFn => {
-    const handler = (_event: Electron.IpcRendererEvent, chunk: string): void => callback(chunk)
-    ipcRenderer.on(IPC.CHAT_STREAM, handler)
-    return () => ipcRenderer.removeListener(IPC.CHAT_STREAM, handler)
-  },
-  getChatHistory: (): Promise<ChatMessage[]> => ipcRenderer.invoke(IPC.CHAT_HISTORY),
 
   // TTS audio
   onTtsAudio: (callback: (audioData: ArrayBuffer) => void): UnsubscribeFn => {
@@ -54,26 +44,71 @@ const api = {
     ipcRenderer.on(IPC.TTS_STOP, handler)
     return () => ipcRenderer.removeListener(IPC.TTS_STOP, handler)
   },
+  ttsPlaybackDone: (): void => ipcRenderer.send(IPC.TTS_PLAYBACK_DONE),
 
   // Keys management
   getKeys: (): Promise<KeyInfo[]> => ipcRenderer.invoke(IPC.KEYS_GET),
   setKey: (name: string, value: string): Promise<void> =>
     ipcRenderer.invoke(IPC.KEYS_SET, name, value),
-  readKeyFromOpenclaw: (name: string): Promise<KeyInfo> =>
+  readKeyFromOpenclaw: (name: string): Promise<string | null> =>
     ipcRenderer.invoke(IPC.KEYS_READ_OPENCLAW, name),
-  readKeyFromEnv: (name: string): Promise<KeyInfo> =>
+  readKeyFromEnv: (name: string): Promise<string | null> =>
     ipcRenderer.invoke(IPC.KEYS_READ_ENV, name),
   validateKey: (name: string): Promise<boolean> => ipcRenderer.invoke(IPC.KEYS_VALIDATE, name),
+
+  // TTS Voice & Model
+  getTtsVoice: (): Promise<string> => ipcRenderer.invoke(IPC.TTS_VOICE_GET),
+  setTtsVoice: (voiceId: string): Promise<void> => ipcRenderer.invoke(IPC.TTS_VOICE_SET, voiceId),
+  getTtsModel: (): Promise<string> => ipcRenderer.invoke(IPC.TTS_MODEL_GET),
+  setTtsModel: (modelId: string): Promise<void> => ipcRenderer.invoke(IPC.TTS_MODEL_SET, modelId),
+
+  // STT provider settings
+  getSttProvider: (): Promise<SttProvider> => ipcRenderer.invoke(IPC.STT_PROVIDER_GET),
+  setSttProvider: (provider: SttProvider): Promise<void> =>
+    ipcRenderer.invoke(IPC.STT_PROVIDER_SET, provider),
+  getLocalWhisperPath: (): Promise<string> => ipcRenderer.invoke(IPC.LOCAL_WHISPER_PATH_GET),
+  setLocalWhisperPath: (path: string): Promise<void> =>
+    ipcRenderer.invoke(IPC.LOCAL_WHISPER_PATH_SET, path),
+
+  // TTS provider settings
+  getTtsProvider: (): Promise<TtsProviderType> => ipcRenderer.invoke(IPC.TTS_PROVIDER_GET),
+  setTtsProvider: (provider: TtsProviderType): Promise<void> =>
+    ipcRenderer.invoke(IPC.TTS_PROVIDER_SET, provider),
+  getVoicevoxUrl: (): Promise<string> => ipcRenderer.invoke(IPC.VOICEVOX_URL_GET),
+  setVoicevoxUrl: (url: string): Promise<void> =>
+    ipcRenderer.invoke(IPC.VOICEVOX_URL_SET, url),
+  getKokoroUrl: (): Promise<string> => ipcRenderer.invoke(IPC.KOKORO_URL_GET),
+  setKokoroUrl: (url: string): Promise<void> =>
+    ipcRenderer.invoke(IPC.KOKORO_URL_SET, url),
+  getKokoroVoice: (): Promise<string> => ipcRenderer.invoke(IPC.KOKORO_VOICE_GET),
+  setKokoroVoice: (voice: string): Promise<void> =>
+    ipcRenderer.invoke(IPC.KOKORO_VOICE_SET, voice),
+  getPiperPath: (): Promise<string> => ipcRenderer.invoke(IPC.PIPER_PATH_GET),
+  setPiperPath: (path: string): Promise<void> =>
+    ipcRenderer.invoke(IPC.PIPER_PATH_SET, path),
+  getPiperModelPath: (): Promise<string> => ipcRenderer.invoke(IPC.PIPER_MODEL_PATH_GET),
+  setPiperModelPath: (path: string): Promise<void> =>
+    ipcRenderer.invoke(IPC.PIPER_MODEL_PATH_SET, path),
+  getVoicevoxSpeaker: (): Promise<number> => ipcRenderer.invoke(IPC.VOICEVOX_SPEAKER_GET),
+  setVoicevoxSpeaker: (id: number): Promise<void> =>
+    ipcRenderer.invoke(IPC.VOICEVOX_SPEAKER_SET, id),
 
   // Config
   getConfig: (): Promise<AppConfig> => ipcRenderer.invoke(IPC.CONFIG_GET),
   setConfig: (config: Partial<AppConfig>): Promise<void> =>
     ipcRenderer.invoke(IPC.CONFIG_SET, config),
 
+  // Error notification
+  onError: (callback: (message: string) => void): UnsubscribeFn => {
+    const handler = (_event: Electron.IpcRendererEvent, message: string): void => callback(message)
+    ipcRenderer.on(IPC.ERROR, handler)
+    return () => ipcRenderer.removeListener(IPC.ERROR, handler)
+  },
+
   // Connection status
-  onConnectionStatus: (callback: (connected: boolean) => void): UnsubscribeFn => {
-    const handler = (_event: Electron.IpcRendererEvent, connected: boolean): void =>
-      callback(connected)
+  onConnectionStatus: (callback: (status: string) => void): UnsubscribeFn => {
+    const handler = (_event: Electron.IpcRendererEvent, status: string): void =>
+      callback(status)
     ipcRenderer.on(IPC.CONNECTION_STATUS, handler)
     return () => ipcRenderer.removeListener(IPC.CONNECTION_STATUS, handler)
   },
