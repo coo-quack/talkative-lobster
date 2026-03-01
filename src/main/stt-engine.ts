@@ -1,12 +1,16 @@
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js'
-import { execFileSync } from 'node:child_process'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 import { writeFileSync, mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir, tmpdir } from 'node:os'
+
+const execFileAsync = promisify(execFile)
 import type { SttProviderConfig } from '../shared/types'
 
 const API_TIMEOUT_MS = 5_000
 const LOCAL_WHISPER_TIMEOUT_MS = 60_000
+export const WHISPER_MODEL_SUBPATH = join('.config', 'lobster', 'models', 'ggml-medium.bin')
 
 export interface SttEngineConfig {
   elevenlabsApiKey: string | null
@@ -96,12 +100,12 @@ export class SttEngine {
   private async transcribeLocalWhisper(wav: Buffer): Promise<string> {
     if (!this.config.localWhisperPath) throw new Error('localWhisperPath not configured')
 
-    const dir = mkdtempSync(join(tmpdir(), 'budgie-stt-'))
+    const dir = mkdtempSync(join(tmpdir(), 'lobster-stt-'))
     const wavPath = join(dir, 'audio.wav')
     try {
       writeFileSync(wavPath, wav)
-      const modelPath = join(homedir(), '.config', 'budgie', 'models', 'ggml-medium.bin')
-      const output = execFileSync(this.config.localWhisperPath, [
+      const modelPath = join(homedir(), WHISPER_MODEL_SUBPATH)
+      const { stdout: output } = await execFileAsync(this.config.localWhisperPath, [
         wavPath,
         '--model', modelPath,
         '--language', 'ja',

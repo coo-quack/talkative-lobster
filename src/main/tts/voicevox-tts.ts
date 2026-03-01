@@ -27,6 +27,8 @@ export class VoicevoxTts implements ITtsProvider {
     if (!queryRes.ok) throw new Error(`VOICEVOX audio_query failed: ${queryRes.status}`)
     const query = await queryRes.json()
 
+    // VOICEVOX synthesis API returns the complete WAV in one response (not streamed),
+    // so we collect all chunks and then re-chunk for consistent downstream handling.
     const synthRes = await fetch(
       `${this.url}/synthesis?speaker=${this.speakerId}`,
       {

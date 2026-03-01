@@ -1,12 +1,13 @@
 import { useState, useCallback, useRef } from 'react'
 import { Waveform } from './Waveform'
-import { useVoiceState } from '../hooks/useVoiceState'
-import { useAudioLevel } from '../hooks/useAudioLevel'
 import { useVAD } from '../hooks/useVAD'
 import { useSpeakerMonitor } from '../hooks/useSpeakerMonitor'
+import type { VoiceState } from '../../../shared/types'
 
 interface Props {
+  state: VoiceState
   onOpenSettings: () => void
+  stopPlayback: () => void
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -17,9 +18,7 @@ const STATUS_LABELS: Record<string, string> = {
   speaking: 'Speaking...'
 }
 
-export function VoiceView({ onOpenSettings }: Props) {
-  const state = useVoiceState()
-  const level = useAudioLevel()
+export function VoiceView({ state, onOpenSettings, stopPlayback }: Props) {
   const [micOn, setMicOn] = useState(true)
 
   // Monitor system audio output — discard speech detected while speakers are playing
@@ -31,29 +30,33 @@ export function VoiceView({ onOpenSettings }: Props) {
 
   const vadEnabled = micOn && (state === 'idle' || state === 'listening' || state === 'speaking')
 
+  const stopPlaybackRef = useRef(stopPlayback)
+  stopPlaybackRef.current = stopPlayback
+
   const handleSpeechStart = useCallback(() => {
-    // During 'speaking', always allow interruption (ignore speaker monitor
-    // since TTS output itself triggers speakerActive)
-    if (stateRef.current !== 'speaking' && speakerActiveRef.current) {
+    const s = stateRef.current
+    if (speakerActiveRef.current) {
       console.log('[voice] Ignoring speech start — speaker active')
       return
     }
-    window.budgie.voiceStart()
+    if (s === 'speaking') {
+      stopPlaybackRef.current()
+    }
+    window.lobster.voiceStart()
   }, [])
 
   const handleSpeechEnd = useCallback((audio: Float32Array) => {
-    // During 'speaking', allow interruption regardless of speaker monitor
-    if (stateRef.current !== 'speaking' && speakerActiveRef.current) {
+    if (speakerActiveRef.current) {
       console.log('[voice] Discarding speech — speaker active')
-      window.budgie.voiceStop()
+      window.lobster.voiceStop()
       return
     }
     // Filter out very short audio (< 0.5s at 16kHz)
     if (audio.length < 16000 * 0.5) {
-      window.budgie.voiceStop()
+      window.lobster.voiceStop()
       return
     }
-    window.budgie.sendAudioChunk(audio)
+    window.lobster.sendAudioChunk(audio)
   }, [])
 
   const { listening: vadListening } = useVAD({
@@ -64,20 +67,21 @@ export function VoiceView({ onOpenSettings }: Props) {
 
   const toggleMic = () => {
     if (micOn) {
-      window.budgie.voiceStop()
+      window.lobster.voiceStop()
     }
     setMicOn(!micOn)
   }
 
+
   const statusLabel = !micOn
-    ? 'Standby'
+    ? 'Offline'
     : vadListening && state === 'idle'
       ? 'Listening...'
       : STATUS_LABELS[state]
 
   return (
     <div className="voice-view">
-      <Waveform state={micOn ? state : 'idle'} level={micOn ? level : 0} />
+      <Waveform state={micOn ? state : 'idle'} offline={!micOn} />
       <div className="status-label">{statusLabel}</div>
       <div className="controls">
         <button className={`mic-btn ${micOn ? 'active' : ''}`} onClick={toggleMic}>

@@ -6,7 +6,7 @@ export function useKeys() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    window.budgie.getKeys()
+    window.lobster.getKeys()
       .then((k: KeyInfo[]) => {
         setKeys(k)
         setLoading(false)
@@ -17,7 +17,7 @@ export function useKeys() {
   }, [])
 
   const refresh = async () => {
-    const k = await window.budgie.getKeys()
+    const k = await window.lobster.getKeys()
     setKeys(k)
   }
 

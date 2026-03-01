@@ -7,9 +7,8 @@ export const voiceMachine = setup({
       | { type: 'SPEECH_END' }
       | { type: 'STT_DONE'; text: string }
       | { type: 'STT_FAIL' }
-      | { type: 'LLM_STREAM_START' }
+      | { type: 'TTS_PLAYING' }
       | { type: 'TTS_DONE' }
-      | { type: 'INTERRUPT' }
       | { type: 'CANCEL' },
   },
 }).createMachine({
@@ -32,11 +31,14 @@ export const voiceMachine = setup({
       on: {
         STT_DONE: 'thinking',
         STT_FAIL: 'idle',
+        SPEECH_START: 'listening',
+        CANCEL: 'idle',
       },
     },
     thinking: {
       on: {
-        LLM_STREAM_START: 'speaking',
+        TTS_PLAYING: 'speaking',
+        TTS_DONE: 'idle',
         SPEECH_START: 'listening',
         CANCEL: 'idle',
       },
@@ -44,8 +46,8 @@ export const voiceMachine = setup({
     speaking: {
       on: {
         TTS_DONE: 'idle',
-        INTERRUPT: 'idle',
         SPEECH_START: 'listening',
+        CANCEL: 'idle',
       },
     },
   },

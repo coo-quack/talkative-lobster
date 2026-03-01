@@ -64,7 +64,6 @@ export interface SttProviderConfig {
   elevenlabs: boolean
   openaiWhisper: boolean
   localWhisper: boolean
-  webSpeech: boolean
 }
 
 export interface KeyInfo {

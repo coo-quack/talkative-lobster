@@ -30,7 +30,7 @@ function fingerprintPublicKey(publicKeyPem: string): string {
 }
 
 function loadOrCreateDeviceIdentity(): DeviceIdentity {
-  const dir = join(homedir(), '.config', 'budgie')
+  const dir = join(homedir(), '.config', 'lobster')
   const filePath = join(dir, 'device-identity.json')
 
   if (existsSync(filePath)) {
@@ -113,6 +113,8 @@ export class OpenClawClient extends EventEmitter {
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.connectSent = false
+      this.ignoredRunIds.clear()
+      this.activeRunIds.clear()
       this.ws = new WebSocket(this.url)
 
       this.ws.on('open', () => {
@@ -151,9 +153,26 @@ export class OpenClawClient extends EventEmitter {
     this.ws = null
   }
 
+  private ignoredRunIds = new Set<string>()
+  private pendingMessageId: string | null = null
+
+  cancelActiveRuns(): void {
+    // Mark current pending message so its runId will be ignored when it arrives
+    if (this.pendingMessageId) {
+      this.ignoredRunIds.add(this.pendingMessageId)
+      this.pendingMessageId = null
+    }
+    for (const id of this.activeRunIds) {
+      this.ignoredRunIds.add(id)
+    }
+    this.activeRunIds.clear()
+  }
+
   sendMessage(text: string): void {
     const idempotencyKey = crypto.randomUUID()
-    console.log(`[openclaw] Sending chat.send: "${text.slice(0, 50)}"`)
+    // Track the idempotency key so cancelActiveRuns can ignore late responses
+    this.pendingMessageId = idempotencyKey
+    console.log(`[openclaw] Sending chat.send: "${text.slice(0, 80)}"`)
     this.request('chat.send', {
       sessionKey: this.sessionKey,
       message: text,
@@ -161,11 +180,25 @@ export class OpenClawClient extends EventEmitter {
     })
       .then((payload) => {
         const res = payload as { runId?: string }
-        if (res?.runId) this.activeRunIds.add(res.runId)
+        if (res?.runId) {
+          // Check if this message was cancelled while waiting for response
+          if (this.ignoredRunIds.has(idempotencyKey)) {
+            this.ignoredRunIds.delete(idempotencyKey)
+            this.ignoredRunIds.add(res.runId)
+          } else {
+            this.activeRunIds.add(res.runId)
+          }
+          if (this.pendingMessageId === idempotencyKey) {
+            this.pendingMessageId = null
+          }
+        }
         console.log('[openclaw] chat.send accepted:', JSON.stringify(payload))
       })
       .catch((err) => {
         console.error('[openclaw] chat.send failed:', err.message)
+        if (this.pendingMessageId === idempotencyKey) {
+          this.pendingMessageId = null
+        }
       })
   }
 
@@ -200,6 +233,14 @@ export class OpenClawClient extends EventEmitter {
         // Only process responses to our own chat.send requests
         if (!payload.runId || !this.activeRunIds.has(payload.runId)) {
           if (payload.state === 'final') console.log(`[openclaw] Ignoring external chat (runId: ${payload.runId ?? 'none'})`)
+          return
+        }
+        // Ignore cancelled runs
+        if (this.ignoredRunIds.has(payload.runId)) {
+          if (payload.state === 'final' || payload.state === 'error') {
+            this.ignoredRunIds.delete(payload.runId)
+            this.activeRunIds.delete(payload.runId)
+          }
           return
         }
         if (payload.state === 'delta') {
@@ -262,7 +303,7 @@ export class OpenClawClient extends EventEmitter {
       maxProtocol: PROTOCOL_VERSION,
       client: {
         id: 'gateway-client',
-        displayName: 'Budgie',
+        displayName: 'Lobster',
         version: '1.0.0',
         platform: process.platform,
         mode: 'backend',

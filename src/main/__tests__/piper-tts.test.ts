@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const { mockExecFileSync, mockWriteFileSync, mockReadFileSync, mockRmSync, mockMkdtempSync } = vi.hoisted(() => ({
-  mockExecFileSync: vi.fn(),
+const { mockExecFile, mockWriteFileSync, mockReadFileSync, mockRmSync, mockMkdtempSync } = vi.hoisted(() => ({
+  mockExecFile: vi.fn((_cmd: string, _args: string[], _opts: unknown, cb: Function) => cb(null, '', '')),
   mockWriteFileSync: vi.fn(),
   mockReadFileSync: vi.fn(),
   mockRmSync: vi.fn(),
   mockMkdtempSync: vi.fn(),
 }))
 
-vi.mock('node:child_process', () => ({ execFileSync: mockExecFileSync }))
+vi.mock('node:child_process', () => ({ execFile: mockExecFile }))
 vi.mock('node:fs', () => ({
   writeFileSync: mockWriteFileSync,
   readFileSync: mockReadFileSync,
@@ -21,7 +21,7 @@ import { PiperTts } from '../tts/piper-tts'
 describe('PiperTts', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    mockMkdtempSync.mockReturnValue('/tmp/budgie-piper-xyz')
+    mockMkdtempSync.mockReturnValue('/tmp/lobster-piper-xyz')
     mockReadFileSync.mockReturnValue(Buffer.from('RIFF-wav-data'))
   })
 
@@ -37,11 +37,12 @@ describe('PiperTts', () => {
       const tts = new PiperTts('/usr/local/bin/piper', '/models/en.onnx')
       for await (const _ of tts.stream('hello')) { /* drain */ }
 
-      expect(mockWriteFileSync).toHaveBeenCalledWith('/tmp/budgie-piper-xyz/input.txt', 'hello')
-      expect(mockExecFileSync).toHaveBeenCalledWith(
+      expect(mockWriteFileSync).toHaveBeenCalledWith('/tmp/lobster-piper-xyz/input.txt', 'hello')
+      expect(mockExecFile).toHaveBeenCalledWith(
         '/usr/local/bin/piper',
-        ['--model', '/models/en.onnx', '--input-file', '/tmp/budgie-piper-xyz/input.txt', '--output-file', '/tmp/budgie-piper-xyz/output.wav'],
+        ['--model', '/models/en.onnx', '--input-file', '/tmp/lobster-piper-xyz/input.txt', '--output-file', '/tmp/lobster-piper-xyz/output.wav'],
         { timeout: 30_000 },
+        expect.any(Function),
       )
     })
 
@@ -63,27 +64,27 @@ describe('PiperTts', () => {
       const tts = new PiperTts('/bin/piper', '/model.onnx')
       for await (const _ of tts.stream('cleanup')) { /* drain */ }
 
-      expect(mockRmSync).toHaveBeenCalledWith('/tmp/budgie-piper-xyz', { recursive: true, force: true })
+      expect(mockRmSync).toHaveBeenCalledWith('/tmp/lobster-piper-xyz', { recursive: true, force: true })
     })
 
     it('cleans up temp directory even on error', async () => {
-      mockExecFileSync.mockImplementation(() => { throw new Error('piper failed') })
+      mockExecFile.mockImplementation((_cmd: string, _args: string[], _opts: unknown, cb: Function) => cb(new Error('piper failed')))
 
       const tts = new PiperTts('/bin/piper', '/model.onnx')
       await expect(async () => {
         for await (const _ of tts.stream('fail')) { /* drain */ }
       }).rejects.toThrow('piper failed')
 
-      expect(mockRmSync).toHaveBeenCalledWith('/tmp/budgie-piper-xyz', { recursive: true, force: true })
+      expect(mockRmSync).toHaveBeenCalledWith('/tmp/lobster-piper-xyz', { recursive: true, force: true })
     })
 
     it('yields nothing when stopped before read', async () => {
       const tts = new PiperTts('/bin/piper', '/model.onnx')
       tts.stop()
 
-      // Reset stopped on stream entry, but execFileSync runs synchronously,
-      // so we stop after exec but before yield by mocking execFileSync to call stop
-      mockExecFileSync.mockImplementation(() => { tts.stop() })
+      // Reset stopped on stream entry, but execFile runs asynchronously,
+      // so we stop after exec but before yield by mocking execFile to call stop
+      mockExecFile.mockImplementation((_cmd: string, _args: string[], _opts: unknown, cb: Function) => { tts.stop(); cb(null, '', '') })
 
       const received: Buffer[] = []
       for await (const chunk of tts.stream('stopped')) {
@@ -119,10 +120,11 @@ describe('PiperTts', () => {
 
       for await (const _ of tts.stream('test')) { /* drain */ }
 
-      expect(mockExecFileSync).toHaveBeenCalledWith(
+      expect(mockExecFile).toHaveBeenCalledWith(
         '/new/piper',
         expect.arrayContaining(['/new/model.onnx']),
         expect.any(Object),
+        expect.any(Function),
       )
     })
   })

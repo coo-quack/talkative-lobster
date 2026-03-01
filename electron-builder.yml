@@ -1,5 +1,5 @@
-appId: com.cooq.budgie
-productName: Budgie
+appId: com.cooq.lobster
+productName: Lobster
 directories:
   buildResources: build
 files:
@@ -12,7 +12,7 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: budgie
+  executableName: lobster
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

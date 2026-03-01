@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '../shared/ipc-channels'
-import type { VoiceState, KeyInfo, AppConfig, SttProvider, TtsProviderType } from '../shared/types'
+import type { VoiceState, KeyInfo, SttProvider, TtsProviderType } from '../shared/types'
 
 type UnsubscribeFn = () => void
 
@@ -19,19 +19,6 @@ const api = {
   sendAudioChunk: (audio: Float32Array): void => {
     ipcRenderer.send(IPC.AUDIO_CHUNK, audio.buffer)
   },
-  // Realtime audio streaming for STT
-  sendAudioChunkRealtime: (audio: Float32Array): void => {
-    ipcRenderer.send(IPC.AUDIO_CHUNK_REALTIME, audio.buffer)
-  },
-  sttCommit: (): void => ipcRenderer.send(IPC.STT_COMMIT),
-
-  // Audio level
-  onAudioLevel: (callback: (level: number) => void): UnsubscribeFn => {
-    const handler = (_event: Electron.IpcRendererEvent, level: number): void => callback(level)
-    ipcRenderer.on(IPC.AUDIO_LEVEL, handler)
-    return () => ipcRenderer.removeListener(IPC.AUDIO_LEVEL, handler)
-  },
-
   // TTS audio
   onTtsAudio: (callback: (audioData: ArrayBuffer) => void): UnsubscribeFn => {
     const handler = (_event: Electron.IpcRendererEvent, audioData: ArrayBuffer): void =>
@@ -44,6 +31,12 @@ const api = {
     ipcRenderer.on(IPC.TTS_STOP, handler)
     return () => ipcRenderer.removeListener(IPC.TTS_STOP, handler)
   },
+  onTtsCancel: (callback: () => void): UnsubscribeFn => {
+    const handler = (): void => callback()
+    ipcRenderer.on(IPC.TTS_CANCEL, handler)
+    return () => ipcRenderer.removeListener(IPC.TTS_CANCEL, handler)
+  },
+  ttsPlaybackStarted: (): void => ipcRenderer.send(IPC.TTS_PLAYBACK_STARTED),
   ttsPlaybackDone: (): void => ipcRenderer.send(IPC.TTS_PLAYBACK_DONE),
 
   // Keys management
@@ -54,8 +47,6 @@ const api = {
     ipcRenderer.invoke(IPC.KEYS_READ_OPENCLAW, name),
   readKeyFromEnv: (name: string): Promise<string | null> =>
     ipcRenderer.invoke(IPC.KEYS_READ_ENV, name),
-  validateKey: (name: string): Promise<boolean> => ipcRenderer.invoke(IPC.KEYS_VALIDATE, name),
-
   // TTS Voice & Model
   getTtsVoice: (): Promise<string> => ipcRenderer.invoke(IPC.TTS_VOICE_GET),
   setTtsVoice: (voiceId: string): Promise<void> => ipcRenderer.invoke(IPC.TTS_VOICE_SET, voiceId),
@@ -93,10 +84,13 @@ const api = {
   setVoicevoxSpeaker: (id: number): Promise<void> =>
     ipcRenderer.invoke(IPC.VOICEVOX_SPEAKER_SET, id),
 
-  // Config
-  getConfig: (): Promise<AppConfig> => ipcRenderer.invoke(IPC.CONFIG_GET),
-  setConfig: (config: Partial<AppConfig>): Promise<void> =>
-    ipcRenderer.invoke(IPC.CONFIG_SET, config),
+  // Connectivity checks
+  checkGateway: (): Promise<{ ok: boolean; message: string }> =>
+    ipcRenderer.invoke(IPC.GATEWAY_CHECK),
+  checkTtsProvider: (provider: string): Promise<{ ok: boolean; message: string }> =>
+    ipcRenderer.invoke(IPC.TTS_CHECK, provider),
+  checkSttProvider: (provider: string): Promise<{ ok: boolean; message: string }> =>
+    ipcRenderer.invoke(IPC.STT_CHECK, provider),
 
   // Error notification
   onError: (callback: (message: string) => void): UnsubscribeFn => {
@@ -114,15 +108,15 @@ const api = {
   },
 }
 
-export type BudgieAPI = typeof api
+export type LobsterAPI = typeof api
 
 if (process.contextIsolated) {
   try {
-    contextBridge.exposeInMainWorld('budgie', api)
+    contextBridge.exposeInMainWorld('lobster', api)
   } catch (error) {
     console.error(error)
   }
 } else {
   // @ts-ignore (define in dts)
-  window.budgie = api
+  window.lobster = api
 }

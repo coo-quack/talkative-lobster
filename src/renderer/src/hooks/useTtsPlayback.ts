@@ -6,6 +6,20 @@ export function useTtsPlayback() {
   const queueRef = useRef<AudioBuffer[]>([])
   const playingRef = useRef(false)
   const streamDoneRef = useRef(false)
+  const playbackStartedRef = useRef(false)
+
+  const stopPlayback = useCallback(() => {
+    streamDoneRef.current = false
+    playbackStartedRef.current = false
+    queueRef.current = []
+    const src = sourceRef.current
+    sourceRef.current = null
+    playingRef.current = false
+    if (src) {
+      src.onended = null
+      try { src.stop() } catch { /* already stopped */ }
+    }
+  }, [])
 
   const playNext = useCallback(() => {
     const ctx = ctxRef.current
@@ -15,12 +29,18 @@ export function useTtsPlayback() {
       if (streamDoneRef.current) {
         streamDoneRef.current = false
         console.log('[tts] Playback fully complete')
-        window.budgie.ttsPlaybackDone()
+        window.lobster.ttsPlaybackDone()
       }
       return
     }
 
     playingRef.current = true
+    // Notify main process when first audio chunk starts playing
+    if (!playbackStartedRef.current) {
+      playbackStartedRef.current = true
+      console.log('[tts] Playback started — notifying main process')
+      window.lobster.ttsPlaybackStarted()
+    }
     const buffer = queueRef.current.shift()!
     const source = ctx.createBufferSource()
     source.buffer = buffer
@@ -36,7 +56,7 @@ export function useTtsPlayback() {
   useEffect(() => {
     ctxRef.current = new AudioContext()
 
-    const unsubAudio = window.budgie.onTtsAudio(async (audioData: ArrayBuffer) => {
+    const unsubAudio = window.lobster.onTtsAudio(async (audioData: ArrayBuffer) => {
       const ctx = ctxRef.current!
       if (ctx.state === 'suspended') await ctx.resume()
 
@@ -49,14 +69,10 @@ export function useTtsPlayback() {
       }
     })
 
-    // TTS_STOP signals all chunks have been sent from main process
-    const unsubStop = window.budgie.onTtsStop(() => {
+    // TTS_STOP: all chunks sent — mark stream as done.
+    // playNext will send ttsPlaybackDone when queue empties after playback.
+    const unsubStop = window.lobster.onTtsStop(() => {
       streamDoneRef.current = true
-      // If nothing playing or queued, notify immediately
-      if (!playingRef.current && queueRef.current.length === 0) {
-        streamDoneRef.current = false
-        window.budgie.ttsPlaybackDone()
-      }
     })
 
     return () => {
@@ -66,18 +82,5 @@ export function useTtsPlayback() {
     }
   }, [playNext])
 
-  const stop = useCallback(() => {
-    streamDoneRef.current = false
-    queueRef.current = []
-    const src = sourceRef.current
-    sourceRef.current = null
-    playingRef.current = false
-    if (src) {
-      src.onended = null
-      src.stop()
-    }
-    window.budgie.ttsPlaybackDone()
-  }, [])
-
-  return { stop }
+  return { stopPlayback }
 }

@@ -6,8 +6,10 @@
  */
 
 const EXACT_BLACKLIST = [
-  // EN whisper artifacts
+  // EN whisper artifacts (e.g. 'NO_' is a common whisper hallucination for silence)
   'NO', 'NO_', 'you', 'Yeah.', 'Bye.', 'Thank you.',
+  // JP filler / non-speech
+  'ん',
   '(music)', '(silence)', '(noise)',
   // JP speaker bleed (YouTube / video)
   'ご視聴ありがとうございました',

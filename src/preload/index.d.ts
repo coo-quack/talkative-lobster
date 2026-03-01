@@ -1,7 +1,7 @@
-import type { BudgieAPI } from './index'
+import type { LobsterAPI } from './index'
 
 declare global {
   interface Window {
-    budgie: BudgieAPI
+    lobster: LobsterAPI
   }
 }

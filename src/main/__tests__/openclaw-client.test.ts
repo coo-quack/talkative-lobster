@@ -86,7 +86,7 @@ describe('OpenClawClient', () => {
   let client: OpenClawClient
 
   beforeEach(() => {
-    client = new OpenClawClient('ws://127.0.0.1:18789', 'test-token', 'agent:main:budgie')
+    client = new OpenClawClient('ws://127.0.0.1:18789', 'test-token', 'agent:main:lobster')
   })
 
   afterEach(() => {
@@ -94,7 +94,7 @@ describe('OpenClawClient', () => {
   })
 
   it('creates with correct config', () => {
-    expect(client.sessionKey).toBe('agent:main:budgie')
+    expect(client.sessionKey).toBe('agent:main:lobster')
   })
 
   it('sends connect request after receiving challenge', async () => {
@@ -104,7 +104,7 @@ describe('OpenClawClient', () => {
     expect(connectReq).toBeDefined()
     expect(connectReq.params.auth.token).toBe('test-token')
     expect(connectReq.params.device.nonce).toBe('test-nonce-123')
-    expect(connectReq.params.client.displayName).toBe('Budgie')
+    expect(connectReq.params.client.displayName).toBe('Lobster')
   })
 
   it('sends chat.send with session key and message', async () => {
@@ -115,7 +115,7 @@ describe('OpenClawClient', () => {
     const chatReq = calls.find((c: any) => c.method === 'chat.send')
     expect(chatReq).toBeDefined()
     expect(chatReq.params.message).toBe('hello')
-    expect(chatReq.params.sessionKey).toBe('agent:main:budgie')
+    expect(chatReq.params.sessionKey).toBe('agent:main:lobster')
   })
 
   it('emits stream events for tracked runId', async () => {
@@ -211,5 +211,162 @@ describe('OpenClawClient', () => {
       })
     )
     expect(streamHandler).not.toHaveBeenCalled()
+  })
+
+  it('cancelActiveRuns ignores events from cancelled run', async () => {
+    const ws = await connectClient(client)
+    const streamHandler = vi.fn()
+    const doneHandler = vi.fn()
+    client.on('stream', streamHandler)
+    client.on('done', doneHandler)
+
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+    ws.resolveChatSend('run-cancel-1')
+    await new Promise((r) => setTimeout(r, 5))
+
+    // Cancel all active runs
+    client.cancelActiveRuns()
+
+    // Events from cancelled run should be ignored
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: { state: 'delta', runId: 'run-cancel-1', message: { text: 'Should be ignored' } },
+      })
+    )
+    expect(streamHandler).not.toHaveBeenCalled()
+
+    // Final event should clean up ignoredRunIds
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: { state: 'final', runId: 'run-cancel-1', message: { text: 'Also ignored' } },
+      })
+    )
+    expect(doneHandler).not.toHaveBeenCalled()
+  })
+
+  it('cancelActiveRuns with pendingMessageId marks late response as ignored', async () => {
+    const ws = await connectClient(client)
+    const doneHandler = vi.fn()
+    client.on('done', doneHandler)
+
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+
+    // Cancel BEFORE chat.send response arrives
+    client.cancelActiveRuns()
+
+    // Now the response arrives with a runId
+    ws.resolveChatSend('run-late-1')
+    await new Promise((r) => setTimeout(r, 5))
+
+    // Events for this run should be ignored because idempotencyKey was in ignoredRunIds
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: { state: 'delta', runId: 'run-late-1', message: { text: 'Ignored' } },
+      })
+    )
+    expect(doneHandler).not.toHaveBeenCalled()
+  })
+
+  it('extractText handles content array format', async () => {
+    const ws = await connectClient(client)
+    const doneHandler = vi.fn()
+    client.on('done', doneHandler)
+
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+    ws.resolveChatSend('run-content')
+    await new Promise((r) => setTimeout(r, 5))
+
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: {
+          state: 'final',
+          runId: 'run-content',
+          message: {
+            content: [
+              { type: 'text', text: 'Hello ' },
+              { type: 'text', text: 'world' },
+            ],
+          },
+        },
+      })
+    )
+    expect(doneHandler).toHaveBeenCalledWith('Hello world')
+  })
+
+  it('extractText handles string content format', async () => {
+    const ws = await connectClient(client)
+    const doneHandler = vi.fn()
+    client.on('done', doneHandler)
+
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+    ws.resolveChatSend('run-string')
+    await new Promise((r) => setTimeout(r, 5))
+
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: {
+          state: 'final',
+          runId: 'run-string',
+          message: { content: 'Direct string content' },
+        },
+      })
+    )
+    expect(doneHandler).toHaveBeenCalledWith('Direct string content')
+  })
+
+  it('ignores tick events', async () => {
+    const ws = await connectClient(client)
+    const streamHandler = vi.fn()
+    client.on('stream', streamHandler)
+
+    ws.emit(
+      'message',
+      JSON.stringify({ type: 'event', event: 'tick' })
+    )
+    expect(streamHandler).not.toHaveBeenCalled()
+  })
+
+  it('handles error response for request', async () => {
+    const ws = await connectClient(client)
+
+    const requestPromise = (client as any).request('test.method', {})
+    const calls = ws.send.mock.calls.map((c: string[]) => JSON.parse(c[0]))
+    const testReq = [...calls].reverse().find((c: any) => c.method === 'test.method')
+
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'res',
+        id: testReq.id,
+        ok: false,
+        error: { message: 'Not authorized' },
+      })
+    )
+
+    await expect(requestPromise).rejects.toThrow('Not authorized')
+  })
+
+  it('rejects request when not connected', async () => {
+    client.disconnect()
+    await expect((client as any).request('test.method', {})).rejects.toThrow('gateway not connected')
   })
 })

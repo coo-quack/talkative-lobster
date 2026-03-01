@@ -4,23 +4,17 @@ export const IPC = {
   VOICE_STOP: 'voice:stop',
   VOICE_INTERRUPT: 'voice:interrupt',
   AUDIO_CHUNK: 'audio:chunk',
-  AUDIO_CHUNK_REALTIME: 'audio:chunk-realtime',
-  STT_COMMIT: 'stt:commit',
-  AUDIO_LEVEL: 'audio:level',
   CHAT_SEND: 'chat:send',
   CHAT_MESSAGE: 'chat:message',
-  CHAT_STREAM: 'chat:stream',
-  CHAT_HISTORY: 'chat:history',
   TTS_AUDIO: 'tts:audio',
-  TTS_STOP: 'tts:stop',
+  TTS_STOP: 'tts:stop',           // Stream complete — let queued audio finish
+  TTS_CANCEL: 'tts:cancel',       // Immediately stop playback
+  TTS_PLAYBACK_STARTED: 'tts:playback-started',
   TTS_PLAYBACK_DONE: 'tts:playback-done',
   KEYS_GET: 'keys:get',
   KEYS_SET: 'keys:set',
   KEYS_READ_OPENCLAW: 'keys:read-openclaw',
   KEYS_READ_ENV: 'keys:read-env',
-  KEYS_VALIDATE: 'keys:validate',
-  CONFIG_GET: 'config:get',
-  CONFIG_SET: 'config:set',
   TTS_VOICE_SET: 'tts:voice-set',
   TTS_VOICE_GET: 'tts:voice-get',
   TTS_MODEL_SET: 'tts:model-set',
@@ -48,6 +42,11 @@ export const IPC = {
   PIPER_MODEL_PATH_SET: 'tts:piper-model-path-set',
   VOICEVOX_SPEAKER_GET: 'tts:voicevox-speaker-get',
   VOICEVOX_SPEAKER_SET: 'tts:voicevox-speaker-set',
+  // Connectivity checks
+  TTS_CHECK: 'tts:check',
+  STT_CHECK: 'stt:check',
+  GATEWAY_CHECK: 'gateway:check',
+
   // Error notification
   ERROR: 'app:error',
 } as const

@@ -22,6 +22,10 @@ describe('isNonSpeech', () => {
       expect(isNonSpeech('Bye.')).toBe(true)
       expect(isNonSpeech('Thank you.')).toBe(true)
     })
+
+    it('filters JP filler "ん"', () => {
+      expect(isNonSpeech('ん')).toBe(true)
+    })
   })
 
   describe('YouTube / video speaker bleed (exact match)', () => {

@@ -46,7 +46,7 @@ export class SettingsStore {
       this.data = { ...DEFAULTS }
       return
     }
-    const dir = dirPath ?? join(homedir(), '.config', 'budgie')
+    const dir = dirPath ?? join(homedir(), '.config', 'lobster')
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
     this.filePath = join(dir, 'settings.json')
     this.data = { ...DEFAULTS }

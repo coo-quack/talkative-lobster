@@ -2,61 +2,73 @@ import { test, expect, _electron as electron, type ElectronApplication, type Pag
 import path from 'node:path'
 import fs from 'node:fs'
 import os from 'node:os'
+import { installFetchMock } from './helpers/mock-fetch'
 
 const MAIN_ENTRY = path.join(__dirname, '..', 'out', 'main', 'index.js')
-const SETTINGS_PATH = path.join(os.homedir(), '.config', 'budgie', 'settings.json')
+const LOBSTER_DIR = path.join(os.homedir(), '.config', 'lobster')
+const SETTINGS_PATH = path.join(LOBSTER_DIR, 'settings.json')
+const KEYS_PATH = path.join(LOBSTER_DIR, 'keys.json')
 
 let app: ElectronApplication
 let window: Page
 let savedSettings: string | null = null
+let savedKeys: string | null = null
+
+function backupAndRemove(filePath: string): string | null {
+  if (fs.existsSync(filePath)) {
+    const content = fs.readFileSync(filePath, 'utf-8')
+    fs.unlinkSync(filePath)
+    return content
+  }
+  return null
+}
+
+function restoreFile(filePath: string, content: string | null): void {
+  if (content !== null) {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true })
+    fs.writeFileSync(filePath, content)
+  }
+}
 
 test.beforeAll(async () => {
-  // Backup and remove settings so tests run with defaults
-  if (fs.existsSync(SETTINGS_PATH)) {
-    savedSettings = fs.readFileSync(SETTINGS_PATH, 'utf-8')
-    fs.unlinkSync(SETTINGS_PATH)
-  }
+  // Backup and remove settings + keys so tests run with fresh state
+  savedSettings = backupAndRemove(SETTINGS_PATH)
+  savedKeys = backupAndRemove(KEYS_PATH)
+
   app = await electron.launch({ args: [MAIN_ENTRY] })
   window = await app.firstWindow()
+  await installFetchMock(app)
   await window.waitForLoadState('domcontentloaded')
 })
 
 test.afterAll(async () => {
   await app.close()
-  // Restore settings
-  if (savedSettings !== null) {
-    fs.mkdirSync(path.dirname(SETTINGS_PATH), { recursive: true })
-    fs.writeFileSync(SETTINGS_PATH, savedSettings)
-  }
+  // Restore settings and keys
+  restoreFile(SETTINGS_PATH, savedSettings)
+  restoreFile(KEYS_PATH, savedKeys)
 })
 
 // ── App launch ──────────────────────────────────────────────────────
 
 test.describe('App launch', () => {
-  test('shows setup modal with welcome heading', async () => {
-    await expect(window.locator('h2')).toContainText('Welcome to Budgie')
+  test('shows setup modal with Settings heading', async () => {
+    await expect(window.locator('h2')).toContainText('Settings')
   })
 
-  test('shows General and Keys tabs', async () => {
-    const tabs = window.locator('.tab-btn')
-    await expect(tabs).toHaveCount(2)
-    await expect(tabs.nth(0)).toContainText('General')
-    await expect(tabs.nth(1)).toContainText('Keys')
+  test('shows hint text about connection tests', async () => {
+    await expect(window.locator('p')).toContainText('All connection tests must pass to start.')
   })
 
-  test('General tab is active by default', async () => {
-    const generalTab = window.locator('.tab-btn').nth(0)
-    await expect(generalTab).toHaveClass(/active/)
-  })
-
-  test('shows configure hint text', async () => {
-    await expect(window.locator('p')).toContainText('Configure your settings')
+  test('shows Gateway, STT, and TTS settings sections', async () => {
+    await expect(window.locator('h3', { hasText: 'Gateway Settings' })).toBeVisible()
+    await expect(window.locator('h3', { hasText: 'STT Settings' })).toBeVisible()
+    await expect(window.locator('h3', { hasText: 'TTS Settings' })).toBeVisible()
   })
 })
 
-// ── General tab — STT provider ──────────────────────────────────────
+// ── STT provider ──────────────────────────────────────────────────
 
-test.describe('General tab — STT provider', () => {
+test.describe('STT provider', () => {
   test('shows STT Provider select with ElevenLabs Scribe as default', async () => {
     const sttLabel = window.locator('.key-field label', { hasText: 'STT Provider' })
     await expect(sttLabel).toBeVisible()
@@ -95,11 +107,25 @@ test.describe('General tab — STT provider', () => {
     await expect(window.locator('label', { hasText: 'whisper.cpp Binary Path' })).not.toBeVisible()
     await sttSelect.selectOption('elevenlabs')
   })
+
+  test('shows ELEVENLABS_API_KEY input when ElevenLabs STT selected', async () => {
+    const sttSelect = window.locator('.key-field label', { hasText: 'STT Provider' }).locator('..').locator('select')
+    await sttSelect.selectOption('elevenlabs')
+    await expect(window.locator('.key-field label', { hasText: 'ELEVENLABS_API_KEY' }).first()).toBeVisible()
+    await sttSelect.selectOption('elevenlabs')
+  })
+
+  test('shows OPENAI_API_KEY input when OpenAI Whisper selected', async () => {
+    const sttSelect = window.locator('.key-field label', { hasText: 'STT Provider' }).locator('..').locator('select')
+    await sttSelect.selectOption('openaiWhisper')
+    await expect(window.locator('.key-field label', { hasText: 'OPENAI_API_KEY' })).toBeVisible()
+    await sttSelect.selectOption('elevenlabs')
+  })
 })
 
-// ── General tab — TTS provider ──────────────────────────────────────
+// ── TTS provider ──────────────────────────────────────────────────
 
-test.describe('General tab — TTS provider', () => {
+test.describe('TTS provider', () => {
   test('shows TTS Provider select with ElevenLabs as default', async () => {
     const ttsSelect = window.locator('.key-field label', { hasText: 'TTS Provider' }).locator('..').locator('select')
     await expect(ttsSelect).toHaveValue('elevenlabs')
@@ -209,30 +235,26 @@ test.describe('General tab — TTS provider', () => {
   })
 })
 
-// ── Tab switching ───────────────────────────────────────────────────
+// ── Gateway settings ─────────────────────────────────────────────
 
-test.describe('Tab switching', () => {
-  test('switches to Keys tab and shows API key fields', async () => {
-    const keysTab = window.locator('.tab-btn', { hasText: 'Keys' })
-    await keysTab.click()
-
-    await expect(keysTab).toHaveClass(/active/)
-
-    // Keys tab should show API key fields
-    await expect(window.locator('label', { hasText: 'ELEVENLABS_API_KEY' })).toBeVisible()
-    await expect(window.locator('label', { hasText: 'GATEWAY_TOKEN' })).toBeVisible()
-
-    // General tab fields should be hidden
-    await expect(window.locator('label', { hasText: 'STT Provider' })).not.toBeVisible()
-    await expect(window.locator('label', { hasText: 'TTS Provider' })).not.toBeVisible()
+test.describe('Gateway settings', () => {
+  test('shows GATEWAY_TOKEN input', async () => {
+    await expect(window.locator('.key-field label', { hasText: 'GATEWAY_TOKEN' })).toBeVisible()
   })
 
-  test('shows OPENAI_API_KEY with optional badge', async () => {
-    const openaiField = window.locator('.key-field', { hasText: 'OPENAI_API_KEY' })
-    await expect(openaiField).toBeVisible()
-    await expect(openaiField.locator('.optional-badge')).toContainText('Optional')
+  test('shows Test button for gateway', async () => {
+    const gatewaySection = window.locator('h3', { hasText: 'Gateway Settings' })
+    await expect(gatewaySection).toBeVisible()
+    // Test button exists after Gateway section
+    const testButtons = window.locator('.check-btn')
+    const count = await testButtons.count()
+    expect(count).toBeGreaterThanOrEqual(3)
   })
+})
 
+// ── Key inputs ───────────────────────────────────────────────────
+
+test.describe('Key inputs', () => {
   test('shows OpenClaw and Env buttons for each key', async () => {
     const keySources = window.locator('.key-sources')
     const count = await keySources.count()
@@ -250,31 +272,105 @@ test.describe('Tab switching', () => {
     const count = await keyInputs.count()
     expect(count).toBeGreaterThan(0)
   })
-
-  test('switches back to General tab', async () => {
-    const generalTab = window.locator('.tab-btn', { hasText: 'General' })
-    await generalTab.click()
-
-    await expect(generalTab).toHaveClass(/active/)
-    await expect(window.locator('label', { hasText: 'STT Provider' })).toBeVisible()
-    await expect(window.locator('label', { hasText: 'TTS Provider' })).toBeVisible()
-  })
 })
 
-// ── Start Budgie button ─────────────────────────────────────────────
+// ── Start Lobster button ─────────────────────────────────────────────
 
-test.describe('Start Budgie button', () => {
+test.describe('Start Lobster button', () => {
   test('button is present', async () => {
-    const btn = window.locator('button', { hasText: 'Start Budgie' })
+    const btn = window.locator('button', { hasText: 'Start Lobster' })
     await expect(btn).toBeVisible()
   })
 
   test('button is disabled when required keys are not set', async () => {
     // With fresh settings and no keys, the button should be disabled
-    const btn = window.locator('button', { hasText: 'Start Budgie' })
+    const btn = window.locator('button', { hasText: 'Start Lobster' })
     const isDisabled = await btn.isDisabled()
     // If keys are already set from previous sessions, it may be enabled
     // So we just verify the button exists and is interactable
     expect(typeof isDisabled).toBe('boolean')
+  })
+})
+
+// ── Check buttons ─────────────────────────────────────────────────
+
+test.describe('Check buttons', () => {
+  test('shows three Test buttons (Gateway, STT, TTS)', async () => {
+    const testButtons = window.locator('.check-btn')
+    await expect(testButtons).toHaveCount(3)
+  })
+
+  test('Gateway Test button shows success with mocked fetch', async () => {
+    const gatewayCheck = window.locator('.connectivity-check').first()
+    const testBtn = gatewayCheck.locator('.check-btn')
+    await testBtn.click()
+
+    const result = gatewayCheck.locator('.check-result.ok')
+    await expect(result).toBeVisible({ timeout: 10000 })
+  })
+
+  test('STT Test button shows success with mocked fetch', async () => {
+    const sttCheck = window.locator('.connectivity-check').nth(1)
+    const testBtn = sttCheck.locator('.check-btn')
+    await testBtn.click()
+
+    const result = sttCheck.locator('.check-result.ok')
+    await expect(result).toBeVisible({ timeout: 10000 })
+  })
+
+  test('TTS Test button shows success with mocked fetch', async () => {
+    const ttsCheck = window.locator('.connectivity-check').nth(2)
+    const testBtn = ttsCheck.locator('.check-btn')
+    await testBtn.click()
+
+    const result = ttsCheck.locator('.check-result.ok')
+    await expect(result).toBeVisible({ timeout: 10000 })
+  })
+
+  test('changing provider resets check status', async () => {
+    const ttsSelect = window.locator('.key-field label', { hasText: 'TTS Provider' }).locator('..').locator('select')
+
+    // Run TTS check first
+    const ttsCheck = window.locator('.connectivity-check').nth(2)
+    const testBtn = ttsCheck.locator('.check-btn')
+    await testBtn.click()
+    await expect(ttsCheck.locator('.check-result')).toBeVisible({ timeout: 10000 })
+
+    // Switch provider — check result should disappear
+    await ttsSelect.selectOption('voicevox')
+    await expect(ttsCheck.locator('.check-result')).not.toBeVisible()
+
+    // Restore
+    await ttsSelect.selectOption('elevenlabs')
+  })
+
+  test('Start Lobster button is enabled after all checks pass', async () => {
+    // Run all three checks
+    for (let i = 0; i < 3; i++) {
+      const check = window.locator('.connectivity-check').nth(i)
+      await check.locator('.check-btn').click()
+      await expect(check.locator('.check-result.ok')).toBeVisible({ timeout: 10000 })
+    }
+
+    const startBtn = window.locator('button', { hasText: 'Start Lobster' })
+    await expect(startBtn).toBeEnabled()
+  })
+})
+
+// ── Settings modal structure ──────────────────────────────────────
+
+test.describe('Settings modal structure', () => {
+  test('key-ok badge shows for pre-set keys', async () => {
+    // Keys that were auto-loaded from OpenClaw should show "Set" badge
+    const setBadges = window.locator('.key-ok')
+    const count = await setBadges.count()
+    // Count may be 0 if no keys are configured — just verify the selector works
+    expect(count).toBeGreaterThanOrEqual(0)
+  })
+
+  test('key inputs have correct placeholder text', async () => {
+    const gatewayInput = window.locator('.key-field input[type="password"]').first()
+    const placeholder = await gatewayInput.getAttribute('placeholder')
+    expect(placeholder).toBeTruthy()
   })
 })

@@ -19,7 +19,7 @@ export class KeyManager {
     if (storePath === ':memory:') {
       this.storePath = ':memory:'
     } else {
-      const dir = storePath ?? join(homedir(), '.config', 'budgie')
+      const dir = storePath ?? join(homedir(), '.config', 'lobster')
       if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
       this.storePath = join(dir, 'keys.json')
       this.load()
