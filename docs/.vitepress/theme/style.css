@@ -1,0 +1,21 @@
+:root {
+  --vp-c-brand-1: #8b0310;
+  --vp-c-brand-2: #a2040b;
+  --vp-c-brand-3: #d4243a;
+  --vp-c-brand-soft: rgba(162, 4, 11, 0.12);
+}
+
+.dark {
+  --vp-c-brand-1: #f94864;
+  --vp-c-brand-2: #e83550;
+  --vp-c-brand-3: #d4243a;
+  --vp-c-brand-soft: rgba(249, 72, 100, 0.16);
+}
+
+.vp-doc a {
+  color: var(--vp-c-brand-1);
+}
+
+.vp-doc a:hover {
+  color: var(--vp-c-brand-2);
+}

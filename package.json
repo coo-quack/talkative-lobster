@@ -1,5 +1,5 @@
 {
-  "name": "talking-budgie",
+  "name": "talkative-lobster",
   "version": "1.0.0",
   "description": "An Electron application with React and TypeScript",
   "main": "./out/main/index.js",
@@ -22,7 +22,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test --config e2e/playwright.config.ts",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
@@ -32,6 +35,8 @@
     "@ricky0123/vad-web": "^0.0.30",
     "@xstate/react": "^6.0.0",
     "onnxruntime-web": "^1.24.2",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "ws": "^8.19.0",
     "xstate": "^5.28.0"
   },
@@ -58,11 +63,10 @@
     "jsdom": "^28.1.0",
     "msw": "^2.12.10",
     "prettier": "^3.7.4",
-    "react": "^19.2.1",
-    "react-dom": "^19.2.1",
     "typescript": "^5.9.3",
     "vite": "^7.2.6",
     "vite-plugin-static-copy": "^3.2.0",
+    "vitepress": "^1.6.4",
     "vitest": "^4.0.18"
   },
   "pnpm": {
