@@ -1,11 +1,15 @@
-import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { readFileSync, existsSync, mkdirSync } from 'node:fs'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 import {
-  DEFAULT_STT_PROVIDER, DEFAULT_TTS_PROVIDER,
-  DEFAULT_TTS_VOICE_ID, DEFAULT_TTS_MODEL_ID,
+  DEFAULT_STT_PROVIDER,
+  DEFAULT_TTS_PROVIDER,
+  DEFAULT_TTS_VOICE_ID,
+  DEFAULT_TTS_MODEL_ID,
   DEFAULT_KOKORO_VOICE,
-  type SttProvider, type TtsProviderType,
+  type SttProvider,
+  type TtsProviderType
 } from '../shared/types'
 
 export interface Settings {
@@ -33,12 +37,13 @@ const DEFAULTS: Settings = {
   kokoroUrl: 'http://localhost:8880',
   kokoroVoice: DEFAULT_KOKORO_VOICE,
   piperPath: '',
-  piperModelPath: '',
+  piperModelPath: ''
 }
 
 export class SettingsStore {
   private filePath: string | null
   private data: Settings
+  private saveTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(dirPath?: string) {
     if (dirPath === ':memory:') {
@@ -59,7 +64,7 @@ export class SettingsStore {
 
   set<K extends keyof Settings>(key: K, value: Settings[K]): void {
     this.data[key] = value
-    this.save()
+    this.scheduleSave()
   }
 
   getAll(): Settings {
@@ -80,8 +85,19 @@ export class SettingsStore {
     }
   }
 
+  private scheduleSave(): void {
+    if (!this.filePath) return
+    if (this.saveTimer) clearTimeout(this.saveTimer)
+    this.saveTimer = setTimeout(() => {
+      this.saveTimer = null
+      this.save()
+    }, 100)
+  }
+
   private save(): void {
     if (!this.filePath) return
-    writeFileSync(this.filePath, JSON.stringify(this.data, null, 2))
+    writeFile(this.filePath, JSON.stringify(this.data, null, 2)).catch((err) => {
+      console.error('[settings] Failed to save:', err)
+    })
   }
 }

@@ -1,5 +1,6 @@
 import { safeStorage } from 'electron'
-import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { readFileSync, existsSync, mkdirSync } from 'node:fs'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 import type { KeyInfo } from '../shared/types'
@@ -80,6 +81,8 @@ export class KeyManager {
       const encrypted = safeStorage.encryptString(entry.value).toString('base64')
       data[name] = { encrypted, source: entry.source }
     }
-    writeFileSync(this.storePath, JSON.stringify(data, null, 2))
+    writeFile(this.storePath, JSON.stringify(data, null, 2)).catch((err) => {
+      console.error('[keys] Failed to save:', err)
+    })
   }
 }

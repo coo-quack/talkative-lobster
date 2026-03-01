@@ -22,10 +22,9 @@ describe('ElevenLabsTts', () => {
 
   it('handles API error response', async () => {
     server.use(
-      http.post(
-        'https://api.elevenlabs.io/v1/text-to-speech/:voiceId/stream',
-        () => HttpResponse.json({ detail: 'Unauthorized' }, { status: 401 }),
-      ),
+      http.post('https://api.elevenlabs.io/v1/text-to-speech/:voiceId/stream', () =>
+        HttpResponse.json({ detail: 'Unauthorized' }, { status: 401 })
+      )
     )
 
     const chunks: Buffer[] = []
@@ -34,6 +33,15 @@ describe('ElevenLabsTts', () => {
         chunks.push(chunk)
       }
     }).rejects.toThrow()
+  })
+
+  it('exposes PCM audio format with correct sample rate', () => {
+    expect(engine.audioFormat).toEqual({
+      type: 'pcm',
+      sampleRate: 24000,
+      channels: 1,
+      bitDepth: 16
+    })
   })
 
   it('can be stopped mid-stream', () => {

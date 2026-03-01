@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { server } from './msw/server'
 import { SttEngine } from '../stt-engine'
@@ -11,7 +11,7 @@ describe('SttEngine', () => {
       elevenlabsApiKey: 'sk_test',
       openaiApiKey: 'sk_openai_test',
       localWhisperPath: null,
-      providers: { elevenlabs: true, openaiWhisper: true, localWhisper: false, webSpeech: false },
+      providers: { elevenlabs: true, openaiWhisper: true, localWhisper: false }
     })
   })
 
@@ -24,7 +24,7 @@ describe('SttEngine', () => {
       elevenlabsApiKey: 'sk_test',
       openaiApiKey: null,
       localWhisperPath: null,
-      providers: { elevenlabs: true, openaiWhisper: false, localWhisper: false, webSpeech: false },
+      providers: { elevenlabs: true, openaiWhisper: false, localWhisper: false }
     })
 
     const audio = new Float32Array(16000)
@@ -38,7 +38,7 @@ describe('SttEngine', () => {
       elevenlabsApiKey: null,
       openaiApiKey: 'sk_openai_test',
       localWhisperPath: null,
-      providers: { elevenlabs: false, openaiWhisper: true, localWhisper: false, webSpeech: false },
+      providers: { elevenlabs: false, openaiWhisper: true, localWhisper: false }
     })
 
     const audio = new Float32Array(16000)
@@ -50,8 +50,8 @@ describe('SttEngine', () => {
   it('falls back to OpenAI Whisper when ElevenLabs fails', async () => {
     server.use(
       http.post('https://api.elevenlabs.io/v1/speech-to-text', () =>
-        HttpResponse.json({ error: 'Server Error' }, { status: 500 }),
-      ),
+        HttpResponse.json({ error: 'Server Error' }, { status: 500 })
+      )
     )
 
     const audio = new Float32Array(16000)
@@ -63,11 +63,11 @@ describe('SttEngine', () => {
   it('returns null when all providers fail', async () => {
     server.use(
       http.post('https://api.elevenlabs.io/v1/speech-to-text', () =>
-        HttpResponse.json({ error: 'fail' }, { status: 500 }),
+        HttpResponse.json({ error: 'fail' }, { status: 500 })
       ),
       http.post('https://api.openai.com/v1/audio/transcriptions', () =>
-        HttpResponse.json({ error: 'fail' }, { status: 500 }),
-      ),
+        HttpResponse.json({ error: 'fail' }, { status: 500 })
+      )
     )
 
     const audio = new Float32Array(16000)
@@ -81,7 +81,7 @@ describe('SttEngine', () => {
       elevenlabsApiKey: null,
       openaiApiKey: 'sk_openai_test',
       localWhisperPath: null,
-      providers: { elevenlabs: false, openaiWhisper: true, localWhisper: false, webSpeech: false },
+      providers: { elevenlabs: false, openaiWhisper: true, localWhisper: false }
     })
 
     // Override ElevenLabs to track if it's called
@@ -90,7 +90,7 @@ describe('SttEngine', () => {
       http.post('https://api.elevenlabs.io/v1/speech-to-text', () => {
         elevenlabsCalled = true
         return HttpResponse.json({ text: 'should not be called' })
-      }),
+      })
     )
 
     const audio = new Float32Array(16000)

@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from 'electron'
+import { type BrowserWindow, ipcMain } from 'electron'
 import { createActor, type AnyActorRef } from 'xstate'
 import crypto from 'node:crypto'
 import { existsSync, accessSync, constants as fsConstants } from 'node:fs'
@@ -6,9 +6,7 @@ import { join } from 'node:path'
 import { homedir } from 'node:os'
 
 import { IPC } from '../shared/ipc-channels'
-import {
-  type ChatMessage, type VoiceState, type SttProvider, type TtsProviderType,
-} from '../shared/types'
+import type { ChatMessage, VoiceState, SttProvider, TtsProviderType } from '../shared/types'
 import { KeyManager } from './keys'
 import { SettingsStore } from './settings-store'
 import { voiceMachine } from './voice-machine'
@@ -20,6 +18,20 @@ import { ElevenLabsTts } from './tts/elevenlabs-tts'
 import { VoicevoxTts } from './tts/voicevox-tts'
 import { KokoroTts } from './tts/kokoro-tts'
 import { PiperTts } from './tts/piper-tts'
+
+function errMsg(err: unknown): string {
+  if (err instanceof Error) return err.message
+  return String(err)
+}
+
+function errCause(
+  err: unknown
+): { code?: string; address?: string; port?: string | number } | undefined {
+  if (err instanceof Error && err.cause && typeof err.cause === 'object') {
+    return err.cause as { code?: string; address?: string; port?: string | number }
+  }
+  return undefined
+}
 
 const DEFAULT_GATEWAY_URL = 'ws://127.0.0.1:18789'
 const SESSION_KEY = 'agent:main:lobster'
@@ -35,6 +47,7 @@ export class Orchestrator {
   private messages: ChatMessage[] = []
   private sttInProgress = false
   private ttsPlaying = false
+  private ipcCleanup: (() => void)[] = []
 
   constructor(win: BrowserWindow) {
     this.win = win
@@ -69,44 +82,8 @@ export class Orchestrator {
     this.wsClient?.disconnect()
     this.wsClient = null
 
-    // Remove all IPC handlers
-    ipcMain.removeAllListeners(IPC.VOICE_START)
-    ipcMain.removeAllListeners(IPC.VOICE_STOP)
-    ipcMain.removeAllListeners(IPC.VOICE_INTERRUPT)
-    ipcMain.removeAllListeners(IPC.AUDIO_CHUNK)
-    ipcMain.removeAllListeners(IPC.TTS_PLAYBACK_STARTED)
-    ipcMain.removeAllListeners(IPC.TTS_PLAYBACK_DONE)
-    ipcMain.removeAllListeners(IPC.CHAT_SEND)
-
-    ipcMain.removeHandler(IPC.KEYS_GET)
-    ipcMain.removeHandler(IPC.KEYS_SET)
-    ipcMain.removeHandler(IPC.KEYS_READ_OPENCLAW)
-    ipcMain.removeHandler(IPC.KEYS_READ_ENV)
-    ipcMain.removeHandler(IPC.TTS_VOICE_GET)
-    ipcMain.removeHandler(IPC.TTS_VOICE_SET)
-    ipcMain.removeHandler(IPC.TTS_MODEL_GET)
-    ipcMain.removeHandler(IPC.TTS_MODEL_SET)
-    ipcMain.removeHandler(IPC.STT_PROVIDER_GET)
-    ipcMain.removeHandler(IPC.STT_PROVIDER_SET)
-    ipcMain.removeHandler(IPC.LOCAL_WHISPER_PATH_GET)
-    ipcMain.removeHandler(IPC.LOCAL_WHISPER_PATH_SET)
-    ipcMain.removeHandler(IPC.TTS_PROVIDER_GET)
-    ipcMain.removeHandler(IPC.TTS_PROVIDER_SET)
-    ipcMain.removeHandler(IPC.VOICEVOX_URL_GET)
-    ipcMain.removeHandler(IPC.VOICEVOX_URL_SET)
-    ipcMain.removeHandler(IPC.VOICEVOX_SPEAKER_GET)
-    ipcMain.removeHandler(IPC.VOICEVOX_SPEAKER_SET)
-    ipcMain.removeHandler(IPC.KOKORO_URL_GET)
-    ipcMain.removeHandler(IPC.KOKORO_URL_SET)
-    ipcMain.removeHandler(IPC.KOKORO_VOICE_GET)
-    ipcMain.removeHandler(IPC.KOKORO_VOICE_SET)
-    ipcMain.removeHandler(IPC.PIPER_PATH_GET)
-    ipcMain.removeHandler(IPC.PIPER_PATH_SET)
-    ipcMain.removeHandler(IPC.PIPER_MODEL_PATH_GET)
-    ipcMain.removeHandler(IPC.PIPER_MODEL_PATH_SET)
-    ipcMain.removeHandler(IPC.GATEWAY_CHECK)
-    ipcMain.removeHandler(IPC.STT_CHECK)
-    ipcMain.removeHandler(IPC.TTS_CHECK)
+    for (const cleanup of this.ipcCleanup) cleanup()
+    this.ipcCleanup = []
   }
 
   private initEngines(): void {
@@ -120,7 +97,7 @@ export class Orchestrator {
     const sttProviders = {
       elevenlabs: sttProv === 'elevenlabs' && !!elevenlabsKey,
       openaiWhisper: sttProv === 'openaiWhisper' && !!openaiKey,
-      localWhisper: sttProv === 'localWhisper' && !!localWhisperPath,
+      localWhisper: sttProv === 'localWhisper' && !!localWhisperPath
     }
 
     if (sttProviders.elevenlabs || sttProviders.openaiWhisper || sttProviders.localWhisper) {
@@ -128,7 +105,7 @@ export class Orchestrator {
         elevenlabsApiKey: elevenlabsKey,
         openaiApiKey: openaiKey,
         localWhisperPath: localWhisperPath || null,
-        providers: sttProviders,
+        providers: sttProviders
       })
     }
 
@@ -144,12 +121,12 @@ export class Orchestrator {
         return new ElevenLabsTts({
           apiKey: elevenlabsKey,
           voiceId: this.settings.get('ttsVoiceId'),
-          modelId: this.settings.get('ttsModelId'),
+          modelId: this.settings.get('ttsModelId')
         })
       case 'voicevox':
         return new VoicevoxTts(
           this.settings.get('voicevoxUrl'),
-          this.settings.get('voicevoxSpeakerId'),
+          this.settings.get('voicevoxSpeakerId')
         )
       case 'kokoro':
         return new KokoroTts(this.settings.get('kokoroUrl'), this.settings.get('kokoroVoice'))
@@ -187,8 +164,9 @@ export class Orchestrator {
       this.send(IPC.CONNECTION_STATUS, 'error')
     })
 
-    this.wsClient.on('stream', (text: string) => {
-      this.actor.send({ type: 'LLM_STREAM_START' })
+    this.wsClient.on('stream', (_text: string) => {
+      // Stream delta received — no state transition needed here.
+      // The state machine transitions on STT_DONE (→ thinking) and TTS_PLAYING (→ speaking).
     })
 
     this.wsClient.on('done', (text: string) => {
@@ -197,7 +175,7 @@ export class Orchestrator {
         id: crypto.randomUUID(),
         role: 'assistant',
         text,
-        timestamp: Date.now(),
+        timestamp: Date.now()
       }
       this.pushMessage(msg)
       this.send(IPC.CHAT_MESSAGE, msg)
@@ -212,9 +190,9 @@ export class Orchestrator {
 
     try {
       await this.wsClient.connect()
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.send(IPC.CONNECTION_STATUS, 'error')
-      this.send(IPC.ERROR, `Gateway connection failed: ${err?.message ?? err}`)
+      this.send(IPC.ERROR, `Gateway connection failed: ${errMsg(err)}`)
     }
   }
 
@@ -236,15 +214,18 @@ export class Orchestrator {
 
     let audioSent = false
     try {
+      this.send(IPC.TTS_FORMAT, this.ttsProvider.audioFormat)
       for await (const chunk of this.ttsProvider.stream(text)) {
         if (this.ttsProvider.isStopped) break
         this.send(IPC.TTS_AUDIO, new Uint8Array(chunk).buffer)
         audioSent = true
       }
-    } catch (err: any) {
-      const msg = err?.cause?.code === 'ECONNREFUSED'
-        ? `TTS connection refused: ${err?.cause?.address ?? 'unknown'}:${err?.cause?.port ?? ''}`
-        : `TTS error: ${err?.message ?? err}`
+    } catch (err: unknown) {
+      const cause = errCause(err)
+      const msg =
+        cause?.code === 'ECONNREFUSED'
+          ? `TTS connection refused: ${cause?.address ?? 'unknown'}:${cause?.port ?? ''}`
+          : `TTS error: ${errMsg(err)}`
       console.error(`[orchestrator] ${msg}`)
       this.send(IPC.ERROR, msg)
     }
@@ -267,25 +248,29 @@ export class Orchestrator {
 
   private handleSttResult(text: string): void {
     console.log(`[orchestrator] STT result: "${text}"`)
-    if (text && !isNonSpeech(text)) {
-      this.actor.send({ type: 'STT_DONE', text })
-
-      const msg: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: 'user',
-        text,
-        timestamp: Date.now(),
-      }
-      this.pushMessage(msg)
-      this.send(IPC.CHAT_MESSAGE, msg)
-      this.wsClient?.sendMessage(text)
-    } else if (text && isNonSpeech(text)) {
-      console.log(`[orchestrator] Filtered non-speech: "${text}"`)
+    if (!text || isNonSpeech(text)) {
+      console.log(`[orchestrator] ${text ? `Filtered non-speech: "${text}"` : 'STT: empty result'}`)
       this.actor.send({ type: 'STT_FAIL' })
-    } else {
-      console.log('[orchestrator] STT: empty result')
-      this.actor.send({ type: 'STT_FAIL' })
+      return
     }
+
+    this.actor.send({ type: 'STT_DONE', text })
+    const msg: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      text,
+      timestamp: Date.now()
+    }
+    this.pushMessage(msg)
+    this.send(IPC.CHAT_MESSAGE, msg)
+
+    if (!this.wsClient) {
+      console.log('[orchestrator] No gateway connection — cannot send message')
+      this.send(IPC.ERROR, 'Gateway not connected. Please set GATEWAY_TOKEN in settings.')
+      this.actor.send({ type: 'CANCEL' })
+      return
+    }
+    this.wsClient.sendMessage(text)
   }
 
   private async handleBatchStt(audio: Float32Array): Promise<void> {
@@ -315,8 +300,8 @@ export class Orchestrator {
       this.actor.send({ type: 'SPEECH_END' })
       const text = await this.sttEngine.transcribe(audio, 16000)
       this.handleSttResult(text ?? '')
-    } catch (err: any) {
-      const msg = `STT error: ${err?.message ?? err}`
+    } catch (err: unknown) {
+      const msg = `STT error: ${errMsg(err)}`
       console.error(`[orchestrator] ${msg}`)
       this.send(IPC.ERROR, msg)
       this.actor.send({ type: 'STT_FAIL' })
@@ -325,11 +310,25 @@ export class Orchestrator {
     }
   }
 
+  private onIpc(channel: string, handler: Parameters<typeof ipcMain.on>[1]): void {
+    ipcMain.on(channel, handler)
+    this.ipcCleanup.push(() => ipcMain.removeListener(channel, handler))
+  }
+
+  private handleIpc(channel: string, handler: Parameters<typeof ipcMain.handle>[1]): void {
+    ipcMain.handle(channel, handler)
+    this.ipcCleanup.push(() => ipcMain.removeHandler(channel))
+  }
+
   private registerIpcHandlers(): void {
-    ipcMain.on(IPC.VOICE_START, () => {
+    this.onIpc(IPC.VOICE_START, () => {
       const currentState = this.actor.getSnapshot().value
       console.log(`[orchestrator] VOICE_START received, state=${currentState}`)
-      if (currentState === 'processing' || currentState === 'thinking' || currentState === 'speaking') {
+      if (
+        currentState === 'processing' ||
+        currentState === 'thinking' ||
+        currentState === 'speaking'
+      ) {
         // Cancel all in-progress processing
         this.ttsProvider?.stop()
         this.wsClient?.cancelActiveRuns()
@@ -339,7 +338,7 @@ export class Orchestrator {
       this.actor.send({ type: 'SPEECH_START' })
     })
 
-    ipcMain.on(IPC.VOICE_STOP, () => {
+    this.onIpc(IPC.VOICE_STOP, () => {
       const currentState = this.actor.getSnapshot().value
       if (currentState !== 'idle') {
         this.ttsProvider?.stop()
@@ -351,17 +350,17 @@ export class Orchestrator {
       this.actor.send({ type: 'CANCEL' })
     })
 
-    ipcMain.on(IPC.VOICE_INTERRUPT, () => {
+    this.onIpc(IPC.VOICE_INTERRUPT, () => {
       this.ttsProvider?.stop()
       this.ttsPlaying = false
       this.actor.send({ type: 'SPEECH_START' })
     })
 
-    ipcMain.on(IPC.AUDIO_CHUNK, (_event, audio: ArrayBuffer) => {
+    this.onIpc(IPC.AUDIO_CHUNK, (_event: unknown, audio: ArrayBuffer) => {
       this.handleBatchStt(new Float32Array(audio))
     })
 
-    ipcMain.on(IPC.TTS_PLAYBACK_STARTED, () => {
+    this.onIpc(IPC.TTS_PLAYBACK_STARTED, () => {
       const currentState = this.actor.getSnapshot().value
       console.log(`[orchestrator] TTS playback started (state=${currentState})`)
       if (currentState === 'thinking') {
@@ -369,7 +368,7 @@ export class Orchestrator {
       }
     })
 
-    ipcMain.on(IPC.TTS_PLAYBACK_DONE, () => {
+    this.onIpc(IPC.TTS_PLAYBACK_DONE, () => {
       const currentState = this.actor.getSnapshot().value
       console.log(`[orchestrator] TTS playback complete (state=${currentState})`)
       this.ttsPlaying = false
@@ -378,12 +377,12 @@ export class Orchestrator {
       }
     })
 
-    ipcMain.on(IPC.CHAT_SEND, (_event, text: string) => {
+    this.onIpc(IPC.CHAT_SEND, (_event: unknown, text: string) => {
       const msg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'user',
         text,
-        timestamp: Date.now(),
+        timestamp: Date.now()
       }
       this.pushMessage(msg)
       this.send(IPC.CHAT_MESSAGE, msg)
@@ -394,137 +393,149 @@ export class Orchestrator {
       }
       this.actor.send({ type: 'SPEECH_END' })
       this.actor.send({ type: 'STT_DONE', text })
-      this.wsClient?.sendMessage(text)
+
+      if (!this.wsClient) {
+        this.send(IPC.ERROR, 'Gateway not connected. Please set GATEWAY_TOKEN in settings.')
+        this.actor.send({ type: 'CANCEL' })
+        return
+      }
+      this.wsClient.sendMessage(text)
     })
 
-    ipcMain.handle(IPC.KEYS_GET, () => {
+    this.handleIpc(IPC.KEYS_GET, () => {
       return this.keyManager.getAll()
     })
 
-    ipcMain.handle(IPC.KEYS_SET, (_event, name: string, value: string, source?: string) => {
+    this.handleIpc(IPC.KEYS_SET, (_event, name: string, value: string, source?: string) => {
       this.keyManager.set(name, value, (source ?? 'manual') as 'manual')
     })
 
-    ipcMain.handle(IPC.KEYS_READ_OPENCLAW, (_event, name: string) => {
+    this.handleIpc(IPC.KEYS_READ_OPENCLAW, (_event, name: string) => {
       return this.keyManager.readFromOpenclaw(name)
     })
 
-    ipcMain.handle(IPC.KEYS_READ_ENV, (_event, name: string) => {
+    this.handleIpc(IPC.KEYS_READ_ENV, (_event, name: string) => {
       return this.keyManager.readFromEnv(name)
     })
 
     // TTS voice & model (ElevenLabs specific)
-    ipcMain.handle(IPC.TTS_VOICE_GET, () => this.settings.get('ttsVoiceId'))
-    ipcMain.handle(IPC.TTS_VOICE_SET, (_event, voiceId: string) => {
+    this.handleIpc(IPC.TTS_VOICE_GET, () => this.settings.get('ttsVoiceId'))
+    this.handleIpc(IPC.TTS_VOICE_SET, (_event, voiceId: string) => {
       this.settings.set('ttsVoiceId', voiceId)
       if (this.ttsProvider && 'setVoiceId' in this.ttsProvider) {
-        (this.ttsProvider as ElevenLabsTts).setVoiceId(voiceId)
+        ;(this.ttsProvider as ElevenLabsTts).setVoiceId(voiceId)
       }
       console.log(`[orchestrator] TTS voice changed to: ${voiceId}`)
     })
-    ipcMain.handle(IPC.TTS_MODEL_GET, () => this.settings.get('ttsModelId'))
-    ipcMain.handle(IPC.TTS_MODEL_SET, (_event, modelId: string) => {
+    this.handleIpc(IPC.TTS_MODEL_GET, () => this.settings.get('ttsModelId'))
+    this.handleIpc(IPC.TTS_MODEL_SET, (_event, modelId: string) => {
       this.settings.set('ttsModelId', modelId)
       if (this.ttsProvider && 'setModelId' in this.ttsProvider) {
-        (this.ttsProvider as ElevenLabsTts).setModelId(modelId)
+        ;(this.ttsProvider as ElevenLabsTts).setModelId(modelId)
       }
       console.log(`[orchestrator] TTS model changed to: ${modelId}`)
     })
 
     // STT provider settings
-    ipcMain.handle(IPC.STT_PROVIDER_GET, () => this.settings.get('sttProvider'))
-    ipcMain.handle(IPC.STT_PROVIDER_SET, (_event, provider: SttProvider) => {
+    this.handleIpc(IPC.STT_PROVIDER_GET, () => this.settings.get('sttProvider'))
+    this.handleIpc(IPC.STT_PROVIDER_SET, (_event, provider: SttProvider) => {
       this.settings.set('sttProvider', provider)
       this.initEngines()
       console.log(`[orchestrator] STT provider changed to: ${provider}`)
     })
-    ipcMain.handle(IPC.LOCAL_WHISPER_PATH_GET, () => this.settings.get('localWhisperPath'))
-    ipcMain.handle(IPC.LOCAL_WHISPER_PATH_SET, (_event, path: string) => {
+    this.handleIpc(IPC.LOCAL_WHISPER_PATH_GET, () => this.settings.get('localWhisperPath'))
+    this.handleIpc(IPC.LOCAL_WHISPER_PATH_SET, (_event, path: string) => {
       this.settings.set('localWhisperPath', path)
       if (this.settings.get('sttProvider') === 'localWhisper') this.initEngines()
       console.log(`[orchestrator] Local whisper path: ${path}`)
     })
 
     // TTS provider settings
-    ipcMain.handle(IPC.TTS_PROVIDER_GET, () => this.settings.get('ttsProvider'))
-    ipcMain.handle(IPC.TTS_PROVIDER_SET, (_event, provider: TtsProviderType) => {
+    this.handleIpc(IPC.TTS_PROVIDER_GET, () => this.settings.get('ttsProvider'))
+    this.handleIpc(IPC.TTS_PROVIDER_SET, (_event, provider: TtsProviderType) => {
       this.settings.set('ttsProvider', provider)
       this.initEngines()
       console.log(`[orchestrator] TTS provider changed to: ${provider}`)
     })
-    ipcMain.handle(IPC.VOICEVOX_URL_GET, () => this.settings.get('voicevoxUrl'))
-    ipcMain.handle(IPC.VOICEVOX_URL_SET, (_event, url: string) => {
+    this.handleIpc(IPC.VOICEVOX_URL_GET, () => this.settings.get('voicevoxUrl'))
+    this.handleIpc(IPC.VOICEVOX_URL_SET, (_event, url: string) => {
       this.settings.set('voicevoxUrl', url)
       if (this.ttsProvider instanceof VoicevoxTts) {
         this.ttsProvider.setUrl(url)
       }
       console.log(`[orchestrator] VOICEVOX URL: ${url}`)
     })
-    ipcMain.handle(IPC.VOICEVOX_SPEAKER_GET, () => this.settings.get('voicevoxSpeakerId'))
-    ipcMain.handle(IPC.VOICEVOX_SPEAKER_SET, (_event, id: number) => {
+    this.handleIpc(IPC.VOICEVOX_SPEAKER_GET, () => this.settings.get('voicevoxSpeakerId'))
+    this.handleIpc(IPC.VOICEVOX_SPEAKER_SET, (_event, id: number) => {
       this.settings.set('voicevoxSpeakerId', id)
       if (this.settings.get('ttsProvider') === 'voicevox') this.initEngines()
       console.log(`[orchestrator] VOICEVOX speaker: ${id}`)
     })
-    ipcMain.handle(IPC.KOKORO_URL_GET, () => this.settings.get('kokoroUrl'))
-    ipcMain.handle(IPC.KOKORO_URL_SET, (_event, url: string) => {
+    this.handleIpc(IPC.KOKORO_URL_GET, () => this.settings.get('kokoroUrl'))
+    this.handleIpc(IPC.KOKORO_URL_SET, (_event, url: string) => {
       this.settings.set('kokoroUrl', url)
       if (this.ttsProvider instanceof KokoroTts) {
         this.ttsProvider.setUrl(url)
       }
       console.log(`[orchestrator] Kokoro URL: ${url}`)
     })
-    ipcMain.handle(IPC.KOKORO_VOICE_GET, () => this.settings.get('kokoroVoice'))
-    ipcMain.handle(IPC.KOKORO_VOICE_SET, (_event, voice: string) => {
+    this.handleIpc(IPC.KOKORO_VOICE_GET, () => this.settings.get('kokoroVoice'))
+    this.handleIpc(IPC.KOKORO_VOICE_SET, (_event, voice: string) => {
       this.settings.set('kokoroVoice', voice)
       if (this.ttsProvider instanceof KokoroTts) {
         this.ttsProvider.setVoice(voice)
       }
       console.log(`[orchestrator] Kokoro voice: ${voice}`)
     })
-    ipcMain.handle(IPC.PIPER_PATH_GET, () => this.settings.get('piperPath'))
-    ipcMain.handle(IPC.PIPER_PATH_SET, (_event, path: string) => {
+    this.handleIpc(IPC.PIPER_PATH_GET, () => this.settings.get('piperPath'))
+    this.handleIpc(IPC.PIPER_PATH_SET, (_event, path: string) => {
       this.settings.set('piperPath', path)
       if (this.settings.get('ttsProvider') === 'piper') this.initEngines()
       console.log(`[orchestrator] Piper path: ${path}`)
     })
-    ipcMain.handle(IPC.PIPER_MODEL_PATH_GET, () => this.settings.get('piperModelPath'))
-    ipcMain.handle(IPC.PIPER_MODEL_PATH_SET, (_event, path: string) => {
+    this.handleIpc(IPC.PIPER_MODEL_PATH_GET, () => this.settings.get('piperModelPath'))
+    this.handleIpc(IPC.PIPER_MODEL_PATH_SET, (_event, path: string) => {
       this.settings.set('piperModelPath', path)
       if (this.settings.get('ttsProvider') === 'piper') this.initEngines()
       console.log(`[orchestrator] Piper model path: ${path}`)
     })
 
     // Connectivity checks
-    ipcMain.handle(IPC.GATEWAY_CHECK, async () => {
+    this.handleIpc(IPC.GATEWAY_CHECK, async () => {
       try {
         return await this.checkGateway()
-      } catch (err: any) {
-        const message = err?.cause?.code === 'ECONNREFUSED'
-          ? `Connection refused: ${DEFAULT_GATEWAY_URL}`
-          : err?.message ?? String(err)
+      } catch (err: unknown) {
+        const cause = errCause(err)
+        const message =
+          cause?.code === 'ECONNREFUSED'
+            ? `Connection refused: ${DEFAULT_GATEWAY_URL}`
+            : errMsg(err)
         return { ok: false, message }
       }
     })
 
-    ipcMain.handle(IPC.STT_CHECK, async (_event, provider: string) => {
+    this.handleIpc(IPC.STT_CHECK, async (_event, provider: string) => {
       try {
         return await this.checkSttProvider(provider)
-      } catch (err: any) {
-        const message = err?.cause?.code === 'ECONNREFUSED'
-          ? `Connection refused: ${err?.cause?.address ?? 'unknown'}:${err?.cause?.port ?? ''}`
-          : err?.message ?? String(err)
+      } catch (err: unknown) {
+        const cause = errCause(err)
+        const message =
+          cause?.code === 'ECONNREFUSED'
+            ? `Connection refused: ${cause?.address ?? 'unknown'}:${cause?.port ?? ''}`
+            : errMsg(err)
         return { ok: false, message }
       }
     })
 
-    ipcMain.handle(IPC.TTS_CHECK, async (_event, provider: string) => {
+    this.handleIpc(IPC.TTS_CHECK, async (_event, provider: string) => {
       try {
         return await this.checkTtsProvider(provider)
-      } catch (err: any) {
-        const message = err?.cause?.code === 'ECONNREFUSED'
-          ? `Connection refused: ${err?.cause?.address ?? 'unknown'}:${err?.cause?.port ?? ''}`
-          : err?.message ?? String(err)
+      } catch (err: unknown) {
+        const cause = errCause(err)
+        const message =
+          cause?.code === 'ECONNREFUSED'
+            ? `Connection refused: ${cause?.address ?? 'unknown'}:${cause?.port ?? ''}`
+            : errMsg(err)
         return { ok: false, message }
       }
     })
@@ -540,22 +551,25 @@ export class Orchestrator {
     return { ok: true, message: 'Gateway connected' }
   }
 
+  private async checkElevenLabsApi(): Promise<{ ok: boolean; message: string }> {
+    const key = this.keyManager.get('ELEVENLABS_API_KEY')
+    if (!key) return { ok: false, message: 'ELEVENLABS_API_KEY is not set' }
+    const res = await fetch('https://api.elevenlabs.io/v1/user', {
+      headers: { 'xi-api-key': key }
+    })
+    if (!res.ok) return { ok: false, message: `ElevenLabs API error: ${res.status}` }
+    return { ok: true, message: 'ElevenLabs API connected' }
+  }
+
   private async checkSttProvider(provider: string): Promise<{ ok: boolean; message: string }> {
     switch (provider) {
-      case 'elevenlabs': {
-        const key = this.keyManager.get('ELEVENLABS_API_KEY')
-        if (!key) return { ok: false, message: 'ELEVENLABS_API_KEY is not set' }
-        const res = await fetch('https://api.elevenlabs.io/v1/user', {
-          headers: { 'xi-api-key': key },
-        })
-        if (!res.ok) return { ok: false, message: `ElevenLabs API error: ${res.status}` }
-        return { ok: true, message: 'ElevenLabs API connected' }
-      }
+      case 'elevenlabs':
+        return this.checkElevenLabsApi()
       case 'openaiWhisper': {
         const key = this.keyManager.get('OPENAI_API_KEY')
         if (!key) return { ok: false, message: 'OPENAI_API_KEY is not set' }
         const res = await fetch('https://api.openai.com/v1/models', {
-          headers: { Authorization: `Bearer ${key}` },
+          headers: { Authorization: `Bearer ${key}` }
         })
         if (!res.ok) return { ok: false, message: `OpenAI API error: ${res.status}` }
         return { ok: true, message: 'OpenAI API connected' }
@@ -580,15 +594,8 @@ export class Orchestrator {
 
   private async checkTtsProvider(provider: string): Promise<{ ok: boolean; message: string }> {
     switch (provider) {
-      case 'elevenlabs': {
-        const key = this.keyManager.get('ELEVENLABS_API_KEY')
-        if (!key) return { ok: false, message: 'ELEVENLABS_API_KEY is not set' }
-        const res = await fetch('https://api.elevenlabs.io/v1/user', {
-          headers: { 'xi-api-key': key },
-        })
-        if (!res.ok) return { ok: false, message: `ElevenLabs API error: ${res.status}` }
-        return { ok: true, message: 'ElevenLabs API connected' }
-      }
+      case 'elevenlabs':
+        return this.checkElevenLabsApi()
       case 'voicevox': {
         const url = this.settings.get('voicevoxUrl') || 'http://localhost:50021'
         const res = await fetch(`${url}/version`)

@@ -14,12 +14,12 @@ export function Waveform({ state, compact, offline }: Props) {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
     const w = canvas.width
     const h = canvas.height
 
     if (offline) {
-      // Static flat line in dark color
       cancelAnimationFrame(animRef.current)
       ctx.clearRect(0, 0, w, h)
       ctx.strokeStyle = '#333'
@@ -36,7 +36,16 @@ export function Waveform({ state, compact, offline }: Props) {
       ctx.strokeStyle = stateColor(state)
       ctx.lineWidth = 2
 
-      const amplitude = state === 'idle' ? 0.1 : state === 'thinking' ? 0.15 : state === 'listening' ? 0.3 : state === 'speaking' ? 0.4 : 0.2
+      const amplitude =
+        state === 'idle'
+          ? 0.1
+          : state === 'thinking'
+            ? 0.15
+            : state === 'listening'
+              ? 0.3
+              : state === 'speaking'
+                ? 0.4
+                : 0.2
       const freq = state === 'speaking' ? 3 : state === 'listening' ? 2 : 1
 
       ctx.beginPath()
@@ -53,7 +62,7 @@ export function Waveform({ state, compact, offline }: Props) {
   }, [state, offline])
 
   const size = compact ? { width: 120, height: 40 } : { width: 300, height: 120 }
-  return <canvas ref={canvasRef} {...size} className="waveform" />
+  return <canvas ref={canvasRef} {...size} className="flex items-center justify-center" />
 }
 
 function stateColor(state: VoiceState): string {

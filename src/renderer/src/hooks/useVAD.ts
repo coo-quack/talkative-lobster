@@ -56,8 +56,8 @@ export function useVAD({ enabled, onSpeechStart, onSpeechEnd }: UseVADOptions) {
               channelCount: 1,
               echoCancellation: true,
               noiseSuppression: true,
-              autoGainControl: true,
-            },
+              autoGainControl: true
+            }
           }),
 
         // Higher threshold to reduce false positives from residual speaker audio
@@ -76,15 +76,15 @@ export function useVAD({ enabled, onSpeechStart, onSpeechEnd }: UseVADOptions) {
         },
         onVADMisfire: () => {
           console.log('[vad] Misfire — too short')
-        },
+        }
       })
 
       vadRef.current = vad
       await vad.start()
       setListening(true)
       console.log('[vad] Silero VAD started')
-    } catch (err: any) {
-      console.error('[vad] Failed to start Silero VAD:', err?.message ?? err)
+    } catch (err: unknown) {
+      console.error('[vad] Failed to start Silero VAD:', err instanceof Error ? err.message : err)
       await cleanup()
     } finally {
       setLoading(false)

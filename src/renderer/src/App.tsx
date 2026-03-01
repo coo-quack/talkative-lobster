@@ -4,7 +4,6 @@ import { SetupModal } from './components/SetupModal'
 import { useTtsPlayback } from './hooks/useTtsPlayback'
 import { useVoiceState } from './hooks/useVoiceState'
 import type { KeyInfo } from '../../shared/types'
-import './App.css'
 
 export default function App() {
   const { stopPlayback } = useTtsPlayback()
@@ -15,6 +14,7 @@ export default function App() {
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'error'>(
     'connecting'
   )
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // Stop TTS playback when leaving speaking/thinking state
   useEffect(() => {
@@ -42,7 +42,8 @@ export default function App() {
       else setConnectionStatus('error')
     })
     const unsubError = window.lobster.onError((message: string) => {
-      alert(message)
+      setErrorMessage(message)
+      setTimeout(() => setErrorMessage(null), 8000)
     })
     return () => {
       unsubConnection()
@@ -61,13 +62,29 @@ export default function App() {
     )
   }
 
+  const statusDotClass =
+    connectionStatus === 'connected'
+      ? 'bg-accent shadow-[0_0_6px_var(--color-accent)]'
+      : connectionStatus === 'connecting'
+        ? 'bg-[#ffc107] shadow-[0_0_6px_#ffc107]'
+        : 'bg-[#f44336] shadow-[0_0_6px_#f44336]'
+
   return (
-    <div className="app">
-      <div className="titlebar">
+    <div className="flex h-screen flex-col overflow-hidden">
+      <div className="flex shrink-0 items-center justify-between border-border border-b bg-bg-secondary px-4 py-2 pl-20 font-semibold text-sm [-webkit-app-region:drag]">
         <span>Talkative Lobster</span>
-        <span className={`status-dot ${connectionStatus}`} />
+        <span className={`h-2 w-2 rounded-full transition-colors duration-300 ${statusDotClass}`} />
       </div>
-      <VoiceView state={voiceState} onOpenSettings={() => setSettingsOpen(true)} stopPlayback={stopPlayback} />
+      {errorMessage && (
+        <div className="shrink-0 border-[#f44336]/30 border-b bg-[#f44336]/20 px-4 py-2 text-[#ef5350] text-sm">
+          {errorMessage}
+        </div>
+      )}
+      <VoiceView
+        state={voiceState}
+        onOpenSettings={() => setSettingsOpen(true)}
+        stopPlayback={stopPlayback}
+      />
     </div>
   )
 }

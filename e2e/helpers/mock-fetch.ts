@@ -5,11 +5,7 @@ export async function installFetchMock(app: ElectronApplication): Promise<void> 
     const originalFetch = globalThis.fetch
     globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const url =
-        typeof input === 'string'
-          ? input
-          : input instanceof URL
-            ? input.toString()
-            : input.url
+        typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
 
       // Gateway health check
       if (url.includes('127.0.0.1:18789')) {
@@ -19,14 +15,14 @@ export async function installFetchMock(app: ElectronApplication): Promise<void> 
       if (url.includes('api.elevenlabs.io/v1/user')) {
         return new Response(JSON.stringify({ status: 'ok' }), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' }
         })
       }
       // OpenAI API check
       if (url.includes('api.openai.com/v1/models')) {
         return new Response(JSON.stringify({ data: [] }), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' }
         })
       }
       // VOICEVOX version check
@@ -37,7 +33,7 @@ export async function installFetchMock(app: ElectronApplication): Promise<void> 
       if (url.includes('/v1/models') && url.includes('8880')) {
         return new Response(JSON.stringify({ data: [] }), {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' }
         })
       }
 

@@ -1,6 +1,7 @@
 import { resolve } from 'path'
 import { defineConfig } from 'electron-vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import type { Plugin } from 'vite'
 import { readFileSync, cpSync, mkdirSync } from 'fs'
 
@@ -105,6 +106,6 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
-    plugins: [react(), serveNativeAssets()]
+    plugins: [react(), tailwindcss(), serveNativeAssets()]
   }
 })

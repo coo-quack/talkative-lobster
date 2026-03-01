@@ -6,9 +6,10 @@ export const IPC = {
   AUDIO_CHUNK: 'audio:chunk',
   CHAT_SEND: 'chat:send',
   CHAT_MESSAGE: 'chat:message',
+  TTS_FORMAT: 'tts:format', // Audio format info before streaming starts
   TTS_AUDIO: 'tts:audio',
-  TTS_STOP: 'tts:stop',           // Stream complete — let queued audio finish
-  TTS_CANCEL: 'tts:cancel',       // Immediately stop playback
+  TTS_STOP: 'tts:stop', // Stream complete — let queued audio finish
+  TTS_CANCEL: 'tts:cancel', // Immediately stop playback
   TTS_PLAYBACK_STARTED: 'tts:playback-started',
   TTS_PLAYBACK_DONE: 'tts:playback-done',
   KEYS_GET: 'keys:get',
@@ -48,5 +49,5 @@ export const IPC = {
   GATEWAY_CHECK: 'gateway:check',
 
   // Error notification
-  ERROR: 'app:error',
+  ERROR: 'app:error'
 } as const

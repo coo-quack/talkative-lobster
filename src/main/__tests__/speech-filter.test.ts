@@ -59,7 +59,9 @@ describe('isNonSpeech', () => {
   describe('repetition detector', () => {
     it('filters same phrase repeated 3+ times', () => {
       expect(isNonSpeech('いかについては、いかについては、いかについては')).toBe(true)
-      expect(isNonSpeech('いかについては、いかについては、いかについては、いかについては')).toBe(true)
+      expect(isNonSpeech('いかについては、いかについては、いかについては、いかについては')).toBe(
+        true
+      )
     })
 
     it('does not filter with only 2 repetitions', () => {
@@ -71,7 +73,9 @@ describe('isNonSpeech', () => {
     })
 
     it('does not trigger for long distinct segments', () => {
-      expect(isNonSpeech('今日は天気がいいですね、明日は雨が降るかもしれません、来週は晴れるでしょう')).toBe(false)
+      expect(
+        isNonSpeech('今日は天気がいいですね、明日は雨が降るかもしれません、来週は晴れるでしょう')
+      ).toBe(false)
     })
   })
 

@@ -53,7 +53,7 @@ function loadOrCreateDeviceIdentity(): DeviceIdentity {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
   writeFileSync(
     filePath,
-    JSON.stringify({ version: 1, deviceId, publicKeyPem, privateKeyPem, createdAtMs: Date.now() }, null, 2) + '\n',
+    `${JSON.stringify({ version: 1, deviceId, publicKeyPem, privateKeyPem, createdAtMs: Date.now() }, null, 2)}\n`,
     { mode: 0o600 }
   )
 
@@ -84,7 +84,7 @@ function buildDeviceAuthPayload(params: {
     params.scopes.join(','),
     String(params.signedAtMs),
     params.token ?? '',
-    params.nonce,
+    params.nonce
   ].join('|')
 }
 
@@ -176,7 +176,7 @@ export class OpenClawClient extends EventEmitter {
     this.request('chat.send', {
       sessionKey: this.sessionKey,
       message: text,
-      idempotencyKey,
+      idempotencyKey
     })
       .then((payload) => {
         const res = payload as { runId?: string }
@@ -202,10 +202,7 @@ export class OpenClawClient extends EventEmitter {
       })
   }
 
-  private handleMessage(
-    msg: Record<string, unknown>,
-    onConnected?: (value: void) => void
-  ): void {
+  private handleMessage(msg: Record<string, unknown>, onConnected?: () => void): void {
     // Event frames
     if (msg.type === 'event') {
       const event = msg.event as string
@@ -232,7 +229,8 @@ export class OpenClawClient extends EventEmitter {
         }
         // Only process responses to our own chat.send requests
         if (!payload.runId || !this.activeRunIds.has(payload.runId)) {
-          if (payload.state === 'final') console.log(`[openclaw] Ignoring external chat (runId: ${payload.runId ?? 'none'})`)
+          if (payload.state === 'final')
+            console.log(`[openclaw] Ignoring external chat (runId: ${payload.runId ?? 'none'})`)
           return
         }
         // Ignore cancelled runs
@@ -277,7 +275,7 @@ export class OpenClawClient extends EventEmitter {
     }
   }
 
-  private sendConnect(nonce: string, onConnected?: (value: void) => void): void {
+  private sendConnect(nonce: string, onConnected?: () => void): void {
     if (this.connectSent) return
     this.connectSent = true
 
@@ -293,7 +291,7 @@ export class OpenClawClient extends EventEmitter {
       scopes,
       signedAtMs,
       token: this.token,
-      nonce,
+      nonce
     })
     const signature = signDevicePayload(this.identity.privateKeyPem, payload)
     const publicKeyRaw = base64UrlEncode(derivePublicKeyRaw(this.identity.publicKeyPem))
@@ -306,11 +304,11 @@ export class OpenClawClient extends EventEmitter {
         displayName: 'Lobster',
         version: '1.0.0',
         platform: process.platform,
-        mode: 'backend',
+        mode: 'backend'
       },
       caps: [],
       auth: {
-        token: this.token,
+        token: this.token
       },
       role,
       scopes,
@@ -319,8 +317,8 @@ export class OpenClawClient extends EventEmitter {
         publicKey: publicKeyRaw,
         signature,
         signedAt: signedAtMs,
-        nonce,
-      },
+        nonce
+      }
     }
 
     this.request('connect', params)
@@ -342,7 +340,7 @@ export class OpenClawClient extends EventEmitter {
     this.pending.clear()
   }
 
-  private request(method: string, params: unknown): Promise<unknown> {
+  private request(method: string, params: unknown, timeoutMs = 30_000): Promise<unknown> {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       return Promise.reject(new Error('gateway not connected'))
     }
@@ -351,8 +349,22 @@ export class OpenClawClient extends EventEmitter {
     const frame = { type: 'req', id, method, params }
 
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject })
-      this.ws!.send(JSON.stringify(frame))
+      const timer = setTimeout(() => {
+        this.pending.delete(id)
+        reject(new Error(`Request '${method}' timed out after ${timeoutMs}ms`))
+      }, timeoutMs)
+
+      this.pending.set(id, {
+        resolve: (value) => {
+          clearTimeout(timer)
+          resolve(value)
+        },
+        reject: (err) => {
+          clearTimeout(timer)
+          reject(err)
+        }
+      })
+      this.ws?.send(JSON.stringify(frame))
     })
   }
 
@@ -364,9 +376,7 @@ export class OpenClawClient extends EventEmitter {
       const textParts = msg.content
         .filter(
           (c: unknown) =>
-            typeof c === 'object' &&
-            c !== null &&
-            (c as Record<string, unknown>).type === 'text'
+            typeof c === 'object' && c !== null && (c as Record<string, unknown>).type === 'text'
         )
         .map((c: unknown) => (c as Record<string, unknown>).text as string)
       return textParts.join('') || null

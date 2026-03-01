@@ -1,171 +1,158 @@
-@import './base.css';
+@import "tailwindcss";
 
-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background-image: url('./wavy-lines.svg');
-  background-size: cover;
-  user-select: none;
+@theme {
+  --color-bg: #1a1a2e;
+  --color-bg-secondary: #16213e;
+  --color-text: #e0e0e0;
+  --color-accent: #4caf50;
+  --color-accent-hover: #66bb6a;
+  --color-border: #2a2a4a;
+  --color-msg-user: #1e3a5f;
+  --color-msg-assistant: #2a2a4a;
 }
 
-code {
-  font-weight: 600;
-  padding: 3px 5px;
-  border-radius: 2px;
-  background-color: var(--color-background-mute);
-  font-family:
-    ui-monospace,
-    SFMono-Regular,
-    SF Mono,
-    Menlo,
-    Consolas,
-    Liberation Mono,
-    monospace;
-  font-size: 85%;
-}
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+  }
 
-#root {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  margin-bottom: 80px;
-}
+  body {
+    min-height: 100vh;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+    line-height: 1.6;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    user-select: none;
+  }
 
-.logo {
-  margin-bottom: 20px;
-  -webkit-user-drag: none;
-  height: 128px;
-  width: 128px;
-  will-change: filter;
-  transition: filter 300ms;
-}
+  #root {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
 
-.logo:hover {
-  filter: drop-shadow(0 0 1.2em #6988e6aa);
-}
+  button {
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
 
-.creator {
-  font-size: 14px;
-  line-height: 16px;
-  color: var(--ev-c-text-2);
-  font-weight: 600;
-  margin-bottom: 10px;
-}
+  button:hover:not(:disabled) {
+    background: #1e2d4d;
+    border-color: var(--color-accent);
+  }
 
-.text {
-  font-size: 28px;
-  color: var(--ev-c-text-1);
-  font-weight: 700;
-  line-height: 32px;
-  text-align: center;
-  margin: 0 10px;
-  padding: 16px 0;
-}
+  button:active:not(:disabled) {
+    background: #253a5e;
+  }
 
-.tip {
-  font-size: 16px;
-  line-height: 24px;
-  color: var(--ev-c-text-2);
-  font-weight: 600;
-}
-
-.react {
-  background: -webkit-linear-gradient(315deg, #087ea4 55%, #7c93ee);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 700;
-}
-
-.ts {
-  background: -webkit-linear-gradient(315deg, #3178c6 45%, #f0dc4e);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 700;
-}
-
-.actions {
-  display: flex;
-  padding-top: 32px;
-  margin: -6px;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-}
-
-.action {
-  flex-shrink: 0;
-  padding: 6px;
-}
-
-.action a {
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-block;
-  border: 1px solid transparent;
-  text-align: center;
-  font-weight: 600;
-  white-space: nowrap;
-  border-radius: 20px;
-  padding: 0 20px;
-  line-height: 38px;
-  font-size: 14px;
-  border-color: var(--ev-button-alt-border);
-  color: var(--ev-button-alt-text);
-  background-color: var(--ev-button-alt-bg);
-}
-
-.action a:hover {
-  border-color: var(--ev-button-alt-hover-border);
-  color: var(--ev-button-alt-hover-text);
-  background-color: var(--ev-button-alt-hover-bg);
-}
-
-.versions {
-  position: absolute;
-  bottom: 30px;
-  margin: 0 auto;
-  padding: 15px 0;
-  font-family: 'Menlo', 'Lucida Console', monospace;
-  display: inline-flex;
-  overflow: hidden;
-  align-items: center;
-  border-radius: 22px;
-  background-color: #202127;
-  backdrop-filter: blur(24px);
-}
-
-.versions li {
-  display: block;
-  float: left;
-  border-right: 1px solid var(--ev-c-gray-1);
-  padding: 0 20px;
-  font-size: 14px;
-  line-height: 14px;
-  opacity: 0.8;
-  &:last-child {
-    border: none;
+  button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 }
 
-@media (max-width: 720px) {
-  .text {
-    font-size: 20px;
+/* E2E-required classes and component styles */
+
+/* Key field - preserved for E2E */
+.key-field {
+  @apply flex flex-col gap-1.5 mb-4 w-full max-w-[400px];
+}
+
+.key-field label {
+  @apply text-[13px] font-semibold text-[#ccc];
+}
+
+.key-field input,
+.key-field select {
+  @apply bg-bg border border-border rounded-md py-2 px-3 text-text text-sm outline-none transition-colors duration-200 w-full;
+}
+
+.key-field input:focus,
+.key-field select:focus {
+  @apply border-accent;
+}
+
+/* Key sources - preserved for E2E */
+.key-sources {
+  @apply flex gap-2;
+}
+
+.key-sources button {
+  @apply text-xs py-1 px-2.5;
+}
+
+/* Key ok - preserved for E2E */
+.key-ok {
+  @apply text-accent text-xs font-semibold;
+}
+
+/* Connectivity check - preserved for E2E */
+.connectivity-check {
+  @apply flex items-center gap-3 mt-1 w-full max-w-[400px];
+}
+
+/* Check btn - preserved for E2E */
+.check-btn {
+  @apply text-[13px] py-1.5 px-4 bg-accent border border-accent rounded-md text-white cursor-pointer transition-colors duration-200;
+}
+
+.check-btn:hover:not(:disabled) {
+  @apply bg-accent-hover;
+}
+
+.check-btn:disabled {
+  @apply opacity-50 cursor-default;
+}
+
+/* Check result - preserved for E2E */
+.check-result {
+  @apply text-[13px];
+}
+
+.check-result.ok {
+  @apply text-accent;
+}
+
+.check-result.fail {
+  @apply text-[#ef5350];
+}
+
+/* Setup modal - preserved for E2E */
+.setup-modal {
+  @apply fixed inset-0 flex flex-col items-center justify-start z-[100] py-8 px-6 overflow-y-auto;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@media (max-width: 620px) {
-  .versions {
-    display: none;
-  }
-}
-
-@media (max-width: 350px) {
-  .tip,
-  .actions {
-    display: none;
+@keyframes blink {
+  50% {
+    border-color: transparent;
   }
 }

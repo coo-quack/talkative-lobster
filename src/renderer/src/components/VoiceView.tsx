@@ -21,7 +21,6 @@ const STATUS_LABELS: Record<string, string> = {
 export function VoiceView({ state, onOpenSettings, stopPlayback }: Props) {
   const [micOn, setMicOn] = useState(true)
 
-  // Monitor system audio output — discard speech detected while speakers are playing
   const { speakerActive } = useSpeakerMonitor(micOn)
   const speakerActiveRef = useRef(speakerActive)
   speakerActiveRef.current = speakerActive
@@ -51,7 +50,6 @@ export function VoiceView({ state, onOpenSettings, stopPlayback }: Props) {
       window.lobster.voiceStop()
       return
     }
-    // Filter out very short audio (< 0.5s at 16kHz)
     if (audio.length < 16000 * 0.5) {
       window.lobster.voiceStop()
       return
@@ -62,7 +60,7 @@ export function VoiceView({ state, onOpenSettings, stopPlayback }: Props) {
   const { listening: vadListening } = useVAD({
     enabled: vadEnabled,
     onSpeechStart: handleSpeechStart,
-    onSpeechEnd: handleSpeechEnd,
+    onSpeechEnd: handleSpeechEnd
   })
 
   const toggleMic = () => {
@@ -72,7 +70,6 @@ export function VoiceView({ state, onOpenSettings, stopPlayback }: Props) {
     setMicOn(!micOn)
   }
 
-
   const statusLabel = !micOn
     ? 'Offline'
     : vadListening && state === 'idle'
@@ -80,14 +77,20 @@ export function VoiceView({ state, onOpenSettings, stopPlayback }: Props) {
       : STATUS_LABELS[state]
 
   return (
-    <div className="voice-view">
+    <div className="flex shrink-0 flex-col items-center justify-center px-4 py-8">
       <Waveform state={micOn ? state : 'idle'} offline={!micOn} />
-      <div className="status-label">{statusLabel}</div>
-      <div className="controls">
-        <button className={`mic-btn ${micOn ? 'active' : ''}`} onClick={toggleMic}>
+      <div className="my-3 text-[#aaa] text-sm">{statusLabel}</div>
+      <div className="mt-2 flex gap-2.5">
+        <button
+          type="button"
+          className={`${micOn ? 'border-accent text-accent' : ''}`}
+          onClick={toggleMic}
+        >
           {micOn ? 'Mic ON' : 'Mic OFF'}
         </button>
-        <button onClick={onOpenSettings}>Settings</button>
+        <button type="button" onClick={onOpenSettings}>
+          Settings
+        </button>
       </div>
     </div>
   )
