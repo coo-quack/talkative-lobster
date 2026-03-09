@@ -237,13 +237,14 @@ describe('App', () => {
         connectionStatusCallback?.('error')
       })
       const dot = screen.getByTitle('Connection error — open settings')
-      expect(dot.getAttribute('role')).toBe('button')
+      expect(dot.tagName).toBe('BUTTON')
     })
 
     it('green dot has no button role', async () => {
       await renderApp()
       const dot = screen.getByTitle('Connected')
-      expect(dot.getAttribute('role')).toBeNull()
+      expect(dot.tagName).toBe('BUTTON')
+      expect(dot).toBeDisabled()
     })
 
     it('green dot is not clickable (no onClick)', async () => {

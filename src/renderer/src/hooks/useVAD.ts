@@ -21,6 +21,7 @@ export function useVAD({ enabled, onSpeechStart, onSpeechEnd }: UseVADOptions) {
   const [loading, setLoading] = useState(false)
 
   const vadRef = useRef<MicVAD | null>(null)
+  const versionRef = useRef(0)
 
   const onSpeechStartRef = useRef(onSpeechStart)
   const onSpeechEndRef = useRef(onSpeechEnd)
@@ -28,9 +29,13 @@ export function useVAD({ enabled, onSpeechStart, onSpeechEnd }: UseVADOptions) {
   onSpeechEndRef.current = onSpeechEnd
 
   const cleanup = useCallback(async () => {
-    if (vadRef.current) {
-      await vadRef.current.destroy()
-      vadRef.current = null
+    // Set null synchronously so startVAD() sees it immediately,
+    // even though destroy() is async.
+    const vad = vadRef.current
+    vadRef.current = null
+    versionRef.current++
+    if (vad) {
+      await vad.destroy()
     }
     setListening(false)
   }, [])
@@ -38,6 +43,7 @@ export function useVAD({ enabled, onSpeechStart, onSpeechEnd }: UseVADOptions) {
   const startVAD = useCallback(async () => {
     if (vadRef.current) return
 
+    const version = ++versionRef.current
     setLoading(true)
     try {
       console.log('[vad] Initializing Silero VAD...')
@@ -60,10 +66,10 @@ export function useVAD({ enabled, onSpeechStart, onSpeechEnd }: UseVADOptions) {
             }
           }),
 
-        // Higher threshold to reduce false positives from residual speaker audio
-        positiveSpeechThreshold: 0.7,
+        // High thresholds to reduce false positives from ambient noise
+        positiveSpeechThreshold: 0.85,
         negativeSpeechThreshold: 0.5,
-        minSpeechMs: 500,
+        minSpeechMs: 600,
         redemptionMs: 600,
 
         onSpeechStart: () => {
@@ -78,6 +84,13 @@ export function useVAD({ enabled, onSpeechStart, onSpeechEnd }: UseVADOptions) {
           console.log('[vad] Misfire — too short')
         }
       })
+
+      // Stale check: if cleanup or another startVAD ran while we awaited,
+      // discard this instance (handles React StrictMode double-mount).
+      if (version !== versionRef.current) {
+        await vad.destroy()
+        return
+      }
 
       vadRef.current = vad
       await vad.start()

@@ -1,23 +1,21 @@
 import { type BrowserWindow, ipcMain } from 'electron'
-import { createActor, type AnyActorRef } from 'xstate'
 import crypto from 'node:crypto'
-import { existsSync, accessSync, constants as fsConstants } from 'node:fs'
-import { join } from 'node:path'
-import { homedir } from 'node:os'
 
 import { IPC } from '../shared/ipc-channels'
-import type { ChatMessage, VoiceState, SttProvider, TtsProviderType } from '../shared/types'
+import type { ChatMessage } from '../shared/types'
 import { KeyManager } from './keys'
 import { SettingsStore } from './settings-store'
-import { voiceMachine } from './voice-machine'
+import { VoiceStateController } from './voice-state-controller'
 import { OpenClawClient } from './openclaw-client'
-import { SttEngine, WHISPER_MODEL_SUBPATH } from './stt-engine'
+import { SttEngine } from './stt-engine'
 import type { ITtsProvider } from './tts/tts-provider'
 import { isNonSpeech } from './speech-filter'
 import { ElevenLabsTts } from './tts/elevenlabs-tts'
 import { VoicevoxTts } from './tts/voicevox-tts'
 import { KokoroTts } from './tts/kokoro-tts'
 import { PiperTts } from './tts/piper-tts'
+import { checkGateway, checkSttProvider, checkTtsProvider } from './health-checks'
+import { registerSettingsHandlers } from './ipc-settings-handlers'
 
 function errMsg(err: unknown): string {
   if (err instanceof Error) return err.message
@@ -40,7 +38,7 @@ export class Orchestrator {
   private win: BrowserWindow
   private keyManager: KeyManager
   private settings: SettingsStore
-  private actor: AnyActorRef
+  private actor: VoiceStateController
   private wsClient: OpenClawClient | null = null
   private sttEngine: SttEngine | null = null
   private ttsProvider: ITtsProvider | null = null
@@ -53,10 +51,13 @@ export class Orchestrator {
     this.win = win
     this.keyManager = new KeyManager()
     this.settings = new SettingsStore()
-    this.actor = createActor(voiceMachine)
+    this.actor = new VoiceStateController({
+      onStuckRecovery: (state, elapsed) => {
+        console.log(`[orchestrator] Stuck in ${state} for ${elapsed}ms, auto-cancelling`)
+      }
+    })
 
-    this.actor.subscribe((snapshot) => {
-      const state = snapshot.value as VoiceState
+    this.actor.subscribe((state) => {
       console.log(`[orchestrator] State: ${state}`)
       this.send(IPC.VOICE_STATE_CHANGED, state)
     })
@@ -402,108 +403,19 @@ export class Orchestrator {
       this.wsClient.sendMessage(text)
     })
 
-    this.handleIpc(IPC.KEYS_GET, () => {
-      return this.keyManager.getAll()
-    })
-
-    this.handleIpc(IPC.KEYS_SET, (_event, name: string, value: string, source?: string) => {
-      this.keyManager.set(name, value, (source ?? 'manual') as 'manual')
-    })
-
-    this.handleIpc(IPC.KEYS_READ_OPENCLAW, (_event, name: string) => {
-      return this.keyManager.readFromOpenclaw(name)
-    })
-
-    this.handleIpc(IPC.KEYS_READ_ENV, (_event, name: string) => {
-      return this.keyManager.readFromEnv(name)
-    })
-
-    // TTS voice & model (ElevenLabs specific)
-    this.handleIpc(IPC.TTS_VOICE_GET, () => this.settings.get('ttsVoiceId'))
-    this.handleIpc(IPC.TTS_VOICE_SET, (_event, voiceId: string) => {
-      this.settings.set('ttsVoiceId', voiceId)
-      if (this.ttsProvider && 'setVoiceId' in this.ttsProvider) {
-        ;(this.ttsProvider as ElevenLabsTts).setVoiceId(voiceId)
-      }
-      console.log(`[orchestrator] TTS voice changed to: ${voiceId}`)
-    })
-    this.handleIpc(IPC.TTS_MODEL_GET, () => this.settings.get('ttsModelId'))
-    this.handleIpc(IPC.TTS_MODEL_SET, (_event, modelId: string) => {
-      this.settings.set('ttsModelId', modelId)
-      if (this.ttsProvider && 'setModelId' in this.ttsProvider) {
-        ;(this.ttsProvider as ElevenLabsTts).setModelId(modelId)
-      }
-      console.log(`[orchestrator] TTS model changed to: ${modelId}`)
-    })
-
-    // STT provider settings
-    this.handleIpc(IPC.STT_PROVIDER_GET, () => this.settings.get('sttProvider'))
-    this.handleIpc(IPC.STT_PROVIDER_SET, (_event, provider: SttProvider) => {
-      this.settings.set('sttProvider', provider)
-      this.initEngines()
-      console.log(`[orchestrator] STT provider changed to: ${provider}`)
-    })
-    this.handleIpc(IPC.LOCAL_WHISPER_PATH_GET, () => this.settings.get('localWhisperPath'))
-    this.handleIpc(IPC.LOCAL_WHISPER_PATH_SET, (_event, path: string) => {
-      this.settings.set('localWhisperPath', path)
-      if (this.settings.get('sttProvider') === 'localWhisper') this.initEngines()
-      console.log(`[orchestrator] Local whisper path: ${path}`)
-    })
-
-    // TTS provider settings
-    this.handleIpc(IPC.TTS_PROVIDER_GET, () => this.settings.get('ttsProvider'))
-    this.handleIpc(IPC.TTS_PROVIDER_SET, (_event, provider: TtsProviderType) => {
-      this.settings.set('ttsProvider', provider)
-      this.initEngines()
-      console.log(`[orchestrator] TTS provider changed to: ${provider}`)
-    })
-    this.handleIpc(IPC.VOICEVOX_URL_GET, () => this.settings.get('voicevoxUrl'))
-    this.handleIpc(IPC.VOICEVOX_URL_SET, (_event, url: string) => {
-      this.settings.set('voicevoxUrl', url)
-      if (this.ttsProvider instanceof VoicevoxTts) {
-        this.ttsProvider.setUrl(url)
-      }
-      console.log(`[orchestrator] VOICEVOX URL: ${url}`)
-    })
-    this.handleIpc(IPC.VOICEVOX_SPEAKER_GET, () => this.settings.get('voicevoxSpeakerId'))
-    this.handleIpc(IPC.VOICEVOX_SPEAKER_SET, (_event, id: number) => {
-      this.settings.set('voicevoxSpeakerId', id)
-      if (this.settings.get('ttsProvider') === 'voicevox') this.initEngines()
-      console.log(`[orchestrator] VOICEVOX speaker: ${id}`)
-    })
-    this.handleIpc(IPC.KOKORO_URL_GET, () => this.settings.get('kokoroUrl'))
-    this.handleIpc(IPC.KOKORO_URL_SET, (_event, url: string) => {
-      this.settings.set('kokoroUrl', url)
-      if (this.ttsProvider instanceof KokoroTts) {
-        this.ttsProvider.setUrl(url)
-      }
-      console.log(`[orchestrator] Kokoro URL: ${url}`)
-    })
-    this.handleIpc(IPC.KOKORO_VOICE_GET, () => this.settings.get('kokoroVoice'))
-    this.handleIpc(IPC.KOKORO_VOICE_SET, (_event, voice: string) => {
-      this.settings.set('kokoroVoice', voice)
-      if (this.ttsProvider instanceof KokoroTts) {
-        this.ttsProvider.setVoice(voice)
-      }
-      console.log(`[orchestrator] Kokoro voice: ${voice}`)
-    })
-    this.handleIpc(IPC.PIPER_PATH_GET, () => this.settings.get('piperPath'))
-    this.handleIpc(IPC.PIPER_PATH_SET, (_event, path: string) => {
-      this.settings.set('piperPath', path)
-      if (this.settings.get('ttsProvider') === 'piper') this.initEngines()
-      console.log(`[orchestrator] Piper path: ${path}`)
-    })
-    this.handleIpc(IPC.PIPER_MODEL_PATH_GET, () => this.settings.get('piperModelPath'))
-    this.handleIpc(IPC.PIPER_MODEL_PATH_SET, (_event, path: string) => {
-      this.settings.set('piperModelPath', path)
-      if (this.settings.get('ttsProvider') === 'piper') this.initEngines()
-      console.log(`[orchestrator] Piper model path: ${path}`)
+    registerSettingsHandlers({
+      keyManager: this.keyManager,
+      settings: this.settings,
+      ttsProvider: () => this.ttsProvider,
+      initEngines: () => this.initEngines(),
+      onIpc: (channel, handler) => this.onIpc(channel, handler),
+      handleIpc: (channel, handler) => this.handleIpc(channel, handler)
     })
 
     // Connectivity checks
     this.handleIpc(IPC.GATEWAY_CHECK, async () => {
       try {
-        return await this.checkGateway()
+        return await checkGateway(this.keyManager)
       } catch (err: unknown) {
         const cause = errCause(err)
         const message =
@@ -516,7 +428,7 @@ export class Orchestrator {
 
     this.handleIpc(IPC.STT_CHECK, async (_event, provider: string) => {
       try {
-        return await this.checkSttProvider(provider)
+        return await checkSttProvider(this.keyManager, this.settings, provider)
       } catch (err: unknown) {
         const cause = errCause(err)
         const message =
@@ -529,7 +441,7 @@ export class Orchestrator {
 
     this.handleIpc(IPC.TTS_CHECK, async (_event, provider: string) => {
       try {
-        return await this.checkTtsProvider(provider)
+        return await checkTtsProvider(this.keyManager, this.settings, provider)
       } catch (err: unknown) {
         const cause = errCause(err)
         const message =
@@ -539,93 +451,6 @@ export class Orchestrator {
         return { ok: false, message }
       }
     })
-  }
-
-  private async checkGateway(): Promise<{ ok: boolean; message: string }> {
-    const token = this.keyManager.get('GATEWAY_TOKEN')
-    if (!token) return { ok: false, message: 'GATEWAY_TOKEN is not set' }
-    // Convert ws:// to http:// for a simple health check
-    const httpUrl = DEFAULT_GATEWAY_URL.replace(/^ws/, 'http')
-    const res = await fetch(httpUrl)
-    if (!res.ok) return { ok: false, message: `Gateway error: ${res.status}` }
-    return { ok: true, message: 'Gateway connected' }
-  }
-
-  private async checkElevenLabsApi(): Promise<{ ok: boolean; message: string }> {
-    const key = this.keyManager.get('ELEVENLABS_API_KEY')
-    if (!key) return { ok: false, message: 'ELEVENLABS_API_KEY is not set' }
-    const res = await fetch('https://api.elevenlabs.io/v1/user', {
-      headers: { 'xi-api-key': key }
-    })
-    if (!res.ok) return { ok: false, message: `ElevenLabs API error: ${res.status}` }
-    return { ok: true, message: 'ElevenLabs API connected' }
-  }
-
-  private async checkSttProvider(provider: string): Promise<{ ok: boolean; message: string }> {
-    switch (provider) {
-      case 'elevenlabs':
-        return this.checkElevenLabsApi()
-      case 'openaiWhisper': {
-        const key = this.keyManager.get('OPENAI_API_KEY')
-        if (!key) return { ok: false, message: 'OPENAI_API_KEY is not set' }
-        const res = await fetch('https://api.openai.com/v1/models', {
-          headers: { Authorization: `Bearer ${key}` }
-        })
-        if (!res.ok) return { ok: false, message: `OpenAI API error: ${res.status}` }
-        return { ok: true, message: 'OpenAI API connected' }
-      }
-      case 'localWhisper': {
-        const bin = this.settings.get('localWhisperPath')?.trim()
-        if (!bin) return { ok: false, message: 'whisper.cpp path is not set' }
-        if (!existsSync(bin)) return { ok: false, message: `Binary not found: ${bin}` }
-        try {
-          accessSync(bin, fsConstants.X_OK)
-        } catch {
-          return { ok: false, message: `Binary not executable: ${bin}` }
-        }
-        const modelPath = join(homedir(), WHISPER_MODEL_SUBPATH)
-        if (!existsSync(modelPath)) return { ok: false, message: `Model not found: ${modelPath}` }
-        return { ok: true, message: 'whisper.cpp binary and model found' }
-      }
-      default:
-        return { ok: false, message: `Unknown provider: ${provider}` }
-    }
-  }
-
-  private async checkTtsProvider(provider: string): Promise<{ ok: boolean; message: string }> {
-    switch (provider) {
-      case 'elevenlabs':
-        return this.checkElevenLabsApi()
-      case 'voicevox': {
-        const url = this.settings.get('voicevoxUrl') || 'http://localhost:50021'
-        const res = await fetch(`${url}/version`)
-        if (!res.ok) return { ok: false, message: `VOICEVOX error: ${res.status}` }
-        const version = await res.text()
-        return { ok: true, message: `VOICEVOX v${version.replace(/"/g, '')}` }
-      }
-      case 'kokoro': {
-        const url = this.settings.get('kokoroUrl') || 'http://localhost:8880'
-        const res = await fetch(`${url}/v1/models`)
-        if (!res.ok) return { ok: false, message: `Kokoro error: ${res.status}` }
-        return { ok: true, message: 'Kokoro API connected' }
-      }
-      case 'piper': {
-        const bin = this.settings.get('piperPath')?.trim()
-        const model = this.settings.get('piperModelPath')?.trim()
-        if (!bin) return { ok: false, message: 'Piper binary path is not set' }
-        if (!model) return { ok: false, message: 'Piper model path is not set' }
-        if (!existsSync(bin)) return { ok: false, message: `Binary not found: ${bin}` }
-        if (!existsSync(model)) return { ok: false, message: `Model not found: ${model}` }
-        try {
-          accessSync(bin, fsConstants.X_OK)
-        } catch {
-          return { ok: false, message: `Binary not executable: ${bin}` }
-        }
-        return { ok: true, message: 'Piper binary and model found' }
-      }
-      default:
-        return { ok: false, message: `Unknown provider: ${provider}` }
-    }
   }
 
   private pushMessage(msg: ChatMessage): void {

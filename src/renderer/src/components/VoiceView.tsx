@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { Mic, MicOff, Square, Settings } from 'lucide-react'
 import { Waveform } from './Waveform'
 import { useVAD } from '../hooks/useVAD'
@@ -22,6 +22,14 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayback }: Props) {
+  const mountedRef = useRef(true)
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
   const { speakerActive } = useSpeakerMonitor(micOn)
   const speakerActiveRef = useRef(speakerActive)
   speakerActiveRef.current = speakerActive
@@ -36,8 +44,8 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
   stopPlaybackRef.current = stopPlayback
 
   const handleSpeechStart = useCallback(() => {
-    if (!micOnRef.current) {
-      console.log('[voice] Ignoring speech start — mic off')
+    if (!mountedRef.current || !micOnRef.current) {
+      console.log('[voice] Ignoring speech start — mic off or unmounted')
       return
     }
     const s = stateRef.current
@@ -52,8 +60,8 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
   }, [])
 
   const handleSpeechEnd = useCallback((audio: Float32Array) => {
-    if (!micOnRef.current) {
-      console.log('[voice] Discarding speech — mic off')
+    if (!mountedRef.current || !micOnRef.current) {
+      console.log('[voice] Discarding speech — mic off or unmounted')
       return
     }
     if (speakerActiveRef.current) {
