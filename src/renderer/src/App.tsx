@@ -78,10 +78,11 @@ export default function App() {
     <div className="flex h-screen flex-col overflow-hidden">
       <div className="relative flex shrink-0 items-center justify-center border-border border-b bg-bg-secondary py-3 pl-20 pr-20 [-webkit-app-region:drag]">
         <span className="text-[#f5f5f4] text-xl font-normal tracking-tight">Talkative Lobster</span>
-        <span
+        <button
+          type="button"
           className={`absolute right-4 h-2 w-2 rounded-full transition-colors duration-300 ${statusDotClass}`}
           onClick={hasError ? openSettings : undefined}
-          role={hasError ? 'button' : undefined}
+          disabled={!hasError}
           title={hasError ? 'Connection error — open settings' : 'Connected'}
         />
       </div>
