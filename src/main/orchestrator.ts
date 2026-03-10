@@ -6,9 +6,12 @@ import type { ChatMessage } from '../shared/types'
 import { KeyManager } from './keys'
 import { SettingsStore } from './settings-store'
 import { VoiceStateController } from './voice-state-controller'
+import type { IGatewayClient } from './gateway-client'
 import { OpenClawClient } from './openclaw-client'
 import { SttEngine } from './stt-engine'
 import type { ITtsProvider } from './tts/tts-provider'
+import { splitTextForTts } from './tts/text-splitter'
+import { AizuchiManager } from './aizuchi'
 import { isNonSpeech } from './speech-filter'
 import { ElevenLabsTts } from './tts/elevenlabs-tts'
 import { VoicevoxTts } from './tts/voicevox-tts'
@@ -34,17 +37,29 @@ function errCause(
 const DEFAULT_GATEWAY_URL = 'ws://127.0.0.1:18789'
 const SESSION_KEY = 'agent:main:lobster'
 
+const TTS_SYSTEM_PROMPT = `[TTS Output Rules]
+Your response will be read aloud by a text-to-speech engine. You MUST follow these rules:
+- Keep responses short and conversational. Avoid long paragraphs.
+- Do not use abbreviations or shorthand. Write out all words fully.
+- Write all numbers as spoken words (e.g. "3" → "three", "100" → "one hundred"). For Japanese, use reading form (e.g. "3つ" → "みっつ", "100人" → "ひゃくにん").
+- Do not use symbols or emoticons (exclamation and question marks are OK).
+- Do NOT output your internal reasoning or thinking process. Only output the final answer.
+- You MUST always finalize your response and send it as a complete reply. Never leave a response unfinished.
+`
+
 export class Orchestrator {
   private win: BrowserWindow
   private keyManager: KeyManager
   private settings: SettingsStore
   private actor: VoiceStateController
-  private wsClient: OpenClawClient | null = null
+  private wsClient: IGatewayClient | null = null
   private sttEngine: SttEngine | null = null
   private ttsProvider: ITtsProvider | null = null
   private messages: ChatMessage[] = []
   private sttInProgress = false
   private ttsPlaying = false
+  private isFirstMessage = true
+  private aizuchi: AizuchiManager
   private ipcCleanup: (() => void)[] = []
 
   constructor(win: BrowserWindow) {
@@ -57,9 +72,18 @@ export class Orchestrator {
       }
     })
 
+    this.aizuchi = new AizuchiManager(win)
+
     this.actor.subscribe((state) => {
       console.log(`[orchestrator] State: ${state}`)
       this.send(IPC.VOICE_STATE_CHANGED, state)
+
+      // Start aizuchi when entering thinking state
+      if (state === 'thinking') {
+        this.aizuchi.start()
+      } else {
+        this.aizuchi.stop()
+      }
     })
 
     // Forward renderer console to main process for debugging
@@ -79,6 +103,7 @@ export class Orchestrator {
   }
 
   stop(): void {
+    this.aizuchi.stop()
     this.actor.stop()
     this.wsClient?.disconnect()
     this.wsClient = null
@@ -124,11 +149,12 @@ export class Orchestrator {
           voiceId: this.settings.get('ttsVoiceId'),
           modelId: this.settings.get('ttsModelId')
         })
-      case 'voicevox':
-        return new VoicevoxTts(
-          this.settings.get('voicevoxUrl'),
-          this.settings.get('voicevoxSpeakerId')
-        )
+      case 'voicevox': {
+        const vUrl = this.settings.get('voicevoxUrl')
+        const vSpeaker = this.settings.get('voicevoxSpeakerId')
+        console.log(`[orchestrator] Creating VoicevoxTts: url=${vUrl}, speaker=${vSpeaker}`)
+        return new VoicevoxTts(vUrl, vSpeaker)
+      }
       case 'kokoro':
         return new KokoroTts(this.settings.get('kokoroUrl'), this.settings.get('kokoroVoice'))
       case 'piper': {
@@ -172,16 +198,23 @@ export class Orchestrator {
 
     this.wsClient.on('done', (text: string) => {
       console.log(`[orchestrator] LLM done: "${text.slice(0, 100)}..."`)
+      // Strip <think>...</think> reasoning blocks and <final> tags from the response
+      const cleaned = text
+        .replace(/<think>[\s\S]*?<\/think>\s*/g, '')
+        .replace(/<\/?final>/g, '')
+        .trim()
+      const ttsText = cleaned || text.trim()
+
       const msg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        text,
+        text: ttsText,
         timestamp: Date.now()
       }
       this.pushMessage(msg)
       this.send(IPC.CHAT_MESSAGE, msg)
 
-      this.handleTts(text)
+      this.handleTts(ttsText)
     })
 
     this.wsClient.on('chatError', (message: string) => {
@@ -197,13 +230,16 @@ export class Orchestrator {
     }
   }
 
-  // --- TTS: single call with streaming ---
+  // --- TTS: split text and stream chunks sequentially ---
 
   private async handleTts(text: string): Promise<void> {
     if (!this.ttsProvider) {
       this.actor.send({ type: 'TTS_DONE' })
       return
     }
+
+    // Stop aizuchi before starting actual TTS
+    this.aizuchi.stop()
 
     // Stop any currently playing TTS before starting new one
     if (this.ttsPlaying) {
@@ -213,13 +249,19 @@ export class Orchestrator {
     }
     this.ttsPlaying = true
 
+    // Split text into sentence chunks to handle TTS character limits
+    const chunks = splitTextForTts(text)
     let audioSent = false
+
     try {
       this.send(IPC.TTS_FORMAT, this.ttsProvider.audioFormat)
-      for await (const chunk of this.ttsProvider.stream(text)) {
+      for (const chunk of chunks) {
         if (this.ttsProvider.isStopped) break
-        this.send(IPC.TTS_AUDIO, new Uint8Array(chunk).buffer)
-        audioSent = true
+        for await (const audio of this.ttsProvider.stream(chunk)) {
+          if (this.ttsProvider.isStopped) break
+          this.send(IPC.TTS_AUDIO, new Uint8Array(audio).buffer)
+          audioSent = true
+        }
       }
     } catch (err: unknown) {
       const cause = errCause(err)
@@ -271,7 +313,18 @@ export class Orchestrator {
       this.actor.send({ type: 'CANCEL' })
       return
     }
-    this.wsClient.sendMessage(text)
+    this.sendToGateway(text)
+  }
+
+  private sendToGateway(text: string): void {
+    if (!this.wsClient) return
+    if (this.isFirstMessage) {
+      this.isFirstMessage = false
+      const withPrompt = `${TTS_SYSTEM_PROMPT}\n${text}`
+      this.wsClient.sendMessage(withPrompt)
+    } else {
+      this.wsClient.sendMessage(text)
+    }
   }
 
   private async handleBatchStt(audio: Float32Array): Promise<void> {
@@ -400,7 +453,7 @@ export class Orchestrator {
         this.actor.send({ type: 'CANCEL' })
         return
       }
-      this.wsClient.sendMessage(text)
+      this.sendToGateway(text)
     })
 
     registerSettingsHandlers({
@@ -449,6 +502,21 @@ export class Orchestrator {
             ? `Connection refused: ${cause?.address ?? 'unknown'}:${cause?.port ?? ''}`
             : errMsg(err)
         return { ok: false, message }
+      }
+    })
+
+    // Session start: re-init engines + reconnect gateway after setup modal
+    this.handleIpc(IPC.SESSION_START, async () => {
+      console.log('[orchestrator] Session start — reinitializing engines and gateway')
+      this.isFirstMessage = true
+      this.initEngines()
+      // Reconnect gateway if not already connected
+      if (!this.wsClient) {
+        try {
+          await this.connectGateway()
+        } catch {
+          // connectGateway handles errors internally
+        }
       }
     })
   }

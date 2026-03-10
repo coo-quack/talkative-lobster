@@ -11,6 +11,7 @@ const webContentsSend = vi.fn()
 
 vi.mock('electron', () => ({
   BrowserWindow: vi.fn(),
+  app: { getPath: () => '/tmp/lobster-test' },
   ipcMain: {
     on: vi.fn((channel: string, handler: IpcHandler) => {
       ipcOnHandlers.set(channel, handler)
@@ -21,11 +22,6 @@ vi.mock('electron', () => ({
     removeHandler: vi.fn(),
     removeListener: vi.fn(),
     removeAllListeners: vi.fn()
-  },
-  safeStorage: {
-    isEncryptionAvailable: () => false,
-    encryptString: vi.fn(),
-    decryptString: vi.fn()
   }
 }))
 
@@ -764,7 +760,8 @@ describe('Orchestrator', () => {
       internals(orchestrator).wsClient = mockWsClient
       internals(orchestrator).handleSttResult('hello world')
 
-      expect(mockWsClient.sendMessage).toHaveBeenCalledWith('hello world')
+      const sentText = mockWsClient.sendMessage.mock.calls[0][0] as string
+      expect(sentText).toContain('hello world')
     })
 
     it('adds message to chat history', () => {
@@ -798,7 +795,8 @@ describe('Orchestrator', () => {
     it('sends message via WS and transitions idle → thinking', () => {
       getIpcOn(IPC.CHAT_SEND)({}, 'hello from text')
 
-      expect(mockWsClient.sendMessage).toHaveBeenCalledWith('hello from text')
+      const sentText = mockWsClient.sendMessage.mock.calls[0][0] as string
+      expect(sentText).toContain('hello from text')
       // idle → listening → processing → thinking
       expect(getState()).toBe('thinking')
     })
@@ -809,7 +807,8 @@ describe('Orchestrator', () => {
 
       getIpcOn(IPC.CHAT_SEND)({}, 'hello from text')
 
-      expect(mockWsClient.sendMessage).toHaveBeenCalledWith('hello from text')
+      const sentText = mockWsClient.sendMessage.mock.calls[0][0] as string
+      expect(sentText).toContain('hello from text')
       // listening → SPEECH_END → processing → STT_DONE → thinking
       expect(getState()).toBe('thinking')
     })

@@ -10,8 +10,8 @@ import type { VoiceState } from '../../../shared/types'
 type Callback = (...args: unknown[]) => void
 
 let voiceStateCallback: ((state: VoiceState) => void) | null = null
-let connectionStatusCallback: Callback | null = null
-let errorCallback: Callback | null = null
+let _connectionStatusCallback: Callback | null = null
+let _errorCallback: Callback | null = null
 
 const noop = () => () => {}
 
@@ -23,12 +23,12 @@ const mockLobster = {
     { name: 'OPENCLAW_TOKEN', isSet: true },
   ]),
   onConnectionStatus: vi.fn((cb: Callback) => {
-    connectionStatusCallback = cb
-    return () => { connectionStatusCallback = null }
+    _connectionStatusCallback = cb
+    return () => { _connectionStatusCallback = null }
   }),
   onError: vi.fn((cb: Callback) => {
-    errorCallback = cb
-    return () => { errorCallback = null }
+    _errorCallback = cb
+    return () => { _errorCallback = null }
   }),
   onVoiceStateChanged: vi.fn((cb: (state: VoiceState) => void) => {
     voiceStateCallback = cb
@@ -73,12 +73,21 @@ const mockLobster = {
   readKeyFromOpenclaw: vi.fn().mockResolvedValue(null),
   readKeyFromEnv: vi.fn().mockResolvedValue(null),
   setKey: vi.fn().mockResolvedValue(undefined),
+  // Aizuchi audio
+  onAizuchiFormat: vi.fn(noop),
+  onAizuchiAudio: vi.fn(noop),
+  onAizuchiStop: vi.fn(noop),
+  onAizuchiCancel: vi.fn(noop),
 }
 
 // ── Mock hooks ────────────────────────────────────────────────────────
 
 vi.mock('../hooks/useTtsPlayback', () => ({
   useTtsPlayback: () => ({ stopPlayback: mockStopPlayback }),
+}))
+
+vi.mock('../hooks/useAizuchiPlayback', () => ({
+  useAizuchiPlayback: () => ({ stopAizuchi: vi.fn() }),
 }))
 
 vi.mock('../hooks/useVAD', () => ({
@@ -110,8 +119,11 @@ beforeEach(() => {
 beforeEach(() => {
   vi.clearAllMocks()
   voiceStateCallback = null
-  connectionStatusCallback = null
-  errorCallback = null
+  // Read before reset to satisfy noUnusedLocals
+  void _connectionStatusCallback
+  void _errorCallback
+  _connectionStatusCallback = null
+  _errorCallback = null
   ;(window as unknown as { lobster: typeof mockLobster }).lobster = mockLobster
 })
 
@@ -275,27 +287,27 @@ describe('Voice state transitions', () => {
       const buttons = document.querySelectorAll('button')
       const stopBtn = Array.from(buttons).find(b => b.textContent?.includes('STOP'))
       expect(stopBtn).toBeDefined()
-      expect(stopBtn!.hasAttribute('disabled')).toBe(true)
+      expect(stopBtn?.hasAttribute('disabled')).toBe(true)
 
       // Listening: STOP enabled
       transitionTo('listening')
-      expect(stopBtn!.hasAttribute('disabled')).toBe(false)
+      expect(stopBtn?.hasAttribute('disabled')).toBe(false)
 
       // Processing: STOP enabled
       transitionTo('processing')
-      expect(stopBtn!.hasAttribute('disabled')).toBe(false)
+      expect(stopBtn?.hasAttribute('disabled')).toBe(false)
 
       // Thinking: STOP enabled
       transitionTo('thinking')
-      expect(stopBtn!.hasAttribute('disabled')).toBe(false)
+      expect(stopBtn?.hasAttribute('disabled')).toBe(false)
 
       // Speaking: STOP enabled
       transitionTo('speaking')
-      expect(stopBtn!.hasAttribute('disabled')).toBe(false)
+      expect(stopBtn?.hasAttribute('disabled')).toBe(false)
 
       // Back to idle: STOP disabled
       transitionTo('idle')
-      expect(stopBtn!.hasAttribute('disabled')).toBe(true)
+      expect(stopBtn?.hasAttribute('disabled')).toBe(true)
     })
   })
 
@@ -312,27 +324,27 @@ describe('Voice state transitions', () => {
       expect(dot).not.toBeNull()
 
       // idle: #44403c
-      expect(dot!.style.backgroundColor).toBe('rgb(68, 64, 60)')
+      expect(dot?.style.backgroundColor).toBe('rgb(68, 64, 60)')
 
       // listening: #00bc7d
       transitionTo('listening')
-      expect(dot!.style.backgroundColor).toBe('rgb(0, 188, 125)')
+      expect(dot?.style.backgroundColor).toBe('rgb(0, 188, 125)')
 
       // processing: #f59e0b
       transitionTo('processing')
-      expect(dot!.style.backgroundColor).toBe('rgb(245, 158, 11)')
+      expect(dot?.style.backgroundColor).toBe('rgb(245, 158, 11)')
 
       // thinking: #60a5fa
       transitionTo('thinking')
-      expect(dot!.style.backgroundColor).toBe('rgb(96, 165, 250)')
+      expect(dot?.style.backgroundColor).toBe('rgb(96, 165, 250)')
 
       // speaking: #a78bfa
       transitionTo('speaking')
-      expect(dot!.style.backgroundColor).toBe('rgb(167, 139, 250)')
+      expect(dot?.style.backgroundColor).toBe('rgb(167, 139, 250)')
 
       // back to idle: #44403c
       transitionTo('idle')
-      expect(dot!.style.backgroundColor).toBe('rgb(68, 64, 60)')
+      expect(dot?.style.backgroundColor).toBe('rgb(68, 64, 60)')
     })
   })
 

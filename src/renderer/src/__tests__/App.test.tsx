@@ -68,12 +68,21 @@ const mockLobster = {
   readKeyFromOpenclaw: vi.fn().mockResolvedValue(null),
   readKeyFromEnv: vi.fn().mockResolvedValue(null),
   setKey: vi.fn().mockResolvedValue(undefined),
+  // Aizuchi audio
+  onAizuchiFormat: vi.fn(noop),
+  onAizuchiAudio: vi.fn(noop),
+  onAizuchiStop: vi.fn(noop),
+  onAizuchiCancel: vi.fn(noop),
 }
 
 // ── Mock hooks that need browser APIs ────────────────────────────────
 
 vi.mock('../hooks/useTtsPlayback', () => ({
   useTtsPlayback: () => ({ stopPlayback: mockStopPlayback }),
+}))
+
+vi.mock('../hooks/useAizuchiPlayback', () => ({
+  useAizuchiPlayback: () => ({ stopAizuchi: vi.fn() }),
 }))
 
 vi.mock('../hooks/useVAD', () => ({

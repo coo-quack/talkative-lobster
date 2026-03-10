@@ -90,6 +90,14 @@ const api = {
   setVoicevoxSpeaker: (id: number): Promise<void> =>
     ipcRenderer.invoke(IPC.VOICEVOX_SPEAKER_SET, id),
 
+  // VAD sensitivity
+  getVadSensitivity: (): Promise<'auto' | number> => ipcRenderer.invoke(IPC.VAD_SENSITIVITY_GET),
+  setVadSensitivity: (value: 'auto' | number): Promise<void> =>
+    ipcRenderer.invoke(IPC.VAD_SENSITIVITY_SET, value),
+
+  // Session control
+  sessionStart: (): Promise<void> => ipcRenderer.invoke(IPC.SESSION_START),
+
   // Connectivity checks
   checkGateway: (): Promise<{ ok: boolean; message: string }> =>
     ipcRenderer.invoke(IPC.GATEWAY_CHECK),
@@ -97,6 +105,34 @@ const api = {
     ipcRenderer.invoke(IPC.TTS_CHECK, provider),
   checkSttProvider: (provider: string): Promise<{ ok: boolean; message: string }> =>
     ipcRenderer.invoke(IPC.STT_CHECK, provider),
+
+  // Aizuchi (backchanneling) audio — separate from main TTS
+  onAizuchiFormat: (
+    callback: (format: { type: string; sampleRate?: number; channels?: number; bitDepth?: number }) => void
+  ): UnsubscribeFn => {
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      format: { type: string; sampleRate?: number; channels?: number; bitDepth?: number }
+    ): void => callback(format)
+    ipcRenderer.on(IPC.AIZUCHI_FORMAT, handler)
+    return () => ipcRenderer.removeListener(IPC.AIZUCHI_FORMAT, handler)
+  },
+  onAizuchiAudio: (callback: (audioData: ArrayBuffer) => void): UnsubscribeFn => {
+    const handler = (_event: Electron.IpcRendererEvent, audioData: ArrayBuffer): void =>
+      callback(audioData)
+    ipcRenderer.on(IPC.AIZUCHI_AUDIO, handler)
+    return () => ipcRenderer.removeListener(IPC.AIZUCHI_AUDIO, handler)
+  },
+  onAizuchiStop: (callback: () => void): UnsubscribeFn => {
+    const handler = (): void => callback()
+    ipcRenderer.on(IPC.AIZUCHI_STOP, handler)
+    return () => ipcRenderer.removeListener(IPC.AIZUCHI_STOP, handler)
+  },
+  onAizuchiCancel: (callback: () => void): UnsubscribeFn => {
+    const handler = (): void => callback()
+    ipcRenderer.on(IPC.AIZUCHI_CANCEL, handler)
+    return () => ipcRenderer.removeListener(IPC.AIZUCHI_CANCEL, handler)
+  },
 
   // Error notification
   onError: (callback: (message: string) => void): UnsubscribeFn => {

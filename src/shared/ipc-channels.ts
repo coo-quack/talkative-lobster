@@ -43,10 +43,22 @@ export const IPC = {
   PIPER_MODEL_PATH_SET: 'tts:piper-model-path-set',
   VOICEVOX_SPEAKER_GET: 'tts:voicevox-speaker-get',
   VOICEVOX_SPEAKER_SET: 'tts:voicevox-speaker-set',
+  // VAD sensitivity
+  VAD_SENSITIVITY_GET: 'vad:sensitivity-get',
+  VAD_SENSITIVITY_SET: 'vad:sensitivity-set',
+  // Session control
+  SESSION_START: 'session:start',
+
   // Connectivity checks
   TTS_CHECK: 'tts:check',
   STT_CHECK: 'stt:check',
   GATEWAY_CHECK: 'gateway:check',
+
+  // Aizuchi (backchanneling) — separate from main TTS to avoid state machine interference
+  AIZUCHI_FORMAT: 'aizuchi:format',
+  AIZUCHI_AUDIO: 'aizuchi:audio',
+  AIZUCHI_STOP: 'aizuchi:stop',
+  AIZUCHI_CANCEL: 'aizuchi:cancel',
 
   // Error notification
   ERROR: 'app:error'

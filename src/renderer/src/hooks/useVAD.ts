@@ -3,11 +3,18 @@ import { MicVAD } from '@ricky0123/vad-web'
 
 interface UseVADOptions {
   enabled: boolean
+  thresholds?: { positiveSpeechThreshold: number; negativeSpeechThreshold: number }
   onSpeechStart: () => void
   onSpeechEnd: (audio: Float32Array) => void
 }
 
 const SAMPLE_RATE = 16000
+
+// Resolve asset base path from the HTML document location.
+// In file:// mode (production), the JS bundle is in assets/ subdirectory
+// so relative paths from the bundle would resolve incorrectly.
+// Using document.baseURI gives us the HTML file's directory.
+const ASSET_BASE = new URL('./', document.baseURI).href
 
 /**
  * Silero VAD — neural network-based Voice Activity Detection.
@@ -16,7 +23,7 @@ const SAMPLE_RATE = 16000
  * Echo cancellation and noise suppression are enabled to filter out
  * audio from speakers (e.g. video playback, music).
  */
-export function useVAD({ enabled, onSpeechStart, onSpeechEnd }: UseVADOptions) {
+export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseVADOptions) {
   const [listening, setListening] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -50,8 +57,8 @@ export function useVAD({ enabled, onSpeechStart, onSpeechEnd }: UseVADOptions) {
 
       const vad = await MicVAD.new({
         model: 'v5',
-        baseAssetPath: '/',
-        onnxWASMBasePath: '/',
+        baseAssetPath: ASSET_BASE,
+        onnxWASMBasePath: ASSET_BASE,
 
         // Provide mic stream with echo cancellation + noise suppression
         // to filter out speaker output (videos, music, TTS playback)
@@ -67,10 +74,10 @@ export function useVAD({ enabled, onSpeechStart, onSpeechEnd }: UseVADOptions) {
           }),
 
         // High thresholds to reduce false positives from ambient noise
-        positiveSpeechThreshold: 0.85,
-        negativeSpeechThreshold: 0.5,
-        minSpeechMs: 600,
-        redemptionMs: 600,
+        positiveSpeechThreshold: thresholds?.positiveSpeechThreshold ?? 0.85,
+        negativeSpeechThreshold: thresholds?.negativeSpeechThreshold ?? 0.5,
+        minSpeechMs: 300,
+        redemptionMs: 1000,
 
         onSpeechStart: () => {
           console.log('[vad] Speech start (Silero)')
@@ -102,7 +109,7 @@ export function useVAD({ enabled, onSpeechStart, onSpeechEnd }: UseVADOptions) {
     } finally {
       setLoading(false)
     }
-  }, [cleanup])
+  }, [cleanup, thresholds?.positiveSpeechThreshold, thresholds?.negativeSpeechThreshold])
 
   useEffect(() => {
     if (enabled) {

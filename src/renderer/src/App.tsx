@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { VoiceView } from './components/VoiceView'
 import { SetupModal } from './components/SetupModal'
 import { useTtsPlayback } from './hooks/useTtsPlayback'
+import { useAizuchiPlayback } from './hooks/useAizuchiPlayback'
 import { useVoiceState } from './hooks/useVoiceState'
 import type { KeyInfo } from '../../shared/types'
 
 export default function App() {
   const { stopPlayback } = useTtsPlayback()
+  useAizuchiPlayback()
   const voiceState = useVoiceState()
   const prevStateRef = useRef(voiceState)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -76,8 +78,8 @@ export default function App() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <div className="relative flex shrink-0 items-center justify-center border-border border-b bg-bg-secondary py-3 pl-20 pr-20 [-webkit-app-region:drag]">
-        <span className="text-[#f5f5f4] text-xl font-normal tracking-tight">Talkative Lobster</span>
+      <div className="relative flex shrink-0 items-center justify-center border-border border-b bg-bg-secondary py-3 pr-20 pl-20 [-webkit-app-region:drag]">
+        <span className="font-normal text-[#f5f5f4] text-xl tracking-tight">Talkative Lobster</span>
         <button
           type="button"
           className={`absolute right-4 h-2 w-2 rounded-full transition-colors duration-300 ${statusDotClass}`}

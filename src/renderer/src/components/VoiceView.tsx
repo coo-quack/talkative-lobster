@@ -1,8 +1,13 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Mic, MicOff, Square, Settings } from 'lucide-react'
 import { Waveform } from './Waveform'
 import { useVAD } from '../hooks/useVAD'
 import { useSpeakerMonitor } from '../hooks/useSpeakerMonitor'
+import {
+  calibrateNoise,
+  mapRmsToThreshold,
+  type CalibrationResult
+} from '../hooks/useNoiseCalibration'
 import type { VoiceState } from '../../../shared/types'
 
 interface Props {
@@ -30,6 +35,58 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
     }
   }, [])
 
+  const [vadSensitivity, setVadSensitivity] = useState<'auto' | number>('auto')
+  const [calibrating, setCalibrating] = useState(false)
+  const [calibratedThresholds, setCalibratedThresholds] = useState<CalibrationResult | null>(null)
+
+  useEffect(() => {
+    window.lobster?.getVadSensitivity?.().then(setVadSensitivity).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!micOn) {
+      setCalibratedThresholds(null)
+      return
+    }
+
+    // Manual sensitivity — skip calibration, use fixed thresholds
+    if (vadSensitivity !== 'auto') {
+      setCalibratedThresholds(mapRmsToThreshold(vadSensitivity))
+      return
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      return
+    }
+
+    let aborted = false
+    const controller = new AbortController()
+    setCalibrating(true)
+
+    calibrateNoise(1500, controller.signal)
+      .then((result) => {
+        if (!aborted) {
+          setCalibratedThresholds(result)
+          console.log(
+            `[voice] Calibrated: positive=${result.positiveSpeechThreshold}, negative=${result.negativeSpeechThreshold}`
+          )
+        }
+      })
+      .catch((err) => {
+        if (!aborted && err instanceof Error && err.name !== 'AbortError') {
+          console.warn('[voice] Calibration failed, using defaults:', err.message)
+        }
+      })
+      .finally(() => {
+        if (!aborted) setCalibrating(false)
+      })
+
+    return () => {
+      aborted = true
+      controller.abort()
+    }
+  }, [micOn, vadSensitivity])
+
   const { speakerActive } = useSpeakerMonitor(micOn)
   const speakerActiveRef = useRef(speakerActive)
   speakerActiveRef.current = speakerActive
@@ -38,7 +95,10 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
   const micOnRef = useRef(micOn)
   micOnRef.current = micOn
 
-  const vadEnabled = micOn && (state === 'idle' || state === 'listening' || state === 'speaking')
+  // Keep VAD running at all times when mic is on to avoid
+  // repeated destroy/re-init cycles that exhaust mic resources.
+  // State filtering happens in the callbacks and orchestrator.
+  const vadEnabled = micOn && !calibrating
 
   const stopPlaybackRef = useRef(stopPlayback)
   stopPlaybackRef.current = stopPlayback
@@ -69,7 +129,14 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
       window.lobster.voiceStop()
       return
     }
-    if (audio.length < 16000 * 0.5) {
+    // During processing/thinking, the user speaking is an interruption.
+    // voiceStart already handled the interrupt — just discard the audio.
+    const s = stateRef.current
+    if (s === 'processing' || s === 'thinking') {
+      console.log(`[voice] Discarding audio in ${s} state`)
+      return
+    }
+    if (audio.length < 16000 * 0.3) {
       window.lobster.voiceStop()
       return
     }
@@ -78,6 +145,7 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
 
   const { listening: vadListening } = useVAD({
     enabled: vadEnabled,
+    thresholds: calibratedThresholds ?? undefined,
     onSpeechStart: handleSpeechStart,
     onSpeechEnd: handleSpeechEnd
   })
@@ -99,9 +167,11 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
   const statusLabel =
     !micOn && (state === 'idle' || state === 'listening')
       ? 'Offline'
-      : vadListening && state === 'idle'
-        ? 'Listening...'
-        : STATUS_LABELS[state]
+      : calibrating
+        ? 'Calibrating...'
+        : vadListening && state === 'idle'
+          ? 'Listening...'
+          : STATUS_LABELS[state]
 
   const STATE_DOT_COLORS: Record<string, string> = {
     idle: '#44403c',
@@ -142,16 +212,16 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
             }
           >
             {micOn ? <Mic size={16} /> : <MicOff size={16} />}
-            <span className="text-sm font-medium">{micOn ? 'ON' : 'OFF'}</span>
+            <span className="font-medium text-sm">{micOn ? 'ON' : 'OFF'}</span>
           </button>
           <button
             type="button"
             onClick={handleStop}
             disabled={state === 'idle'}
-            className="flex h-10 items-center gap-2 rounded-full border border-[#44403b] bg-transparent px-4 text-[#d6d3d1] transition-all hover:border-[#57534e] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-[#44403b]"
+            className="flex h-10 items-center gap-2 rounded-full border border-[#44403b] bg-transparent px-4 text-[#d6d3d1] transition-all hover:border-[#57534e] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-[#44403b]"
           >
             <Square size={14} fill="currentColor" />
-            <span className="text-sm font-medium">STOP</span>
+            <span className="font-medium text-sm">STOP</span>
           </button>
         </div>
         <button

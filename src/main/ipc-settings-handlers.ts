@@ -123,4 +123,11 @@ export function registerSettingsHandlers(deps: {
     if (settings.get('ttsProvider') === 'piper') initEngines()
     console.log(`[orchestrator] Piper model path: ${path}`)
   })
+
+  // VAD sensitivity
+  handleIpc(IPC.VAD_SENSITIVITY_GET, () => settings.get('vadSensitivity'))
+  handleIpc(IPC.VAD_SENSITIVITY_SET, (_event: unknown, value: 'auto' | number) => {
+    settings.set('vadSensitivity', value)
+    console.log(`[orchestrator] VAD sensitivity: ${value}`)
+  })
 }

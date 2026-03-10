@@ -1,12 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { KeyManager } from '../keys'
 
-// Mock electron safeStorage
 vi.mock('electron', () => ({
-  safeStorage: {
-    isEncryptionAvailable: () => true,
-    encryptString: (s: string) => Buffer.from(`enc:${s}`),
-    decryptString: (buf: Buffer) => buf.toString().replace('enc:', '')
+  app: {
+    getPath: () => '/tmp/lobster-test'
   }
 }))
 
@@ -34,7 +31,7 @@ describe('KeyManager', () => {
     ])
   })
 
-  it('stores and retrieves a key via safeStorage', () => {
+  it('stores and retrieves a key', () => {
     km.set('ELEVENLABS_API_KEY', 'sk_test123', 'manual')
     const keys = km.getAll()
     const el = keys.find((k) => k.name === 'ELEVENLABS_API_KEY')

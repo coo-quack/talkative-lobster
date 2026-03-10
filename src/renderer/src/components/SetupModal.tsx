@@ -4,6 +4,7 @@ import { useSettings } from '../hooks/useSettings'
 import { GatewaySettings } from './GatewaySettings'
 import { SttSettings } from './SttSettings'
 import { TtsSettings } from './TtsSettings'
+import { VadSettings } from './VadSettings'
 
 interface Props {
   onComplete: () => void
@@ -117,6 +118,8 @@ export function SetupModal({ onComplete }: Props) {
       await window.lobster.setKokoroVoice(settings.kokoroVoice)
       await window.lobster.setPiperPath(settings.piperPath)
       await window.lobster.setPiperModelPath(settings.piperModelPath)
+      await window.lobster.setVadSensitivity?.(settings.vadSensitivity)
+      await window.lobster.sessionStart?.()
       await refresh()
       onComplete()
     } catch (err) {
@@ -149,6 +152,11 @@ export function SetupModal({ onComplete }: Props) {
         setLocalWhisperPath={settings.setLocalWhisperPath}
         checkStatus={sttCheckStatus}
         setCheckStatus={setSttCheckStatus}
+      />
+
+      <VadSettings
+        vadSensitivity={settings.vadSensitivity}
+        setVadSensitivity={settings.setVadSensitivity}
       />
 
       <TtsSettings

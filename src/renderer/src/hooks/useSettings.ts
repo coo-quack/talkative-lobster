@@ -21,6 +21,7 @@ export interface SettingsState {
   piperModelPath: string
   voicevoxSpeakerId: number
   kokoroVoice: string
+  vadSensitivity: 'auto' | number
   settingsLoaded: boolean
 }
 
@@ -36,6 +37,7 @@ export interface SettingsActions {
   setPiperModelPath: (v: string) => void
   setVoicevoxSpeakerId: (v: number) => void
   setKokoroVoice: (v: string) => void
+  setVadSensitivity: (v: 'auto' | number) => void
 }
 
 export function useSettings(): SettingsState & SettingsActions {
@@ -50,6 +52,7 @@ export function useSettings(): SettingsState & SettingsActions {
   const [piperModelPath, setPiperModelPath] = useState('')
   const [voicevoxSpeakerId, setVoicevoxSpeakerId] = useState(1)
   const [kokoroVoice, setKokoroVoice] = useState(DEFAULT_KOKORO_VOICE)
+  const [vadSensitivity, setVadSensitivity] = useState<'auto' | number>('auto')
   const [settingsLoaded, setSettingsLoaded] = useState(false)
 
   useEffect(() => {
@@ -64,7 +67,8 @@ export function useSettings(): SettingsState & SettingsActions {
       window.lobster.getPiperPath().then(setPiperPath),
       window.lobster.getPiperModelPath().then(setPiperModelPath),
       window.lobster.getVoicevoxSpeaker().then(setVoicevoxSpeakerId),
-      window.lobster.getKokoroVoice().then(setKokoroVoice)
+      window.lobster.getKokoroVoice().then(setKokoroVoice),
+      window.lobster.getVadSensitivity?.()?.then(setVadSensitivity) ?? Promise.resolve()
     ]).then(() => setSettingsLoaded(true))
   }, [])
 
@@ -91,6 +95,8 @@ export function useSettings(): SettingsState & SettingsActions {
     setVoicevoxSpeakerId,
     kokoroVoice,
     setKokoroVoice,
+    vadSensitivity,
+    setVadSensitivity,
     settingsLoaded
   }
 }

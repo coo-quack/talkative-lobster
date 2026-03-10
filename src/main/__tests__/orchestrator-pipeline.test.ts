@@ -11,6 +11,7 @@ const webContentsSend = vi.fn()
 
 vi.mock('electron', () => ({
   BrowserWindow: vi.fn(),
+  app: { getPath: () => '/tmp/lobster-test' },
   ipcMain: {
     on: vi.fn((channel: string, handler: IpcHandler) => {
       ipcOnHandlers.set(channel, handler)
@@ -21,11 +22,6 @@ vi.mock('electron', () => ({
     removeHandler: vi.fn(),
     removeListener: vi.fn(),
     removeAllListeners: vi.fn()
-  },
-  safeStorage: {
-    isEncryptionAvailable: () => false,
-    encryptString: vi.fn(),
-    decryptString: vi.fn()
   }
 }))
 
@@ -164,7 +160,8 @@ describe('Orchestrator pipeline', () => {
       await internals(orchestrator).handleBatchStt(audio)
 
       expect(getState()).toBe('thinking')
-      expect(mockWsClient.sendMessage).toHaveBeenCalledWith('こんにちは')
+      const sentText = mockWsClient.sendMessage.mock.calls[0][0] as string
+      expect(sentText).toContain('こんにちは')
 
       const chatMsg = webContentsSend.mock.calls.find(
         (c: unknown[]) => c[0] === IPC.CHAT_MESSAGE

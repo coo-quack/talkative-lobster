@@ -24,6 +24,7 @@ export interface Settings {
   kokoroVoice: string
   piperPath: string
   piperModelPath: string
+  vadSensitivity: 'auto' | number
 }
 
 const DEFAULTS: Settings = {
@@ -37,7 +38,8 @@ const DEFAULTS: Settings = {
   kokoroUrl: 'http://localhost:8880',
   kokoroVoice: DEFAULT_KOKORO_VOICE,
   piperPath: '',
-  piperModelPath: ''
+  piperModelPath: '',
+  vadSensitivity: 'auto' as const
 }
 
 export class SettingsStore {
@@ -76,7 +78,15 @@ export class SettingsStore {
     try {
       const raw = JSON.parse(readFileSync(this.filePath, 'utf-8'))
       for (const key of Object.keys(DEFAULTS) as (keyof Settings)[]) {
-        if (key in raw && typeof raw[key] === typeof DEFAULTS[key]) {
+        if (!(key in raw)) continue
+        // vadSensitivity accepts both 'auto' (string) and a number
+        if (key === 'vadSensitivity') {
+          if (raw[key] === 'auto' || typeof raw[key] === 'number') {
+            Object.assign(this.data, { [key]: raw[key] })
+          }
+          continue
+        }
+        if (typeof raw[key] === typeof DEFAULTS[key]) {
           Object.assign(this.data, { [key]: raw[key] })
         }
       }
