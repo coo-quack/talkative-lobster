@@ -21,7 +21,12 @@ const api = {
   },
   // TTS audio
   onTtsFormat: (
-    callback: (format: { type: string; sampleRate?: number; channels?: number; bitDepth?: number }) => void
+    callback: (format: {
+      type: string
+      sampleRate?: number
+      channels?: number
+      bitDepth?: number
+    }) => void
   ): UnsubscribeFn => {
     const handler = (
       _event: Electron.IpcRendererEvent,
@@ -108,7 +113,12 @@ const api = {
 
   // Aizuchi (backchanneling) audio — separate from main TTS
   onAizuchiFormat: (
-    callback: (format: { type: string; sampleRate?: number; channels?: number; bitDepth?: number }) => void
+    callback: (format: {
+      type: string
+      sampleRate?: number
+      channels?: number
+      bitDepth?: number
+    }) => void
   ): UnsubscribeFn => {
     const handler = (
       _event: Electron.IpcRendererEvent,

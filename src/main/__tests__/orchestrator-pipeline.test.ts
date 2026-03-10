@@ -163,9 +163,7 @@ describe('Orchestrator pipeline', () => {
       const sentText = mockWsClient.sendMessage.mock.calls[0][0] as string
       expect(sentText).toContain('こんにちは')
 
-      const chatMsg = webContentsSend.mock.calls.find(
-        (c: unknown[]) => c[0] === IPC.CHAT_MESSAGE
-      )
+      const chatMsg = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.CHAT_MESSAGE)
       expect(chatMsg).toBeDefined()
       expect(chatMsg?.[1].text).toBe('こんにちは')
       expect(chatMsg?.[1].role).toBe('user')
@@ -184,14 +182,10 @@ describe('Orchestrator pipeline', () => {
       // TTS phase
       await internals(orchestrator).handleTts('response text')
 
-      const formatCall = webContentsSend.mock.calls.find(
-        (c: unknown[]) => c[0] === IPC.TTS_FORMAT
-      )
+      const formatCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.TTS_FORMAT)
       expect(formatCall).toBeDefined()
 
-      const audioCall = webContentsSend.mock.calls.find(
-        (c: unknown[]) => c[0] === IPC.TTS_AUDIO
-      )
+      const audioCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.TTS_AUDIO)
       expect(audioCall).toBeDefined()
 
       // Simulate renderer reporting playback done
@@ -213,9 +207,7 @@ describe('Orchestrator pipeline', () => {
       await internals(orchestrator).handleBatchStt(audio)
 
       expect(getState()).toBe('idle')
-      const errorCall = webContentsSend.mock.calls.find(
-        (c: unknown[]) => c[0] === IPC.ERROR
-      )
+      const errorCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.ERROR)
       expect(errorCall).toBeDefined()
       expect(errorCall?.[1]).toContain('STT error')
     })
@@ -296,9 +288,7 @@ describe('Orchestrator pipeline', () => {
 
       await internals(orchestrator).handleTts('response')
 
-      const errorCall = webContentsSend.mock.calls.find(
-        (c: unknown[]) => c[0] === IPC.ERROR
-      )
+      const errorCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.ERROR)
       expect(errorCall).toBeDefined()
       expect(errorCall?.[1]).toContain('TTS error')
     })
@@ -322,9 +312,7 @@ describe('Orchestrator pipeline', () => {
 
       await internals(orchestrator).handleTts('response')
 
-      const errorCall = webContentsSend.mock.calls.find(
-        (c: unknown[]) => c[0] === IPC.ERROR
-      )
+      const errorCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.ERROR)
       expect(errorCall?.[1]).toContain('TTS connection refused')
       expect(errorCall?.[1]).toContain('127.0.0.1')
     })
@@ -393,9 +381,7 @@ describe('Orchestrator pipeline', () => {
       internals(orchestrator).handleSttResult('hello')
 
       expect(getState()).toBe('idle')
-      const errorCall = webContentsSend.mock.calls.find(
-        (c: unknown[]) => c[0] === IPC.ERROR
-      )
+      const errorCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.ERROR)
       expect(errorCall).toBeDefined()
       expect(errorCall?.[1]).toContain('Gateway not connected')
     })
@@ -406,9 +392,7 @@ describe('Orchestrator pipeline', () => {
       getIpcOn(IPC.CHAT_SEND)({}, 'hello')
 
       expect(getState()).toBe('idle')
-      const errorCall = webContentsSend.mock.calls.find(
-        (c: unknown[]) => c[0] === IPC.ERROR
-      )
+      const errorCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.ERROR)
       expect(errorCall?.[1]).toContain('Gateway not connected')
     })
   })

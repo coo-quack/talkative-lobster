@@ -162,7 +162,9 @@ describe('device-identity', () => {
         token: 'tok-abc',
         nonce: 'nonce-xyz'
       })
-      expect(result).toBe('v2|device-123|client-1|backend|operator|admin,write|1000000|tok-abc|nonce-xyz')
+      expect(result).toBe(
+        'v2|device-123|client-1|backend|operator|admin,write|1000000|tok-abc|nonce-xyz'
+      )
     })
 
     it('uses empty string for null token', () => {
@@ -226,11 +228,9 @@ describe('device-identity', () => {
       mockExistsSync.mockReturnValue(false)
       loadOrCreateDeviceIdentity()
 
-      expect(mockWriteFileSync).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(String),
-        { mode: 0o600 }
-      )
+      expect(mockWriteFileSync).toHaveBeenCalledWith(expect.any(String), expect.any(String), {
+        mode: 0o600
+      })
     })
 
     it('writes valid JSON to file', () => {
@@ -252,9 +252,7 @@ describe('device-identity', () => {
       const privateKeyPem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()
 
       mockExistsSync.mockReturnValue(true)
-      mockReadFileSync.mockReturnValue(
-        JSON.stringify({ version: 1, publicKeyPem, privateKeyPem })
-      )
+      mockReadFileSync.mockReturnValue(JSON.stringify({ version: 1, publicKeyPem, privateKeyPem }))
 
       const identity = loadOrCreateDeviceIdentity()
       expect(identity.publicKeyPem).toBe(publicKeyPem)
@@ -285,9 +283,7 @@ describe('device-identity', () => {
 
     it('regenerates when file is missing publicKeyPem', () => {
       mockExistsSync.mockImplementation((p: string) => p.endsWith('device-identity.json'))
-      mockReadFileSync.mockReturnValue(
-        JSON.stringify({ version: 1, privateKeyPem: 'y' })
-      )
+      mockReadFileSync.mockReturnValue(JSON.stringify({ version: 1, privateKeyPem: 'y' }))
 
       const identity = loadOrCreateDeviceIdentity()
       expect(identity.deviceId).toMatch(/^[0-9a-f]{64}$/)
@@ -298,17 +294,16 @@ describe('device-identity', () => {
       mockExistsSync.mockReturnValue(false)
       loadOrCreateDeviceIdentity()
 
-      expect(mockMkdirSync).toHaveBeenCalledWith(
-        expect.stringContaining('lobster'),
-        { recursive: true }
-      )
+      expect(mockMkdirSync).toHaveBeenCalledWith(expect.stringContaining('lobster'), {
+        recursive: true
+      })
     })
 
     it('does not recreate directory if it exists', () => {
       // First call (dir check) returns true, second (file check) returns false
       mockExistsSync
         .mockReturnValueOnce(false) // file doesn't exist
-        .mockReturnValueOnce(true)  // dir exists
+        .mockReturnValueOnce(true) // dir exists
 
       loadOrCreateDeviceIdentity()
       expect(mockMkdirSync).not.toHaveBeenCalled()
@@ -341,12 +336,7 @@ describe('device-identity', () => {
 
       const sig = signDevicePayload(identity.privateKeyPem, payload)
       const sigBuf = Buffer.from(sig, 'base64url')
-      const valid = crypto.verify(
-        null,
-        Buffer.from(payload, 'utf8'),
-        identity.publicKeyPem,
-        sigBuf
-      )
+      const valid = crypto.verify(null, Buffer.from(payload, 'utf8'), identity.publicKeyPem, sigBuf)
       expect(valid).toBe(true)
     })
   })

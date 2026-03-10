@@ -4,7 +4,7 @@ import { mapRmsToThreshold } from '../hooks/useNoiseCalibration'
 describe('mapRmsToThreshold', () => {
   it('returns minimum threshold for very quiet environment (RMS = 0.001)', () => {
     const result = mapRmsToThreshold(0.001)
-    expect(result.positiveSpeechThreshold).toBe(0.70)
+    expect(result.positiveSpeechThreshold).toBe(0.7)
     expect(result.negativeSpeechThreshold).toBe(0.42)
     expect(result.noiseFloorRms).toBe(0.001)
   })
@@ -25,7 +25,7 @@ describe('mapRmsToThreshold', () => {
 
   it('clamps RMS below minimum to minimum threshold', () => {
     const result = mapRmsToThreshold(0)
-    expect(result.positiveSpeechThreshold).toBe(0.70)
+    expect(result.positiveSpeechThreshold).toBe(0.7)
     expect(result.noiseFloorRms).toBe(0)
   })
 
@@ -77,7 +77,7 @@ describe('mapRmsToThreshold', () => {
 
   it('handles boundary value RMS_MIN exactly', () => {
     const result = mapRmsToThreshold(0.001)
-    expect(result.positiveSpeechThreshold).toBe(0.70)
+    expect(result.positiveSpeechThreshold).toBe(0.7)
   })
 
   it('handles boundary value RMS_MAX exactly', () => {
@@ -88,7 +88,7 @@ describe('mapRmsToThreshold', () => {
   it('handles very small positive RMS near zero', () => {
     const result = mapRmsToThreshold(0.0001)
     // Should clamp to minimum
-    expect(result.positiveSpeechThreshold).toBe(0.70)
+    expect(result.positiveSpeechThreshold).toBe(0.7)
   })
 
   it('threshold range covers expected spread', () => {

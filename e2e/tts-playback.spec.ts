@@ -21,28 +21,27 @@ test.afterAll(async () => {
  * Send a voice state change event from main → renderer via IPC.
  */
 async function sendVoiceState(state: string): Promise<void> {
-  await app.evaluate(
-    ({ webContents }, s) => {
-      for (const wc of webContents.getAllWebContents()) {
-        wc.send('voice:state-changed', s)
-      }
-    },
-    state
-  )
+  await app.evaluate(({ webContents }, s) => {
+    for (const wc of webContents.getAllWebContents()) {
+      wc.send('voice:state-changed', s)
+    }
+  }, state)
 }
 
 /**
  * Send TTS format info from main → renderer.
  */
-async function sendTtsFormat(format: { type: string; sampleRate?: number; channels?: number; bitDepth?: number }): Promise<void> {
-  await app.evaluate(
-    ({ webContents }, f) => {
-      for (const wc of webContents.getAllWebContents()) {
-        wc.send('tts:format', f)
-      }
-    },
-    format
-  )
+async function sendTtsFormat(format: {
+  type: string
+  sampleRate?: number
+  channels?: number
+  bitDepth?: number
+}): Promise<void> {
+  await app.evaluate(({ webContents }, f) => {
+    for (const wc of webContents.getAllWebContents()) {
+      wc.send('tts:format', f)
+    }
+  }, format)
 }
 
 /**
