@@ -21,7 +21,7 @@ pnpm dev
 
 On first launch, the **Settings modal** opens automatically and walks you through:
 
-1. **OpenClaw Gateway** — enter your gateway URL (default: `ws://localhost:3000`)
+1. **OpenClaw Gateway** — enter your `GATEWAY_TOKEN` (default URL: `ws://127.0.0.1:18789`)
 2. **STT Provider** — choose a speech-to-text provider and enter API keys if needed
 3. **TTS Provider** — choose a text-to-speech provider and configure voice settings
 

@@ -22,6 +22,7 @@ export interface SettingsState {
   voicevoxSpeakerId: number
   kokoroVoice: string
   vadSensitivity: 'auto' | number
+  gatewayUrl: string
   settingsLoaded: boolean
 }
 
@@ -38,6 +39,7 @@ export interface SettingsActions {
   setVoicevoxSpeakerId: (v: number) => void
   setKokoroVoice: (v: string) => void
   setVadSensitivity: (v: 'auto' | number) => void
+  setGatewayUrl: (v: string) => void
 }
 
 export function useSettings(): SettingsState & SettingsActions {
@@ -53,6 +55,7 @@ export function useSettings(): SettingsState & SettingsActions {
   const [voicevoxSpeakerId, setVoicevoxSpeakerId] = useState(1)
   const [kokoroVoice, setKokoroVoice] = useState(DEFAULT_KOKORO_VOICE)
   const [vadSensitivity, setVadSensitivity] = useState<'auto' | number>('auto')
+  const [gatewayUrl, setGatewayUrl] = useState('ws://127.0.0.1:18789')
   const [settingsLoaded, setSettingsLoaded] = useState(false)
 
   useEffect(() => {
@@ -68,7 +71,8 @@ export function useSettings(): SettingsState & SettingsActions {
       window.lobster.getPiperModelPath().then(setPiperModelPath),
       window.lobster.getVoicevoxSpeaker().then(setVoicevoxSpeakerId),
       window.lobster.getKokoroVoice().then(setKokoroVoice),
-      window.lobster.getVadSensitivity?.()?.then(setVadSensitivity) ?? Promise.resolve()
+      window.lobster.getVadSensitivity?.()?.then(setVadSensitivity) ?? Promise.resolve(),
+      window.lobster.getGatewayUrl?.()?.then(setGatewayUrl) ?? Promise.resolve()
     ]).then(() => setSettingsLoaded(true))
   }, [])
 
@@ -97,6 +101,8 @@ export function useSettings(): SettingsState & SettingsActions {
     setKokoroVoice,
     vadSensitivity,
     setVadSensitivity,
+    gatewayUrl,
+    setGatewayUrl,
     settingsLoaded
   }
 }

@@ -9,7 +9,7 @@ const RMS_MIN = 0.001
 const RMS_MAX = 0.05
 
 // Threshold range boundaries
-const THRESHOLD_MIN = 0.70
+const THRESHOLD_MIN = 0.7
 const THRESHOLD_MAX = 0.92
 
 // Negative threshold ratio
@@ -103,9 +103,7 @@ export async function calibrateNoise(
         // Use median to be robust against transient sounds
         const sorted = [...samples].sort((a, b) => a - b)
         const medianRms = sorted[Math.floor(sorted.length / 2)]
-        console.log(
-          `[calibration] ${samples.length} samples, median RMS: ${medianRms.toFixed(5)}`
-        )
+        console.log(`[calibration] ${samples.length} samples, median RMS: ${medianRms.toFixed(5)}`)
         resolve(mapRmsToThreshold(medianRms))
       }, durationMs)
     })

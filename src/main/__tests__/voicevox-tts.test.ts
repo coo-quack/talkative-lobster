@@ -3,12 +3,7 @@ import { VoicevoxTts } from '../tts/voicevox-tts'
 
 // Helper to build a mock Response.
 function mockResponse(
-  opts: {
-    ok?: boolean
-    status?: number
-    json?: unknown
-    arrayBuffer?: ArrayBuffer
-  } = {}
+  opts: { ok?: boolean; status?: number; json?: unknown; arrayBuffer?: ArrayBuffer } = {}
 ): Response {
   const ok = opts.ok ?? true
   const status = opts.status ?? (ok ? 200 : 500)

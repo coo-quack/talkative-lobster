@@ -470,9 +470,7 @@ describe('Orchestrator', () => {
 
       await internals(orchestrator).handleTts('hello')
 
-      const formatCall = webContentsSend.mock.calls.find(
-        (c: unknown[]) => c[0] === IPC.TTS_FORMAT
-      )
+      const formatCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.TTS_FORMAT)
       expect(formatCall).toBeDefined()
       expect(formatCall?.[1]).toEqual({ type: 'encoded' })
     })

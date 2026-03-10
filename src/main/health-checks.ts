@@ -21,9 +21,7 @@ export async function checkGateway(
   return { ok: true, message: 'Gateway connected' }
 }
 
-export async function checkElevenLabsApi(
-  keyManager: KeyManager
-): Promise<HealthCheckResult> {
+export async function checkElevenLabsApi(keyManager: KeyManager): Promise<HealthCheckResult> {
   const key = keyManager.get('ELEVENLABS_API_KEY')
   if (!key) return { ok: false, message: 'ELEVENLABS_API_KEY is not set' }
   const res = await fetch('https://api.elevenlabs.io/v1/user', {

@@ -13,11 +13,7 @@ const IV_LEN = 16
 
 /** Derive a stable 32-byte key from machine-specific values. */
 function deriveKey(): Buffer {
-  const seed = [
-    process.platform,
-    homedir(),
-    'lobster-keystore-v1'
-  ].join(':')
+  const seed = [process.platform, homedir(), 'lobster-keystore-v1'].join(':')
   return createHash('sha256').update(seed).digest()
 }
 
@@ -36,7 +32,10 @@ function decrypt(encoded: string): string {
   const iv = Buffer.alloc(IV_LEN, 0)
   createHash('md5').update(key).digest().copy(iv)
   const decipher = createDecipheriv(ALGO, key, iv)
-  const decrypted = Buffer.concat([decipher.update(Buffer.from(encoded, 'base64')), decipher.final()])
+  const decrypted = Buffer.concat([
+    decipher.update(Buffer.from(encoded, 'base64')),
+    decipher.final()
+  ])
   return decrypted.toString('utf8')
 }
 

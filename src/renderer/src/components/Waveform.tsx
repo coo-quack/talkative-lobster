@@ -18,7 +18,7 @@ const STATE_CONFIGS: Record<string, StateConfig> = {
   listening: { color: '#00bc7d', amplitude: 8, speed: 2 },
   processing: { color: '#f59e0b', amplitude: 5, speed: 2.5 },
   thinking: { color: '#60a5fa', amplitude: 8, speed: 2 },
-  speaking: { color: '#a78bfa', amplitude: 12, speed: 3 },
+  speaking: { color: '#a78bfa', amplitude: 12, speed: 3 }
 }
 
 const OFFLINE_CONFIG: StateConfig = { color: '#44403c', amplitude: 0, speed: 0 }
@@ -42,7 +42,7 @@ export function Waveform({ state, compact, offline }: Props) {
 
     const draw = () => {
       ctx.clearRect(0, 0, w, h)
-      const config = offline ? OFFLINE_CONFIG : (STATE_CONFIGS[state] || STATE_CONFIGS.idle)
+      const config = offline ? OFFLINE_CONFIG : STATE_CONFIGS[state] || STATE_CONFIGS.idle
       const t = Date.now() / 1000
 
       for (let i = 0; i < ringCount; i++) {

@@ -1,5 +1,5 @@
 appId: com.cooq.lobster
-productName: Lobster
+productName: TalkLob
 directories:
   buildResources: build
 files:
@@ -14,7 +14,7 @@ asarUnpack:
 win:
   executableName: lobster
 nsis:
-  artifactName: ${name}-${version}-${arch}-setup.${ext}
+  artifactName: ${name}-${arch}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
@@ -32,16 +32,17 @@ mac:
       arch: [arm64, x64]
   notarize: false
 dmg:
-  artifactName: ${name}-${version}-${arch}.${ext}
+  artifactName: ${name}-${arch}.${ext}
 linux:
   target:
     - AppImage
-    - snap
     - deb
   maintainer: electronjs.org
   category: Utility
 appImage:
-  artifactName: ${name}-${version}-${arch}.${ext}
+  artifactName: ${name}-${arch}.${ext}
+deb:
+  artifactName: ${name}-${arch}.${ext}
 npmRebuild: false
 publish:
   provider: github

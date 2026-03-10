@@ -119,6 +119,7 @@ export function SetupModal({ onComplete }: Props) {
       await window.lobster.setPiperPath(settings.piperPath)
       await window.lobster.setPiperModelPath(settings.piperModelPath)
       await window.lobster.setVadSensitivity?.(settings.vadSensitivity)
+      await window.lobster.setGatewayUrl?.(settings.gatewayUrl)
       await window.lobster.sessionStart?.()
       await refresh()
       onComplete()
@@ -139,6 +140,8 @@ export function SetupModal({ onComplete }: Props) {
         refresh={refresh}
         checkStatus={gatewayCheckStatus}
         setCheckStatus={setGatewayCheckStatus}
+        gatewayUrl={settings.gatewayUrl}
+        setGatewayUrl={settings.setGatewayUrl}
       />
 
       <SttSettings

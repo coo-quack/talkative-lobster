@@ -46,6 +46,10 @@ export const IPC = {
   // VAD sensitivity
   VAD_SENSITIVITY_GET: 'vad:sensitivity-get',
   VAD_SENSITIVITY_SET: 'vad:sensitivity-set',
+  // Gateway URL
+  GATEWAY_URL_GET: 'gateway:url-get',
+  GATEWAY_URL_SET: 'gateway:url-set',
+
   // Session control
   SESSION_START: 'session:start',
 

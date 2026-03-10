@@ -39,7 +39,14 @@ describe('IGatewayClient', () => {
   it('GatewayClientEvents type covers all expected events', () => {
     // Type-level check: ensure all event names exist
     type EventNames = keyof GatewayClientEvents
-    const events: EventNames[] = ['connected', 'disconnected', 'error', 'stream', 'done', 'chatError']
+    const events: EventNames[] = [
+      'connected',
+      'disconnected',
+      'error',
+      'stream',
+      'done',
+      'chatError'
+    ]
     expect(events).toHaveLength(6)
   })
 })
