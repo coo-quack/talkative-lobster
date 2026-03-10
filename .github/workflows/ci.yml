@@ -104,6 +104,6 @@ jobs:
         with:
           name: build-output
           path: out/
-      - run: pnpm run test:e2e
+      - run: xvfb-run --auto-servernum pnpm run test:e2e
         env:
           CI: true

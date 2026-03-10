@@ -45,7 +45,9 @@ export async function launchApp(): Promise<AppContext> {
 }
 
 export async function closeApp(ctx: AppContext): Promise<void> {
-  await ctx.app.close()
+  if (ctx?.app) {
+    await ctx.app.close()
+  }
   restoreFile(SETTINGS_PATH, savedSettings)
   restoreFile(KEYS_PATH, savedKeys)
 }
