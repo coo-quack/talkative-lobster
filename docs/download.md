@@ -24,7 +24,7 @@ The app is not signed with an Apple Developer ID. On first launch, macOS will sh
 | Format | Download |
 |--------|----------|
 | AppImage | [Lobster.AppImage](https://github.com/coo-quack/talkative-lobster/releases/latest/download/talkative-lobster-x86_64.AppImage) |
-| deb | [Lobster.deb](https://github.com/coo-quack/talkative-lobster/releases/latest/download/talkative-lobster.deb) |
+| deb | [Lobster.deb](https://github.com/coo-quack/talkative-lobster/releases/latest/download/talkative-lobster-amd64.deb) |
 
 ## All Releases
 

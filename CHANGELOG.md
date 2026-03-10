@@ -1,0 +1,11 @@
+# Changelog
+
+## v1.0.0
+
+- Initial release
+- Voice-driven AI chat with real-time TTS playback
+- VAD (Voice Activity Detection) with auto noise calibration
+- Gateway WebSocket integration (OpenClaw protocol)
+- Multi-platform support: macOS (arm64/x64), Windows (x64), Linux (AppImage/deb)
+- Encrypted key storage with AES-256-CBC
+- ElevenLabs and VOICEVOX TTS providers

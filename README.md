@@ -35,7 +35,7 @@ Download the latest release for your platform:
 | macOS (Intel) | [Lobster-x64.dmg](https://github.com/coo-quack/talkative-lobster/releases/latest/download/talkative-lobster-x64.dmg) |
 | Windows | [Lobster-setup.exe](https://github.com/coo-quack/talkative-lobster/releases/latest/download/talkative-lobster-x64-setup.exe) |
 | Linux (AppImage) | [Lobster.AppImage](https://github.com/coo-quack/talkative-lobster/releases/latest/download/talkative-lobster-x86_64.AppImage) |
-| Linux (deb) | [Lobster.deb](https://github.com/coo-quack/talkative-lobster/releases/latest/download/talkative-lobster.deb) |
+| Linux (deb) | [Lobster.deb](https://github.com/coo-quack/talkative-lobster/releases/latest/download/talkative-lobster-amd64.deb) |
 
 See all releases on the [Releases page](https://github.com/coo-quack/talkative-lobster/releases).
 
