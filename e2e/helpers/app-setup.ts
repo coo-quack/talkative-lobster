@@ -3,6 +3,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import os from 'node:os'
 import { installFetchMock } from './mock-fetch'
+import { seedTestKeys } from './seed-keys'
 
 const MAIN_ENTRY = path.join(__dirname, '..', '..', 'out', 'main', 'index.js')
 const LOBSTER_DIR = path.join(os.homedir(), '.config', 'lobster')
@@ -45,6 +46,7 @@ export async function launchApp(): Promise<AppContext> {
   const window = await app.firstWindow()
   await installFetchMock(app)
   await window.waitForLoadState('domcontentloaded')
+  await seedTestKeys(window)
   return { app, window }
 }
 
