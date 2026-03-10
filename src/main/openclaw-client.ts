@@ -190,7 +190,8 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
           if (content) this.emit('stream', content)
         } else if (payload.state === 'final') {
           this.activeRunIds.delete(payload.runId)
-          const content = this.extractText(payload.message) ?? this.lastAgentText.get(payload.runId) ?? null
+          const content =
+            this.extractText(payload.message) ?? this.lastAgentText.get(payload.runId) ?? null
           this.lastAgentText.delete(payload.runId)
           if (content) this.emit('done', content)
         } else if (payload.state === 'error') {
@@ -210,7 +211,11 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
         }
         // Buffer the latest assistant text from agent events as fallback
         // in case the chat final event arrives without a message body.
-        if (payload.stream === 'assistant' && payload.runId && typeof payload.data?.text === 'string') {
+        if (
+          payload.stream === 'assistant' &&
+          payload.runId &&
+          typeof payload.data?.text === 'string'
+        ) {
           this.lastAgentText.set(payload.runId, payload.data.text)
         }
       }

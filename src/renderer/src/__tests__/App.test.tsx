@@ -18,15 +18,19 @@ const mockStopPlayback = vi.fn()
 const mockLobster = {
   getKeys: vi.fn().mockResolvedValue([
     { name: 'ELEVENLABS_API_KEY', isSet: true },
-    { name: 'OPENCLAW_TOKEN', isSet: true },
+    { name: 'OPENCLAW_TOKEN', isSet: true }
   ]),
   onConnectionStatus: vi.fn((cb: Callback) => {
     connectionStatusCallback = cb
-    return () => { connectionStatusCallback = null }
+    return () => {
+      connectionStatusCallback = null
+    }
   }),
   onError: vi.fn((cb: Callback) => {
     errorCallback = cb
-    return () => { errorCallback = null }
+    return () => {
+      errorCallback = null
+    }
   }),
   onVoiceStateChanged: vi.fn(() => () => {}),
   voiceStart: vi.fn(),
@@ -72,25 +76,25 @@ const mockLobster = {
   onAizuchiFormat: vi.fn(noop),
   onAizuchiAudio: vi.fn(noop),
   onAizuchiStop: vi.fn(noop),
-  onAizuchiCancel: vi.fn(noop),
+  onAizuchiCancel: vi.fn(noop)
 }
 
 // ── Mock hooks that need browser APIs ────────────────────────────────
 
 vi.mock('../hooks/useTtsPlayback', () => ({
-  useTtsPlayback: () => ({ stopPlayback: mockStopPlayback }),
+  useTtsPlayback: () => ({ stopPlayback: mockStopPlayback })
 }))
 
 vi.mock('../hooks/useAizuchiPlayback', () => ({
-  useAizuchiPlayback: () => ({ stopAizuchi: vi.fn() }),
+  useAizuchiPlayback: () => ({ stopAizuchi: vi.fn() })
 }))
 
 vi.mock('../hooks/useVAD', () => ({
-  useVAD: () => ({ listening: false }),
+  useVAD: () => ({ listening: false })
 }))
 
 vi.mock('../hooks/useSpeakerMonitor', () => ({
-  useSpeakerMonitor: () => ({ speakerActive: false }),
+  useSpeakerMonitor: () => ({ speakerActive: false })
 }))
 
 // ── Canvas mock ──────────────────────────────────────────────────────
@@ -105,7 +109,7 @@ beforeEach(() => {
     set strokeStyle(_v: string) {},
     set fillStyle(_v: string) {},
     set lineWidth(_v: number) {},
-    set globalAlpha(_v: number) {},
+    set globalAlpha(_v: number) {}
   })
 })
 
@@ -384,7 +388,7 @@ describe('App', () => {
       cleanup()
       mockLobster.getKeys.mockResolvedValue([
         { name: 'ELEVENLABS_API_KEY', isSet: false },
-        { name: 'OPENCLAW_TOKEN', isSet: false },
+        { name: 'OPENCLAW_TOKEN', isSet: false }
       ])
       await act(async () => {
         render(<App />)
@@ -398,7 +402,7 @@ describe('App', () => {
       // Restore for any tests that might follow
       mockLobster.getKeys.mockResolvedValue([
         { name: 'ELEVENLABS_API_KEY', isSet: true },
-        { name: 'OPENCLAW_TOKEN', isSet: true },
+        { name: 'OPENCLAW_TOKEN', isSet: true }
       ])
     })
   })

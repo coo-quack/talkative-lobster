@@ -21,7 +21,12 @@ const api = {
   },
   // TTS audio
   onTtsFormat: (
-    callback: (format: { type: string; sampleRate?: number; channels?: number; bitDepth?: number }) => void
+    callback: (format: {
+      type: string
+      sampleRate?: number
+      channels?: number
+      bitDepth?: number
+    }) => void
   ): UnsubscribeFn => {
     const handler = (
       _event: Electron.IpcRendererEvent,
@@ -95,6 +100,10 @@ const api = {
   setVadSensitivity: (value: 'auto' | number): Promise<void> =>
     ipcRenderer.invoke(IPC.VAD_SENSITIVITY_SET, value),
 
+  // Gateway URL
+  getGatewayUrl: (): Promise<string> => ipcRenderer.invoke(IPC.GATEWAY_URL_GET),
+  setGatewayUrl: (url: string): Promise<void> => ipcRenderer.invoke(IPC.GATEWAY_URL_SET, url),
+
   // Session control
   sessionStart: (): Promise<void> => ipcRenderer.invoke(IPC.SESSION_START),
 
@@ -108,7 +117,12 @@ const api = {
 
   // Aizuchi (backchanneling) audio — separate from main TTS
   onAizuchiFormat: (
-    callback: (format: { type: string; sampleRate?: number; channels?: number; bitDepth?: number }) => void
+    callback: (format: {
+      type: string
+      sampleRate?: number
+      channels?: number
+      bitDepth?: number
+    }) => void
   ): UnsubscribeFn => {
     const handler = (
       _event: Electron.IpcRendererEvent,

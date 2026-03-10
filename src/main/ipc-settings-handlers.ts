@@ -130,4 +130,11 @@ export function registerSettingsHandlers(deps: {
     settings.set('vadSensitivity', value)
     console.log(`[orchestrator] VAD sensitivity: ${value}`)
   })
+
+  // Gateway URL
+  handleIpc(IPC.GATEWAY_URL_GET, () => settings.get('gatewayUrl'))
+  handleIpc(IPC.GATEWAY_URL_SET, (_event: unknown, url: string) => {
+    settings.set('gatewayUrl', url)
+    console.log(`[orchestrator] Gateway URL: ${url}`)
+  })
 }

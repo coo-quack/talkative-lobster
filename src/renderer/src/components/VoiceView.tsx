@@ -40,7 +40,10 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
   const [calibratedThresholds, setCalibratedThresholds] = useState<CalibrationResult | null>(null)
 
   useEffect(() => {
-    window.lobster?.getVadSensitivity?.().then(setVadSensitivity).catch(() => {})
+    window.lobster
+      ?.getVadSensitivity?.()
+      .then(setVadSensitivity)
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -178,12 +181,12 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
     listening: '#00bc7d',
     processing: '#f59e0b',
     thinking: '#60a5fa',
-    speaking: '#a78bfa',
+    speaking: '#a78bfa'
   }
 
   const isOffline = !micOn && (state === 'idle' || state === 'listening')
   const waveformState = isOffline ? 'idle' : state
-  const dotColor = isOffline ? '#44403c' : (STATE_DOT_COLORS[effectiveState] || '#44403c')
+  const dotColor = isOffline ? '#44403c' : STATE_DOT_COLORS[effectiveState] || '#44403c'
 
   return (
     <div className="flex flex-1 flex-col">

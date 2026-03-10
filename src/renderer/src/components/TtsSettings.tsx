@@ -86,8 +86,8 @@ export function TtsSettings({
     try {
       if (ttsProvider === 'elevenlabs' && inputs.ELEVENLABS_API_KEY) {
         await window.lobster.setKey('ELEVENLABS_API_KEY', inputs.ELEVENLABS_API_KEY)
-        await refresh()
       }
+      await refresh()
       await window.lobster.setTtsProvider(ttsProvider)
       if (ttsProvider === 'voicevox') await window.lobster.setVoicevoxUrl(voicevoxUrl)
       if (ttsProvider === 'kokoro') await window.lobster.setKokoroUrl(kokoroUrl)

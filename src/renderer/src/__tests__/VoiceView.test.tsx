@@ -8,11 +8,11 @@ import type { VoiceState } from '../../../shared/types'
 // ── Mock hooks ───────────────────────────────────────────────────────
 
 vi.mock('../hooks/useVAD', () => ({
-  useVAD: () => ({ listening: false }),
+  useVAD: () => ({ listening: false })
 }))
 
 vi.mock('../hooks/useSpeakerMonitor', () => ({
-  useSpeakerMonitor: () => ({ speakerActive: false }),
+  useSpeakerMonitor: () => ({ speakerActive: false })
 }))
 
 // ── Mock lobster API ─────────────────────────────────────────────────
@@ -21,7 +21,7 @@ const mockLobster = {
   voiceStart: vi.fn(),
   voiceStop: vi.fn(),
   voiceInterrupt: vi.fn(),
-  sendAudioChunk: vi.fn(),
+  sendAudioChunk: vi.fn()
 }
 
 beforeEach(() => {
@@ -36,7 +36,7 @@ beforeEach(() => {
     set strokeStyle(_v: string) {},
     set fillStyle(_v: string) {},
     set lineWidth(_v: number) {},
-    set globalAlpha(_v: number) {},
+    set globalAlpha(_v: number) {}
   })
 })
 
@@ -47,20 +47,22 @@ afterEach(() => {
 // ── Tests ────────────────────────────────────────────────────────────
 
 describe('VoiceView', () => {
-  function renderVoiceView(overrides: Partial<{
-    state: VoiceState
-    micOn: boolean
-    onMicToggle: (on: boolean) => void
-    onOpenSettings: () => void
-    stopPlayback: () => void
-  }> = {}) {
+  function renderVoiceView(
+    overrides: Partial<{
+      state: VoiceState
+      micOn: boolean
+      onMicToggle: (on: boolean) => void
+      onOpenSettings: () => void
+      stopPlayback: () => void
+    }> = {}
+  ) {
     const props = {
       state: 'idle' as VoiceState,
       micOn: true,
       onMicToggle: vi.fn(),
       onOpenSettings: vi.fn(),
       stopPlayback: vi.fn(),
-      ...overrides,
+      ...overrides
     }
     const result = render(<VoiceView {...props} />)
     return { ...result, props }

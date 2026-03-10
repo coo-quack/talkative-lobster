@@ -51,12 +51,11 @@ export function SttSettings({
     try {
       if (sttProvider === 'elevenlabs' && inputs.ELEVENLABS_API_KEY) {
         await window.lobster.setKey('ELEVENLABS_API_KEY', inputs.ELEVENLABS_API_KEY)
-        await refresh()
       }
       if (sttProvider === 'openaiWhisper' && inputs.OPENAI_API_KEY) {
         await window.lobster.setKey('OPENAI_API_KEY', inputs.OPENAI_API_KEY)
-        await refresh()
       }
+      await refresh()
       await window.lobster.setSttProvider(sttProvider)
       if (sttProvider === 'localWhisper') await window.lobster.setLocalWhisperPath(localWhisperPath)
       const result = await window.lobster.checkSttProvider(sttProvider)

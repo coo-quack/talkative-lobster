@@ -59,9 +59,7 @@ describe('health-checks', () => {
     })
 
     it('returns error on non-ok response', async () => {
-      server.use(
-        http.get('http://127.0.0.1:18789', () => new HttpResponse(null, { status: 500 }))
-      )
+      server.use(http.get('http://127.0.0.1:18789', () => new HttpResponse(null, { status: 500 })))
       const km = createMockKeyManager({ GATEWAY_TOKEN: 'tok' })
       const result = await checkGateway(km)
       expect(result).toEqual({ ok: false, message: 'Gateway error: 500' })
@@ -95,9 +93,7 @@ describe('health-checks', () => {
 
     it('returns error on non-ok response', async () => {
       server.use(
-        http.get('https://api.elevenlabs.io/v1/user', () =>
-          new HttpResponse(null, { status: 401 })
-        )
+        http.get('https://api.elevenlabs.io/v1/user', () => new HttpResponse(null, { status: 401 }))
       )
       const km = createMockKeyManager({ ELEVENLABS_API_KEY: 'key' })
       const result = await checkElevenLabsApi(km)
@@ -183,9 +179,7 @@ describe('health-checks', () => {
     })
 
     it('voicevox: returns version on success', async () => {
-      server.use(
-        http.get('http://localhost:50021/version', () => HttpResponse.text('"0.14.0"'))
-      )
+      server.use(http.get('http://localhost:50021/version', () => HttpResponse.text('"0.14.0"')))
       const km = createMockKeyManager({})
       const settings = createMockSettings({ voicevoxUrl: 'http://localhost:50021' })
       const result = await checkTtsProvider(km, settings, 'voicevox')
@@ -193,9 +187,7 @@ describe('health-checks', () => {
     })
 
     it('voicevox: uses default URL when not configured', async () => {
-      server.use(
-        http.get('http://localhost:50021/version', () => HttpResponse.text('"1.0"'))
-      )
+      server.use(http.get('http://localhost:50021/version', () => HttpResponse.text('"1.0"')))
       const km = createMockKeyManager({})
       const settings = createMockSettings({})
       const result = await checkTtsProvider(km, settings, 'voicevox')
@@ -203,9 +195,7 @@ describe('health-checks', () => {
     })
 
     it('kokoro: returns connected on success', async () => {
-      server.use(
-        http.get('http://localhost:8880/v1/models', () => HttpResponse.json({ data: [] }))
-      )
+      server.use(http.get('http://localhost:8880/v1/models', () => HttpResponse.json({ data: [] })))
       const km = createMockKeyManager({})
       const settings = createMockSettings({ kokoroUrl: 'http://localhost:8880' })
       const result = await checkTtsProvider(km, settings, 'kokoro')
@@ -228,7 +218,10 @@ describe('health-checks', () => {
 
     it('piper: returns not-found when binary missing', async () => {
       const km = createMockKeyManager({})
-      const settings = createMockSettings({ piperPath: '/bin/piper', piperModelPath: '/model.onnx' })
+      const settings = createMockSettings({
+        piperPath: '/bin/piper',
+        piperModelPath: '/model.onnx'
+      })
       mockExistsSync.mockReturnValue(false)
       const result = await checkTtsProvider(km, settings, 'piper')
       expect(result).toEqual({ ok: false, message: 'Binary not found: /bin/piper' })
@@ -236,7 +229,10 @@ describe('health-checks', () => {
 
     it('piper: returns model not-found when model missing', async () => {
       const km = createMockKeyManager({})
-      const settings = createMockSettings({ piperPath: '/bin/piper', piperModelPath: '/model.onnx' })
+      const settings = createMockSettings({
+        piperPath: '/bin/piper',
+        piperModelPath: '/model.onnx'
+      })
       mockExistsSync.mockImplementation((p: string) => p === '/bin/piper')
       mockAccessSync.mockImplementation(() => {})
       const result = await checkTtsProvider(km, settings, 'piper')
@@ -245,7 +241,10 @@ describe('health-checks', () => {
 
     it('piper: returns success when binary and model exist', async () => {
       const km = createMockKeyManager({})
-      const settings = createMockSettings({ piperPath: '/bin/piper', piperModelPath: '/model.onnx' })
+      const settings = createMockSettings({
+        piperPath: '/bin/piper',
+        piperModelPath: '/model.onnx'
+      })
       mockExistsSync.mockReturnValue(true)
       mockAccessSync.mockImplementation(() => {})
       const result = await checkTtsProvider(km, settings, 'piper')

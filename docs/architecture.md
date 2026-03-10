@@ -76,7 +76,7 @@ Transitions happen automatically. The user can interrupt during `speaking` by st
 | OpenClaw Client | `src/main/openclaw-client.ts` | WebSocket client for LLM gateway |
 | STT Engine | `src/main/stt-engine.ts` | Multi-provider speech-to-text |
 | Speech Filter | `src/main/speech-filter.ts` | Text processing before TTS |
-| Keys | `src/main/keys.ts` | API key encryption via safeStorage |
+| Keys | `src/main/keys.ts` | API key encryption (AES-256-CBC) |
 | Settings Store | `src/main/settings-store.ts` | Settings persistence (JSON) |
 | Piper TTS | `src/main/tts/piper-tts.ts` | Local TTS via Piper |
 | VOICEVOX TTS | `src/main/tts/voicevox-tts.ts` | Japanese TTS via VOICEVOX |
@@ -91,7 +91,7 @@ src/
     openclaw-client.ts#   WebSocket client for OpenClaw gateway
     stt-engine.ts     #   Multi-provider speech-to-text
     speech-filter.ts  #   Text processing before TTS
-    keys.ts           #   API key encryption via safeStorage
+    keys.ts           #   API key encryption (AES-256-CBC)
     settings-store.ts #   Settings persistence (JSON)
     tts/              #   TTS provider implementations
     __tests__/        #   Unit tests

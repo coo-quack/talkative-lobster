@@ -2,18 +2,29 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
-
-permissions:
-  contents: write
-
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
+    branches: [main]
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if git ls-remote --tags origin "v$VERSION" | grep -q "v$VERSION"; then
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          fi
+
   test:
+    needs: check
+    if: needs.check.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,13 +54,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
-      - run: electron-builder --mac --publish never
+      - run: pnpm exec electron-builder --mac --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: release-mac
-          path: |
-            dist/*.dmg
-          retention-days: 3
+          path: dist/*.dmg
+          retention-days: 7
 
   build-win:
     needs: test
@@ -65,13 +75,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
-      - run: electron-builder --win --publish never
+      - run: pnpm exec electron-builder --win --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: release-win
-          path: |
-            dist/*-setup.exe
-          retention-days: 3
+          path: dist/*-setup.exe
+          retention-days: 7
 
   build-linux:
     needs: test
@@ -87,18 +96,20 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
-      - run: electron-builder --linux --publish never
+      - run: pnpm exec electron-builder --linux --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: release-linux
           path: |
             dist/*.AppImage
             dist/*.deb
-          retention-days: 3
+          retention-days: 7
 
-  publish:
-    needs: [build-mac, build-win, build-linux]
+  release:
+    needs: [check, build-mac, build-win, build-linux]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -120,13 +131,41 @@ jobs:
       - name: List artifacts
         run: ls -lh dist/
 
+      - name: Create git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          VERSION="v${{ needs.check.outputs.version }}"
+          if git ls-remote --tags origin "$VERSION" | grep -q "$VERSION"; then
+            echo "Tag $VERSION already exists, skipping"
+          else
+            git tag "$VERSION"
+            git push origin "$VERSION"
+          fi
+
+      - name: Extract changelog
+        id: changelog
+        run: |
+          VERSION="${{ needs.check.outputs.version }}"
+          NOTES=$(awk "/^## v${VERSION}/{found=1; next} found && /^## v/{exit} found{print}" CHANGELOG.md)
+          if [ -z "$NOTES" ]; then
+            NOTES="Release v${VERSION}"
+          fi
+          echo "$NOTES" > /tmp/release-notes.md
+
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          draft: true
-          generate_release_notes: true
-          files: |
-            dist/*.dmg
-            dist/*-setup.exe
-            dist/*.AppImage
-            dist/*.deb
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="v${{ needs.check.outputs.version }}"
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "Release $VERSION already exists, skipping"
+          else
+            gh release create "$VERSION" \
+              --title "$VERSION" \
+              --notes-file /tmp/release-notes.md \
+              dist/*.dmg \
+              dist/*-setup.exe \
+              dist/*.AppImage \
+              dist/*.deb
+          fi

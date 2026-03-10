@@ -20,19 +20,25 @@ const mockStopPlayback = vi.fn()
 const mockLobster = {
   getKeys: vi.fn().mockResolvedValue([
     { name: 'ELEVENLABS_API_KEY', isSet: true },
-    { name: 'OPENCLAW_TOKEN', isSet: true },
+    { name: 'OPENCLAW_TOKEN', isSet: true }
   ]),
   onConnectionStatus: vi.fn((cb: Callback) => {
     _connectionStatusCallback = cb
-    return () => { _connectionStatusCallback = null }
+    return () => {
+      _connectionStatusCallback = null
+    }
   }),
   onError: vi.fn((cb: Callback) => {
     _errorCallback = cb
-    return () => { _errorCallback = null }
+    return () => {
+      _errorCallback = null
+    }
   }),
   onVoiceStateChanged: vi.fn((cb: (state: VoiceState) => void) => {
     voiceStateCallback = cb
-    return () => { voiceStateCallback = null }
+    return () => {
+      voiceStateCallback = null
+    }
   }),
   voiceStart: vi.fn(),
   voiceStop: vi.fn(),
@@ -77,25 +83,25 @@ const mockLobster = {
   onAizuchiFormat: vi.fn(noop),
   onAizuchiAudio: vi.fn(noop),
   onAizuchiStop: vi.fn(noop),
-  onAizuchiCancel: vi.fn(noop),
+  onAizuchiCancel: vi.fn(noop)
 }
 
 // ── Mock hooks ────────────────────────────────────────────────────────
 
 vi.mock('../hooks/useTtsPlayback', () => ({
-  useTtsPlayback: () => ({ stopPlayback: mockStopPlayback }),
+  useTtsPlayback: () => ({ stopPlayback: mockStopPlayback })
 }))
 
 vi.mock('../hooks/useAizuchiPlayback', () => ({
-  useAizuchiPlayback: () => ({ stopAizuchi: vi.fn() }),
+  useAizuchiPlayback: () => ({ stopAizuchi: vi.fn() })
 }))
 
 vi.mock('../hooks/useVAD', () => ({
-  useVAD: () => ({ listening: false }),
+  useVAD: () => ({ listening: false })
 }))
 
 vi.mock('../hooks/useSpeakerMonitor', () => ({
-  useSpeakerMonitor: () => ({ speakerActive: false }),
+  useSpeakerMonitor: () => ({ speakerActive: false })
 }))
 
 // ── Canvas mock ──────────────────────────────────────────────────────
@@ -110,7 +116,7 @@ beforeEach(() => {
     set strokeStyle(_v: string) {},
     set fillStyle(_v: string) {},
     set lineWidth(_v: number) {},
-    set globalAlpha(_v: number) {},
+    set globalAlpha(_v: number) {}
   })
 })
 
@@ -285,7 +291,7 @@ describe('Voice state transitions', () => {
 
       // Idle: STOP disabled
       const buttons = document.querySelectorAll('button')
-      const stopBtn = Array.from(buttons).find(b => b.textContent?.includes('STOP'))
+      const stopBtn = Array.from(buttons).find((b) => b.textContent?.includes('STOP'))
       expect(stopBtn).toBeDefined()
       expect(stopBtn?.hasAttribute('disabled')).toBe(true)
 

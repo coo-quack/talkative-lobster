@@ -3,11 +3,20 @@ import path from 'node:path'
 import fs from 'node:fs'
 import os from 'node:os'
 import { installFetchMock } from './mock-fetch'
+import { seedTestKeys } from './seed-keys'
 
 const MAIN_ENTRY = path.join(__dirname, '..', '..', 'out', 'main', 'index.js')
 const LOBSTER_DIR = path.join(os.homedir(), '.config', 'lobster')
 const SETTINGS_PATH = path.join(LOBSTER_DIR, 'settings.json')
-const KEYS_PATH = path.join(LOBSTER_DIR, 'keys.json')
+
+// Electron userData keys.json path (varies by platform in dev mode)
+function getElectronKeysPath(): string {
+  if (process.platform === 'darwin') {
+    return path.join(os.homedir(), 'Library', 'Application Support', 'Electron', 'keys.json')
+  }
+  // Linux / CI
+  return path.join(os.homedir(), '.config', 'Electron', 'keys.json')
+}
 
 function backupAndRemove(filePath: string): string | null {
   if (fs.existsSync(filePath)) {
@@ -32,20 +41,31 @@ export interface AppContext {
 
 let savedSettings: string | null = null
 let savedKeys: string | null = null
+const KEYS_PATH = getElectronKeysPath()
 
 export async function launchApp(): Promise<AppContext> {
   savedSettings = backupAndRemove(SETTINGS_PATH)
   savedKeys = backupAndRemove(KEYS_PATH)
 
-  const app = await electron.launch({ args: [MAIN_ENTRY] })
+  const args = [MAIN_ENTRY]
+  if (process.env.CI) {
+    args.push('--no-sandbox', '--disable-gpu')
+  }
+  const app = await electron.launch({ args })
   const window = await app.firstWindow()
   await installFetchMock(app)
   await window.waitForLoadState('domcontentloaded')
+  // Wait for SetupModal to render before seeding keys to avoid race condition
+  // where getKeys() resolves after seeding → needsSetup=false → skips modal
+  await window.locator('h2', { hasText: 'Settings' }).waitFor({ state: 'visible', timeout: 10000 })
+  await seedTestKeys(window)
   return { app, window }
 }
 
 export async function closeApp(ctx: AppContext): Promise<void> {
-  await ctx.app.close()
+  if (ctx?.app) {
+    await ctx.app.close()
+  }
   restoreFile(SETTINGS_PATH, savedSettings)
   restoreFile(KEYS_PATH, savedKeys)
 }
