@@ -473,9 +473,7 @@ export class Orchestrator {
       } catch (err: unknown) {
         const cause = errCause(err)
         const message =
-          cause?.code === 'ECONNREFUSED'
-            ? `Connection refused: ${gatewayUrl}`
-            : errMsg(err)
+          cause?.code === 'ECONNREFUSED' ? `Connection refused: ${gatewayUrl}` : errMsg(err)
         return { ok: false, message }
       }
     })

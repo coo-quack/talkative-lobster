@@ -48,8 +48,8 @@ export function GatewaySettings({
       await window.lobster.setGatewayUrl?.(gatewayUrl)
       if (inputs.GATEWAY_TOKEN) {
         await window.lobster.setKey('GATEWAY_TOKEN', inputs.GATEWAY_TOKEN)
-        await refresh()
       }
+      await refresh()
       const result = await window.lobster.checkGateway()
       setCheckStatus(result)
     } catch {

@@ -8,7 +8,15 @@ import { seedTestKeys } from './seed-keys'
 const MAIN_ENTRY = path.join(__dirname, '..', '..', 'out', 'main', 'index.js')
 const LOBSTER_DIR = path.join(os.homedir(), '.config', 'lobster')
 const SETTINGS_PATH = path.join(LOBSTER_DIR, 'settings.json')
-const KEYS_PATH = path.join(LOBSTER_DIR, 'keys.json')
+
+// Electron userData keys.json path (varies by platform in dev mode)
+function getElectronKeysPath(): string {
+  if (process.platform === 'darwin') {
+    return path.join(os.homedir(), 'Library', 'Application Support', 'Electron', 'keys.json')
+  }
+  // Linux / CI
+  return path.join(os.homedir(), '.config', 'Electron', 'keys.json')
+}
 
 function backupAndRemove(filePath: string): string | null {
   if (fs.existsSync(filePath)) {
@@ -33,6 +41,7 @@ export interface AppContext {
 
 let savedSettings: string | null = null
 let savedKeys: string | null = null
+const KEYS_PATH = getElectronKeysPath()
 
 export async function launchApp(): Promise<AppContext> {
   savedSettings = backupAndRemove(SETTINGS_PATH)
@@ -46,6 +55,9 @@ export async function launchApp(): Promise<AppContext> {
   const window = await app.firstWindow()
   await installFetchMock(app)
   await window.waitForLoadState('domcontentloaded')
+  // Wait for SetupModal to render before seeding keys to avoid race condition
+  // where getKeys() resolves after seeding → needsSetup=false → skips modal
+  await window.locator('h2', { hasText: 'Settings' }).waitFor({ state: 'visible', timeout: 10000 })
   await seedTestKeys(window)
   return { app, window }
 }
