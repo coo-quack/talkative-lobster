@@ -11,6 +11,7 @@ export default defineConfig({
 
     nav: [
       { text: "Home", link: "/" },
+      { text: "Download", link: "/download" },
       { text: "Getting Started", link: "/getting-started" },
       { text: "Providers", link: "/providers" },
       { text: "GitHub", link: "https://github.com/coo-quack/talkative-lobster" },
@@ -21,6 +22,7 @@ export default defineConfig({
         text: "Guide",
         items: [
           { text: "Overview", link: "/" },
+          { text: "Download", link: "/download" },
           { text: "Getting Started", link: "/getting-started" },
         ],
       },

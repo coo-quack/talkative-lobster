@@ -23,7 +23,23 @@ You speak  -->  Speech-to-Text  -->  LLM  -->  Text-to-Speech  -->  You hear
 - **Multi-provider TTS** — ElevenLabs, VOICEVOX (Japanese), Kokoro (JP + EN), Piper (local)
 - **Natural interruption** — speak over the AI to interrupt and redirect
 - **Speaker monitor** — filters out system audio (YouTube, music) so only your voice triggers the AI
-- **Encrypted key storage** — API keys stored securely via Electron's safeStorage
+- **Encrypted key storage** — API keys stored with obfuscated encryption on your machine
+
+## Download
+
+Download the latest release for your platform:
+
+| Platform | Download |
+|----------|----------|
+| macOS (Apple Silicon) | [Lobster-arm64.dmg](https://github.com/coo-quack/talkative-lobster/releases/latest/download/talkative-lobster-arm64.dmg) |
+| macOS (Intel) | [Lobster-x64.dmg](https://github.com/coo-quack/talkative-lobster/releases/latest/download/talkative-lobster-x64.dmg) |
+| Windows | [Lobster-setup.exe](https://github.com/coo-quack/talkative-lobster/releases/latest/download/talkative-lobster-x64-setup.exe) |
+| Linux (AppImage) | [Lobster.AppImage](https://github.com/coo-quack/talkative-lobster/releases/latest/download/talkative-lobster-x86_64.AppImage) |
+| Linux (deb) | [Lobster.deb](https://github.com/coo-quack/talkative-lobster/releases/latest/download/talkative-lobster.deb) |
+
+See all releases on the [Releases page](https://github.com/coo-quack/talkative-lobster/releases).
+
+> **Documentation**: [https://coo-quack.github.io/talkative-lobster/](https://coo-quack.github.io/talkative-lobster/)
 
 ## Getting Started
 
