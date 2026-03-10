@@ -4,7 +4,8 @@ import { homedir } from 'node:os'
 
 export function getApiKey(name: string): string | null {
   // 1. Environment variable
-  if (process.env[name]) return process.env[name]!
+  const envVal = process.env[name]
+  if (envVal) return envVal
 
   // 2. OpenClaw config
   const configPath = join(homedir(), '.openclaw', 'openclaw.json')
@@ -13,7 +14,9 @@ export function getApiKey(name: string): string | null {
       const config = JSON.parse(readFileSync(configPath, 'utf-8'))
       if (name === 'GATEWAY_TOKEN') return config?.gateway?.auth?.token ?? null
       return config?.env?.[name] ?? null
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   return null
@@ -21,7 +24,8 @@ export function getApiKey(name: string): string | null {
 
 export function requireApiKey(name: string): string {
   const key = getApiKey(name)
-  if (!key) throw new Error(`${name} not found in env or openclaw config. Skipping integration test.`)
+  if (!key)
+    throw new Error(`${name} not found in env or openclaw config. Skipping integration test.`)
   return key
 }
 
@@ -29,7 +33,11 @@ export function requireApiKey(name: string): string {
  * Generate a sine wave as Float32Array (for testing STT with known audio).
  * This won't produce meaningful speech, but tests the pipeline.
  */
-export function generateSineWave(durationSec: number, sampleRate: number, freq = 440): Float32Array {
+export function generateSineWave(
+  durationSec: number,
+  sampleRate: number,
+  freq = 440
+): Float32Array {
   const samples = new Float32Array(durationSec * sampleRate)
   for (let i = 0; i < samples.length; i++) {
     samples[i] = Math.sin(2 * Math.PI * freq * (i / sampleRate)) * 0.5

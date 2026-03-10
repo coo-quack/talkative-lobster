@@ -10,11 +10,11 @@ hero:
     alt: Talkative Lobster
   actions:
     - theme: brand
+      text: Download
+      link: /download
+    - theme: alt
       text: Get Started
       link: /getting-started
-    - theme: alt
-      text: Providers
-      link: /providers
     - theme: alt
       text: GitHub
       link: https://github.com/coo-quack/talkative-lobster
@@ -37,7 +37,7 @@ features:
     details: Filters out system audio (YouTube, music) so only your voice triggers the AI.
   - icon: 🔐
     title: Encrypted Key Storage
-    details: API keys stored securely via Electron's safeStorage. Keys never leave your machine unencrypted.
+    details: API keys stored with obfuscated encryption on your machine. Keys never leave your device.
 ---
 
 ## How It Works

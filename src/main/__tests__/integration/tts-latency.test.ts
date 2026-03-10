@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest'
-import { TtsEngine } from '../../tts-engine'
+import { ElevenLabsTts } from '../../tts/elevenlabs-tts'
 import { requireApiKey } from './helpers'
 import { TTS_MODELS } from '../../../shared/types'
 
@@ -15,10 +15,10 @@ beforeAll(() => {
 describe('TTS Latency Comparison', () => {
   for (const model of TTS_MODELS) {
     it(`${model.name} (${model.id}): time-to-first-chunk and total time`, async () => {
-      const engine = new TtsEngine({
+      const engine = new ElevenLabsTts({
         apiKey,
         voiceId: VOICE_ID,
-        modelId: model.id,
+        modelId: model.id
       })
 
       const startTime = performance.now()
@@ -50,16 +50,16 @@ describe('TTS Latency Comparison', () => {
   }
 
   it('measures chunk arrival intervals for default model', async () => {
-    const engine = new TtsEngine({
+    const engine = new ElevenLabsTts({
       apiKey,
       voiceId: VOICE_ID,
-      modelId: 'eleven_multilingual_v2',
+      modelId: 'eleven_multilingual_v2'
     })
 
     const chunkTimes: number[] = []
     const startTime = performance.now()
 
-    for await (const chunk of engine.stream(TEST_TEXT)) {
+    for await (const _chunk of engine.stream(TEST_TEXT)) {
       chunkTimes.push(performance.now() - startTime)
     }
 
@@ -75,7 +75,12 @@ describe('TTS Latency Comparison', () => {
     console.log(`     Total chunks:  ${chunkTimes.length}`)
     console.log(`     Avg interval:  ${avgInterval.toFixed(0)}ms`)
     console.log(`     Max interval:  ${maxInterval.toFixed(0)}ms`)
-    console.log(`     First 5 intervals: ${intervals.slice(0, 5).map(i => i.toFixed(0) + 'ms').join(', ')}`)
+    console.log(
+      `     First 5 intervals: ${intervals
+        .slice(0, 5)
+        .map((i) => `${i.toFixed(0)}ms`)
+        .join(', ')}`
+    )
 
     // Max interval should not exceed 2s (would cause audible gap)
     expect(maxInterval).toBeLessThan(2000)

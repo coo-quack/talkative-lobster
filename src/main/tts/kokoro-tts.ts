@@ -1,4 +1,4 @@
-import type { ITtsProvider } from './tts-provider'
+import type { ITtsProvider, TtsAudioFormat } from './tts-provider'
 
 const DEFAULT_URL = 'http://localhost:8880'
 const DEFAULT_VOICE = 'jf_alpha'
@@ -6,6 +6,8 @@ export class KokoroTts implements ITtsProvider {
   private url: string
   private voice: string
   private stopped = false
+
+  readonly audioFormat: TtsAudioFormat = { type: 'encoded' }
 
   get isStopped(): boolean {
     return this.stopped
@@ -26,8 +28,8 @@ export class KokoroTts implements ITtsProvider {
         model: 'kokoro',
         input: text,
         voice: this.voice,
-        response_format: 'mp3',
-      }),
+        response_format: 'mp3'
+      })
     })
     if (!res.ok) throw new Error(`Kokoro TTS failed: ${res.status}`)
 

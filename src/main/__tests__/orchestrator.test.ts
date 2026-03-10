@@ -3,27 +3,26 @@ import type { ITtsProvider } from '../tts/tts-provider'
 
 // ── Electron mocks ──────────────────────────────────────────────────
 
-const ipcOnHandlers = new Map<string, Function>()
-const ipcHandleHandlers = new Map<string, Function>()
+type IpcHandler = (...args: unknown[]) => unknown
+
+const ipcOnHandlers = new Map<string, IpcHandler>()
+const ipcHandleHandlers = new Map<string, IpcHandler>()
 const webContentsSend = vi.fn()
 
 vi.mock('electron', () => ({
   BrowserWindow: vi.fn(),
+  app: { getPath: () => '/tmp/lobster-test' },
   ipcMain: {
-    on: vi.fn((channel: string, handler: Function) => {
+    on: vi.fn((channel: string, handler: IpcHandler) => {
       ipcOnHandlers.set(channel, handler)
     }),
-    handle: vi.fn((channel: string, handler: Function) => {
+    handle: vi.fn((channel: string, handler: IpcHandler) => {
       ipcHandleHandlers.set(channel, handler)
     }),
     removeHandler: vi.fn(),
-    removeAllListeners: vi.fn(),
-  },
-  safeStorage: {
-    isEncryptionAvailable: () => false,
-    encryptString: vi.fn(),
-    decryptString: vi.fn(),
-  },
+    removeListener: vi.fn(),
+    removeAllListeners: vi.fn()
+  }
 }))
 
 // ── FS mock (prevent real disk access) ──────────────────────────────
@@ -34,7 +33,7 @@ vi.mock('node:fs', () => ({
   writeFileSync: vi.fn(),
   mkdirSync: vi.fn(),
   accessSync: vi.fn(),
-  constants: { X_OK: 1 },
+  constants: { X_OK: 1 }
 }))
 
 // ── OpenClaw mock ───────────────────────────────────────────────────
@@ -44,11 +43,11 @@ const mockWsClient = {
   connect: vi.fn().mockResolvedValue(undefined),
   disconnect: vi.fn(),
   sendMessage: vi.fn(),
-  cancelActiveRuns: vi.fn(),
+  cancelActiveRuns: vi.fn()
 }
 
 vi.mock('../openclaw-client', () => ({
-  OpenClawClient: vi.fn().mockImplementation(() => mockWsClient),
+  OpenClawClient: vi.fn().mockImplementation(() => mockWsClient)
 }))
 
 // ── STT mock ────────────────────────────────────────────────────────
@@ -57,8 +56,8 @@ const mockSttTranscribe = vi.fn()
 
 vi.mock('../stt-engine', () => ({
   SttEngine: vi.fn().mockImplementation(() => ({
-    transcribe: mockSttTranscribe,
-  })),
+    transcribe: mockSttTranscribe
+  }))
 }))
 
 // ── TTS mocks ───────────────────────────────────────────────────────
@@ -66,31 +65,36 @@ vi.mock('../stt-engine', () => ({
 function createMockTtsProvider(chunks: Buffer[] = [Buffer.from([1, 2, 3])]): ITtsProvider {
   let stopped = false
   return {
-    get isStopped() { return stopped },
-    stop() { stopped = true },
+    audioFormat: { type: 'encoded' as const },
+    get isStopped() {
+      return stopped
+    },
+    stop() {
+      stopped = true
+    },
     async *stream(_text: string) {
       for (const chunk of chunks) {
         if (stopped) return
         yield chunk
       }
-    },
+    }
   }
 }
 
 vi.mock('../tts/elevenlabs-tts', () => ({
-  ElevenLabsTts: vi.fn().mockImplementation(() => createMockTtsProvider()),
+  ElevenLabsTts: vi.fn().mockImplementation(() => createMockTtsProvider())
 }))
 
 vi.mock('../tts/voicevox-tts', () => ({
-  VoicevoxTts: vi.fn().mockImplementation(() => createMockTtsProvider()),
+  VoicevoxTts: vi.fn().mockImplementation(() => createMockTtsProvider())
 }))
 
 vi.mock('../tts/kokoro-tts', () => ({
-  KokoroTts: vi.fn().mockImplementation(() => createMockTtsProvider()),
+  KokoroTts: vi.fn().mockImplementation(() => createMockTtsProvider())
 }))
 
 vi.mock('../tts/piper-tts', () => ({
-  PiperTts: vi.fn().mockImplementation(() => createMockTtsProvider()),
+  PiperTts: vi.fn().mockImplementation(() => createMockTtsProvider())
 }))
 
 // ── Import after mocks ─────────────────────────────────────────────
@@ -98,19 +102,38 @@ vi.mock('../tts/piper-tts', () => ({
 import { Orchestrator } from '../orchestrator'
 import { IPC } from '../../shared/ipc-channels'
 
+// ── Type alias for accessing Orchestrator private members in tests ──
+
+type OrchestratorInternals = {
+  actor: { getSnapshot: () => { value: string }; send: (e: Record<string, unknown>) => void }
+  ttsProvider: ITtsProvider | null
+  ttsPlaying: boolean
+  sttInProgress: boolean
+  sttEngine: { transcribe: ReturnType<typeof vi.fn> } | null
+  wsClient: typeof mockWsClient
+  messages: Array<{ role: string; text: string }>
+  handleTts: (text: string) => Promise<void>
+  handleBatchStt: (audio: Float32Array) => Promise<void>
+  handleSttResult: (text: string) => void
+}
+
+function internals(o: Orchestrator): OrchestratorInternals {
+  return o as unknown as OrchestratorInternals
+}
+
 function createMockWindow() {
   return {
     isDestroyed: vi.fn().mockReturnValue(false),
     webContents: {
       send: webContentsSend,
-      on: vi.fn(),
-    },
-  } as any
+      on: vi.fn()
+    }
+  } as unknown as import('electron').BrowserWindow
 }
 
 describe('Orchestrator', () => {
   let orchestrator: Orchestrator
-  let win: any
+  let win: import('electron').BrowserWindow
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -124,24 +147,18 @@ describe('Orchestrator', () => {
     orchestrator.stop()
   })
 
-  function getIpcOn(channel: string): Function {
+  function getIpcOn(channel: string): IpcHandler {
     const handler = ipcOnHandlers.get(channel)
     if (!handler) throw new Error(`No ipc.on handler for ${channel}`)
     return handler
   }
 
-  function getIpcHandle(channel: string): Function {
-    const handler = ipcHandleHandlers.get(channel)
-    if (!handler) throw new Error(`No ipc.handle handler for ${channel}`)
-    return handler
-  }
-
   function getState(): string {
-    return (orchestrator as any).actor.getSnapshot().value
+    return internals(orchestrator).actor.getSnapshot().value
   }
 
-  function sendEvent(type: string, data?: any) {
-    (orchestrator as any).actor.send(data ? { type, ...data } : { type })
+  function sendEvent(type: string, data?: Record<string, unknown>) {
+    internals(orchestrator).actor.send(data ? { type, ...data } : { type })
   }
 
   // ── Constructor & lifecycle ─────────────────────────────────────
@@ -198,8 +215,8 @@ describe('Orchestrator', () => {
 
       // Set up a TTS provider and wsClient
       const mockTts = createMockTtsProvider()
-      ;(orchestrator as any).ttsProvider = mockTts
-      ;(orchestrator as any).wsClient = mockWsClient
+      internals(orchestrator).ttsProvider = mockTts
+      internals(orchestrator).wsClient = mockWsClient
 
       getIpcOn(IPC.VOICE_START)()
       expect(getState()).toBe('listening')
@@ -214,7 +231,7 @@ describe('Orchestrator', () => {
       expect(getState()).toBe('thinking')
 
       const mockTts = createMockTtsProvider()
-      ;(orchestrator as any).ttsProvider = mockTts
+      internals(orchestrator).ttsProvider = mockTts
 
       getIpcOn(IPC.VOICE_START)()
       expect(getState()).toBe('listening')
@@ -229,17 +246,17 @@ describe('Orchestrator', () => {
       expect(getState()).toBe('speaking')
 
       const mockTts = createMockTtsProvider()
-      ;(orchestrator as any).ttsProvider = mockTts
-      ;(orchestrator as any).ttsPlaying = true
+      internals(orchestrator).ttsProvider = mockTts
+      internals(orchestrator).ttsPlaying = true
 
       getIpcOn(IPC.VOICE_START)()
       expect(getState()).toBe('listening')
-      expect((orchestrator as any).ttsPlaying).toBe(false)
+      expect(internals(orchestrator).ttsPlaying).toBe(false)
     })
 
     it('does not cancel in idle state', () => {
       const mockTts = createMockTtsProvider()
-      ;(orchestrator as any).ttsProvider = mockTts
+      internals(orchestrator).ttsProvider = mockTts
 
       getIpcOn(IPC.VOICE_START)()
       expect(getState()).toBe('listening')
@@ -270,17 +287,17 @@ describe('Orchestrator', () => {
       expect(getState()).toBe('speaking')
 
       const mockTts = createMockTtsProvider()
-      ;(orchestrator as any).ttsProvider = mockTts
-      ;(orchestrator as any).wsClient = mockWsClient
-      ;(orchestrator as any).ttsPlaying = true
-      ;(orchestrator as any).sttInProgress = true
+      internals(orchestrator).ttsProvider = mockTts
+      internals(orchestrator).wsClient = mockWsClient
+      internals(orchestrator).ttsPlaying = true
+      internals(orchestrator).sttInProgress = true
 
       getIpcOn(IPC.VOICE_STOP)()
       expect(getState()).toBe('idle')
       expect(mockTts.isStopped).toBe(true)
       expect(mockWsClient.cancelActiveRuns).toHaveBeenCalled()
-      expect((orchestrator as any).ttsPlaying).toBe(false)
-      expect((orchestrator as any).sttInProgress).toBe(false)
+      expect(internals(orchestrator).ttsPlaying).toBe(false)
+      expect(internals(orchestrator).sttInProgress).toBe(false)
     })
 
     it('cancels processing state', () => {
@@ -360,7 +377,7 @@ describe('Orchestrator', () => {
 
       getIpcOn(IPC.TTS_PLAYBACK_DONE)()
       expect(getState()).toBe('idle')
-      expect((orchestrator as any).ttsPlaying).toBe(false)
+      expect(internals(orchestrator).ttsPlaying).toBe(false)
     })
 
     it('transitions thinking → idle (audio finished before TTS_PLAYING)', () => {
@@ -403,12 +420,12 @@ describe('Orchestrator', () => {
       expect(getState()).toBe('speaking')
 
       const mockTts = createMockTtsProvider()
-      ;(orchestrator as any).ttsProvider = mockTts
+      internals(orchestrator).ttsProvider = mockTts
 
       getIpcOn(IPC.VOICE_INTERRUPT)()
       expect(getState()).toBe('listening')
       expect(mockTts.isStopped).toBe(true)
-      expect((orchestrator as any).ttsPlaying).toBe(false)
+      expect(internals(orchestrator).ttsPlaying).toBe(false)
     })
   })
 
@@ -420,43 +437,73 @@ describe('Orchestrator', () => {
     })
 
     it('sends TTS_DONE immediately when no TTS provider', async () => {
-      ;(orchestrator as any).ttsProvider = null
+      internals(orchestrator).ttsProvider = null
       sendEvent('SPEECH_START')
       sendEvent('SPEECH_END')
       sendEvent('STT_DONE', { text: 'hello' })
       expect(getState()).toBe('thinking')
 
-      await (orchestrator as any).handleTts('hello')
+      await internals(orchestrator).handleTts('hello')
       expect(getState()).toBe('idle')
     })
 
-    it('sends TTS_AUDIO and TTS_STOP when audio is produced', async () => {
+    it('sends TTS_FORMAT before TTS_AUDIO', async () => {
       const mockTts = createMockTtsProvider([Buffer.from([1, 2, 3])])
-      ;(orchestrator as any).ttsProvider = mockTts
+      internals(orchestrator).ttsProvider = mockTts
 
       sendEvent('SPEECH_START')
       sendEvent('SPEECH_END')
       sendEvent('STT_DONE', { text: 'hello' })
 
-      await (orchestrator as any).handleTts('hello')
+      await internals(orchestrator).handleTts('hello')
 
-      const audioCall = webContentsSend.mock.calls.find((c: any[]) => c[0] === IPC.TTS_AUDIO)
+      const calls = webContentsSend.mock.calls.map((c: unknown[]) => c[0])
+      const formatIdx = calls.indexOf(IPC.TTS_FORMAT)
+      const audioIdx = calls.indexOf(IPC.TTS_AUDIO)
+      expect(formatIdx).toBeGreaterThanOrEqual(0)
+      expect(audioIdx).toBeGreaterThan(formatIdx)
+    })
+
+    it('sends audio format info matching the provider', async () => {
+      const mockTts = createMockTtsProvider([Buffer.from([1, 2, 3])])
+      internals(orchestrator).ttsProvider = mockTts
+
+      await internals(orchestrator).handleTts('hello')
+
+      const formatCall = webContentsSend.mock.calls.find(
+        (c: unknown[]) => c[0] === IPC.TTS_FORMAT
+      )
+      expect(formatCall).toBeDefined()
+      expect(formatCall?.[1]).toEqual({ type: 'encoded' })
+    })
+
+    it('sends TTS_AUDIO and TTS_STOP when audio is produced', async () => {
+      const mockTts = createMockTtsProvider([Buffer.from([1, 2, 3])])
+      internals(orchestrator).ttsProvider = mockTts
+
+      sendEvent('SPEECH_START')
+      sendEvent('SPEECH_END')
+      sendEvent('STT_DONE', { text: 'hello' })
+
+      await internals(orchestrator).handleTts('hello')
+
+      const audioCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.TTS_AUDIO)
       expect(audioCall).toBeDefined()
 
-      const stopCall = webContentsSend.mock.calls.find((c: any[]) => c[0] === IPC.TTS_STOP)
+      const stopCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.TTS_STOP)
       expect(stopCall).toBeDefined()
     })
 
     it('does NOT send TTS_DONE when audio was sent (renderer controls lifecycle)', async () => {
       const mockTts = createMockTtsProvider([Buffer.from([1, 2, 3])])
-      ;(orchestrator as any).ttsProvider = mockTts
+      internals(orchestrator).ttsProvider = mockTts
 
       sendEvent('SPEECH_START')
       sendEvent('SPEECH_END')
       sendEvent('STT_DONE', { text: 'hello' })
       expect(getState()).toBe('thinking')
 
-      await (orchestrator as any).handleTts('hello')
+      await internals(orchestrator).handleTts('hello')
 
       // State should still be thinking — renderer sends TTS_PLAYBACK_DONE
       expect(getState()).toBe('thinking')
@@ -464,81 +511,95 @@ describe('Orchestrator', () => {
 
     it('sends TTS_DONE when no audio was sent and still in thinking', async () => {
       const mockTts = createMockTtsProvider([]) // No chunks
-      ;(orchestrator as any).ttsProvider = mockTts
+      internals(orchestrator).ttsProvider = mockTts
 
       sendEvent('SPEECH_START')
       sendEvent('SPEECH_END')
       sendEvent('STT_DONE', { text: 'hello' })
       expect(getState()).toBe('thinking')
 
-      await (orchestrator as any).handleTts('hello')
+      await internals(orchestrator).handleTts('hello')
       expect(getState()).toBe('idle')
     })
 
     it('does not send audio when TTS was stopped mid-stream', async () => {
       let streamCalled = false
       const mockTts: ITtsProvider = {
-        get isStopped() { return streamCalled },
-        stop() { streamCalled = true },
+        audioFormat: { type: 'encoded' },
+        get isStopped() {
+          return streamCalled
+        },
+        stop() {
+          streamCalled = true
+        },
         async *stream(_text: string) {
           streamCalled = true
           yield Buffer.from([1, 2, 3])
-        },
+        }
       }
-      ;(orchestrator as any).ttsProvider = mockTts
+      internals(orchestrator).ttsProvider = mockTts
 
-      await (orchestrator as any).handleTts('hello')
+      await internals(orchestrator).handleTts('hello')
 
-      const audioCall = webContentsSend.mock.calls.find((c: any[]) => c[0] === IPC.TTS_AUDIO)
+      const audioCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.TTS_AUDIO)
       expect(audioCall).toBeUndefined()
     })
 
     it('handles TTS error gracefully', async () => {
       const mockTts: ITtsProvider = {
-        get isStopped() { return false },
-        stop() {},
-        async *stream(_text: string) {
-          throw new Error('TTS connection failed')
+        audioFormat: { type: 'encoded' },
+        get isStopped() {
+          return false
         },
+        stop() {},
+        // biome-ignore lint/correctness/useYield: throw-only generator for error testing
+        stream: async function* (_text: string): AsyncGenerator<Buffer> {
+          throw new Error('TTS connection failed')
+        }
       }
-      ;(orchestrator as any).ttsProvider = mockTts
+      internals(orchestrator).ttsProvider = mockTts
 
-      await (orchestrator as any).handleTts('hello')
+      await internals(orchestrator).handleTts('hello')
 
-      const errorCall = webContentsSend.mock.calls.find((c: any[]) => c[0] === IPC.ERROR)
+      const errorCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.ERROR)
       expect(errorCall).toBeDefined()
-      expect(errorCall[1]).toContain('TTS error')
+      expect(errorCall?.[1]).toContain('TTS error')
     })
 
     it('handles ECONNREFUSED error with descriptive message', async () => {
       const mockTts: ITtsProvider = {
-        get isStopped() { return false },
-        stop() {},
-        async *stream(_text: string) {
-          const err = new Error('fetch failed') as any
-          err.cause = { code: 'ECONNREFUSED', address: '127.0.0.1', port: 50021 }
-          throw err
+        audioFormat: { type: 'encoded' },
+        get isStopped() {
+          return false
         },
+        stop() {},
+        // biome-ignore lint/correctness/useYield: throw-only generator for error testing
+        stream: async function* (_text: string): AsyncGenerator<Buffer> {
+          const err = Object.assign(new Error('fetch failed'), {
+            cause: { code: 'ECONNREFUSED', address: '127.0.0.1', port: 50021 }
+          })
+          throw err
+        }
       }
-      ;(orchestrator as any).ttsProvider = mockTts
+      internals(orchestrator).ttsProvider = mockTts
 
-      await (orchestrator as any).handleTts('hello')
+      await internals(orchestrator).handleTts('hello')
 
-      const errorCall = webContentsSend.mock.calls.find((c: any[]) => c[0] === IPC.ERROR)
+      const errorCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.ERROR)
       expect(errorCall).toBeDefined()
-      expect(errorCall[1]).toContain('TTS connection refused')
-      expect(errorCall[1]).toContain('127.0.0.1')
+      expect(errorCall?.[1]).toContain('TTS connection refused')
+      expect(errorCall?.[1]).toContain('127.0.0.1')
     })
 
     it('stops previous TTS when new TTS starts while playing', async () => {
       const mockTts = createMockTtsProvider([Buffer.from([1, 2])])
-      ;(orchestrator as any).ttsProvider = mockTts
-      ;(orchestrator as any).ttsPlaying = true
+      internals(orchestrator).ttsProvider = mockTts
+      internals(orchestrator).ttsPlaying = true
 
-      await (orchestrator as any).handleTts('hello')
+      await internals(orchestrator).handleTts('hello')
 
       expect(mockTts.isStopped).toBe(true)
-      const cancelCall = webContentsSend.mock.calls.find((c: any[]) => c[0] === IPC.TTS_CANCEL)
+      const cancelCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.TTS_CANCEL)
       expect(cancelCall).toBeDefined()
     })
   })
@@ -548,13 +609,14 @@ describe('Orchestrator', () => {
   describe('handleBatchStt', () => {
     beforeEach(async () => {
       await orchestrator.start()
-      ;(orchestrator as any).sttEngine = { transcribe: mockSttTranscribe }
+      internals(orchestrator).sttEngine = { transcribe: mockSttTranscribe }
+      internals(orchestrator).wsClient = mockWsClient
     })
 
     it('processes audio when in idle state', async () => {
       mockSttTranscribe.mockResolvedValue('こんにちは')
       const audio = new Float32Array(16000)
-      await (orchestrator as any).handleBatchStt(audio)
+      await internals(orchestrator).handleBatchStt(audio)
 
       expect(mockSttTranscribe).toHaveBeenCalled()
       expect(getState()).toBe('thinking')
@@ -566,7 +628,7 @@ describe('Orchestrator', () => {
 
       mockSttTranscribe.mockResolvedValue('こんにちは')
       const audio = new Float32Array(16000)
-      await (orchestrator as any).handleBatchStt(audio)
+      await internals(orchestrator).handleBatchStt(audio)
 
       expect(getState()).toBe('thinking')
     })
@@ -577,7 +639,7 @@ describe('Orchestrator', () => {
       expect(getState()).toBe('processing')
 
       const audio = new Float32Array(16000)
-      await (orchestrator as any).handleBatchStt(audio)
+      await internals(orchestrator).handleBatchStt(audio)
 
       expect(mockSttTranscribe).not.toHaveBeenCalled()
     })
@@ -589,7 +651,7 @@ describe('Orchestrator', () => {
       expect(getState()).toBe('thinking')
 
       const audio = new Float32Array(16000)
-      await (orchestrator as any).handleBatchStt(audio)
+      await internals(orchestrator).handleBatchStt(audio)
 
       expect(mockSttTranscribe).not.toHaveBeenCalled()
     })
@@ -602,16 +664,16 @@ describe('Orchestrator', () => {
       expect(getState()).toBe('speaking')
 
       const audio = new Float32Array(16000)
-      await (orchestrator as any).handleBatchStt(audio)
+      await internals(orchestrator).handleBatchStt(audio)
 
       expect(mockSttTranscribe).not.toHaveBeenCalled()
     })
 
     it('prevents concurrent STT processing', async () => {
-      ;(orchestrator as any).sttInProgress = true
+      internals(orchestrator).sttInProgress = true
 
       const audio = new Float32Array(16000)
-      await (orchestrator as any).handleBatchStt(audio)
+      await internals(orchestrator).handleBatchStt(audio)
 
       expect(mockSttTranscribe).not.toHaveBeenCalled()
     })
@@ -619,16 +681,16 @@ describe('Orchestrator', () => {
     it('resets sttInProgress after processing', async () => {
       mockSttTranscribe.mockResolvedValue('hello')
       const audio = new Float32Array(16000)
-      await (orchestrator as any).handleBatchStt(audio)
+      await internals(orchestrator).handleBatchStt(audio)
 
-      expect((orchestrator as any).sttInProgress).toBe(false)
+      expect(internals(orchestrator).sttInProgress).toBe(false)
     })
 
     it('does nothing when no STT engine configured', async () => {
-      ;(orchestrator as any).sttEngine = null
+      internals(orchestrator).sttEngine = null
 
       const audio = new Float32Array(16000)
-      await (orchestrator as any).handleBatchStt(audio)
+      await internals(orchestrator).handleBatchStt(audio)
 
       expect(mockSttTranscribe).not.toHaveBeenCalled()
     })
@@ -636,10 +698,10 @@ describe('Orchestrator', () => {
     it('handles STT error and sends STT_FAIL', async () => {
       mockSttTranscribe.mockRejectedValue(new Error('STT failed'))
       const audio = new Float32Array(16000)
-      await (orchestrator as any).handleBatchStt(audio)
+      await internals(orchestrator).handleBatchStt(audio)
 
       expect(getState()).toBe('idle')
-      const errorCall = webContentsSend.mock.calls.find((c: any[]) => c[0] === IPC.ERROR)
+      const errorCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.ERROR)
       expect(errorCall).toBeDefined()
     })
 
@@ -648,7 +710,7 @@ describe('Orchestrator', () => {
       expect(getState()).toBe('idle')
 
       const audio = new Float32Array(16000)
-      await (orchestrator as any).handleBatchStt(audio)
+      await internals(orchestrator).handleBatchStt(audio)
 
       // Should have gone through idle → listening → processing → thinking
       expect(getState()).toBe('thinking')
@@ -660,53 +722,65 @@ describe('Orchestrator', () => {
   describe('handleSttResult', () => {
     beforeEach(async () => {
       await orchestrator.start()
+      internals(orchestrator).wsClient = mockWsClient
       sendEvent('SPEECH_START')
       sendEvent('SPEECH_END')
       expect(getState()).toBe('processing')
     })
 
     it('sends STT_DONE and chat message for valid text', () => {
-      ;(orchestrator as any).handleSttResult('こんにちは')
+      internals(orchestrator).handleSttResult('こんにちは')
 
       expect(getState()).toBe('thinking')
-      const chatMsg = webContentsSend.mock.calls.find((c: any[]) => c[0] === IPC.CHAT_MESSAGE)
+      const chatMsg = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.CHAT_MESSAGE)
       expect(chatMsg).toBeDefined()
-      expect(chatMsg[1].text).toBe('こんにちは')
-      expect(chatMsg[1].role).toBe('user')
+      expect(chatMsg?.[1].text).toBe('こんにちは')
+      expect(chatMsg?.[1].role).toBe('user')
     })
 
     it('filters non-speech and sends STT_FAIL', () => {
-      ;(orchestrator as any).handleSttResult('ご視聴ありがとうございました')
+      internals(orchestrator).handleSttResult('ご視聴ありがとうございました')
 
       expect(getState()).toBe('idle')
     })
 
     it('sends STT_FAIL for empty text', () => {
-      ;(orchestrator as any).handleSttResult('')
+      internals(orchestrator).handleSttResult('')
 
       expect(getState()).toBe('idle')
     })
 
     it('filters whisper artifacts like [music]', () => {
-      ;(orchestrator as any).handleSttResult('[music]')
+      internals(orchestrator).handleSttResult('[music]')
 
       expect(getState()).toBe('idle')
     })
 
     it('sends message to WebSocket client', () => {
-      ;(orchestrator as any).wsClient = mockWsClient
-      ;(orchestrator as any).handleSttResult('hello world')
+      internals(orchestrator).wsClient = mockWsClient
+      internals(orchestrator).handleSttResult('hello world')
 
-      expect(mockWsClient.sendMessage).toHaveBeenCalledWith('hello world')
+      const sentText = mockWsClient.sendMessage.mock.calls[0][0] as string
+      expect(sentText).toContain('hello world')
     })
 
     it('adds message to chat history', () => {
-      ;(orchestrator as any).handleSttResult('test message')
+      internals(orchestrator).handleSttResult('test message')
 
-      const messages = (orchestrator as any).messages
+      const messages = internals(orchestrator).messages
       expect(messages.length).toBe(1)
       expect(messages[0].text).toBe('test message')
       expect(messages[0].role).toBe('user')
+    })
+
+    it('cancels and sends error when gateway is not connected', () => {
+      internals(orchestrator).wsClient = null as unknown as typeof mockWsClient
+      internals(orchestrator).handleSttResult('hello')
+
+      expect(getState()).toBe('idle')
+      const errorCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.ERROR)
+      expect(errorCall).toBeDefined()
+      expect(errorCall?.[1]).toContain('Gateway not connected')
     })
   })
 
@@ -715,13 +789,14 @@ describe('Orchestrator', () => {
   describe('CHAT_SEND', () => {
     beforeEach(async () => {
       await orchestrator.start()
-      ;(orchestrator as any).wsClient = mockWsClient
+      internals(orchestrator).wsClient = mockWsClient
     })
 
     it('sends message via WS and transitions idle → thinking', () => {
       getIpcOn(IPC.CHAT_SEND)({}, 'hello from text')
 
-      expect(mockWsClient.sendMessage).toHaveBeenCalledWith('hello from text')
+      const sentText = mockWsClient.sendMessage.mock.calls[0][0] as string
+      expect(sentText).toContain('hello from text')
       // idle → listening → processing → thinking
       expect(getState()).toBe('thinking')
     })
@@ -732,7 +807,8 @@ describe('Orchestrator', () => {
 
       getIpcOn(IPC.CHAT_SEND)({}, 'hello from text')
 
-      expect(mockWsClient.sendMessage).toHaveBeenCalledWith('hello from text')
+      const sentText = mockWsClient.sendMessage.mock.calls[0][0] as string
+      expect(sentText).toContain('hello from text')
       // listening → SPEECH_END → processing → STT_DONE → thinking
       expect(getState()).toBe('thinking')
     })
@@ -740,10 +816,21 @@ describe('Orchestrator', () => {
     it('adds message to history', () => {
       getIpcOn(IPC.CHAT_SEND)({}, 'test text')
 
-      const messages = (orchestrator as any).messages
+      const messages = internals(orchestrator).messages
       expect(messages.length).toBe(1)
       expect(messages[0].role).toBe('user')
       expect(messages[0].text).toBe('test text')
+    })
+
+    it('cancels and sends error when gateway is not connected', () => {
+      internals(orchestrator).wsClient = null as unknown as typeof mockWsClient
+
+      getIpcOn(IPC.CHAT_SEND)({}, 'hello')
+
+      expect(getState()).toBe('idle')
+      const errorCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.ERROR)
+      expect(errorCall).toBeDefined()
+      expect(errorCall?.[1]).toContain('Gateway not connected')
     })
   })
 
@@ -755,19 +842,19 @@ describe('Orchestrator', () => {
 
       sendEvent('SPEECH_START')
       const stateCall = webContentsSend.mock.calls.find(
-        (c: any[]) => c[0] === IPC.VOICE_STATE_CHANGED && c[1] === 'listening'
+        (c: unknown[]) => c[0] === IPC.VOICE_STATE_CHANGED && c[1] === 'listening'
       )
       expect(stateCall).toBeDefined()
     })
 
     it('does not send to destroyed window', async () => {
-      win.isDestroyed.mockReturnValue(true)
+      vi.mocked(win.isDestroyed).mockReturnValue(true)
       await orchestrator.start()
 
       sendEvent('SPEECH_START')
       // webContentsSend should not be called since window is destroyed
       const calls = webContentsSend.mock.calls.filter(
-        (c: any[]) => c[0] === IPC.VOICE_STATE_CHANGED && c[1] === 'listening'
+        (c: unknown[]) => c[0] === IPC.VOICE_STATE_CHANGED && c[1] === 'listening'
       )
       expect(calls.length).toBe(0)
     })

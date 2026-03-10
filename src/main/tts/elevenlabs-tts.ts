@@ -1,5 +1,7 @@
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js'
-import type { ITtsProvider } from './tts-provider'
+import type { ITtsProvider, TtsAudioFormat } from './tts-provider'
+
+const PCM_SAMPLE_RATE = 24000
 
 interface ElevenLabsTtsConfig {
   apiKey: string
@@ -12,6 +14,13 @@ export class ElevenLabsTts implements ITtsProvider {
   private voiceId: string
   private modelId: string
   private stopped = false
+
+  readonly audioFormat: TtsAudioFormat = {
+    type: 'pcm',
+    sampleRate: PCM_SAMPLE_RATE,
+    channels: 1,
+    bitDepth: 16
+  }
 
   get isStopped(): boolean {
     return this.stopped
@@ -28,7 +37,7 @@ export class ElevenLabsTts implements ITtsProvider {
     const audioStream = await this.client.textToSpeech.stream(this.voiceId, {
       text,
       modelId: this.modelId,
-      optimizeStreamingLatency: 2,
+      outputFormat: `pcm_${PCM_SAMPLE_RATE}`
     })
     for await (const chunk of audioStream) {
       if (this.stopped) return

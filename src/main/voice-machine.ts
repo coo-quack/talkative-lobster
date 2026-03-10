@@ -9,46 +9,46 @@ export const voiceMachine = setup({
       | { type: 'STT_FAIL' }
       | { type: 'TTS_PLAYING' }
       | { type: 'TTS_DONE' }
-      | { type: 'CANCEL' },
-  },
+      | { type: 'CANCEL' }
+  }
 }).createMachine({
   id: 'voice',
   initial: 'idle',
   states: {
     idle: {
-      on: { SPEECH_START: 'listening' },
+      on: { SPEECH_START: 'listening' }
     },
     listening: {
       after: {
-        10000: 'idle',
+        10000: 'idle'
       },
       on: {
         SPEECH_END: 'processing',
-        CANCEL: 'idle',
-      },
+        CANCEL: 'idle'
+      }
     },
     processing: {
       on: {
         STT_DONE: 'thinking',
         STT_FAIL: 'idle',
         SPEECH_START: 'listening',
-        CANCEL: 'idle',
-      },
+        CANCEL: 'idle'
+      }
     },
     thinking: {
       on: {
         TTS_PLAYING: 'speaking',
         TTS_DONE: 'idle',
         SPEECH_START: 'listening',
-        CANCEL: 'idle',
-      },
+        CANCEL: 'idle'
+      }
     },
     speaking: {
       on: {
         TTS_DONE: 'idle',
         SPEECH_START: 'listening',
-        CANCEL: 'idle',
-      },
-    },
-  },
+        CANCEL: 'idle'
+      }
+    }
+  }
 })

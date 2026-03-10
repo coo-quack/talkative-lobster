@@ -26,7 +26,9 @@ export function useSpeakerMonitor(enabled: boolean) {
       rafRef.current = 0
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop())
+      streamRef.current.getTracks().forEach((t) => {
+        t.stop()
+      })
       streamRef.current = null
     }
     if (ctxRef.current && ctxRef.current.state !== 'closed') {
@@ -46,16 +48,20 @@ export function useSpeakerMonitor(enabled: boolean) {
       // navigator.mediaDevices.getDisplayMedia with audio captures system sound
       const stream = await navigator.mediaDevices.getDisplayMedia({
         audio: true,
-        video: { width: 1, height: 1, frameRate: 1 }, // minimal video (required by API)
+        video: { width: 1, height: 1, frameRate: 1 } // minimal video (required by API)
       })
 
       // Stop the video track immediately — we only need audio
-      stream.getVideoTracks().forEach((t) => t.stop())
+      stream.getVideoTracks().forEach((t) => {
+        t.stop()
+      })
 
       const audioTracks = stream.getAudioTracks()
       if (audioTracks.length === 0) {
         console.log('[speaker-monitor] No audio track from system capture')
-        stream.getTracks().forEach((t) => t.stop())
+        stream.getTracks().forEach((t) => {
+          t.stop()
+        })
         return
       }
 
@@ -104,8 +110,11 @@ export function useSpeakerMonitor(enabled: boolean) {
 
       rafRef.current = requestAnimationFrame(detect)
       console.log('[speaker-monitor] System audio monitoring started')
-    } catch (err: any) {
-      console.log('[speaker-monitor] System audio capture not available:', err?.message)
+    } catch (err: unknown) {
+      console.log(
+        '[speaker-monitor] System audio capture not available:',
+        err instanceof Error ? err.message : err
+      )
       // Not critical — if capture fails, VAD runs without speaker gating
     }
   }, [])

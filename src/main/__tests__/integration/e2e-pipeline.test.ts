@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest'
-import { TtsEngine } from '../../tts-engine'
+import { ElevenLabsTts } from '../../tts/elevenlabs-tts'
 import { SttEngine } from '../../stt-engine'
-import { requireApiKey, float32ToWav } from './helpers'
+import { requireApiKey } from './helpers'
 
 let elevenlabsKey: string
 let openaiKey: string | null
@@ -18,17 +18,23 @@ beforeAll(() => {
 describe('E2E Voice Pipeline', () => {
   it('TTS → raw audio → STT roundtrip', async () => {
     // Step 1: Generate speech audio via TTS
-    const ttsEngine = new TtsEngine({
+    const ttsEngine = new ElevenLabsTts({
       apiKey: elevenlabsKey,
       voiceId: 'pFZP5JQG7iQjIQuC4Bku',
-      modelId: 'eleven_multilingual_v2',
+      modelId: 'eleven_multilingual_v2'
     })
 
     const ttsStart = performance.now()
-    const ttsAudio = await ttsEngine.synthesize('こんにちは、元気ですか')
+    const chunks: Buffer[] = []
+    for await (const chunk of ttsEngine.stream('こんにちは、元気ですか')) {
+      chunks.push(chunk)
+    }
+    const ttsAudio = Buffer.concat(chunks)
     const ttsTime = performance.now() - ttsStart
 
-    console.log(`\n  📊 TTS synthesize: ${ttsTime.toFixed(0)}ms, ${(ttsAudio.length / 1024).toFixed(1)}KB`)
+    console.log(
+      `\n  📊 TTS synthesize: ${ttsTime.toFixed(0)}ms, ${(ttsAudio.length / 1024).toFixed(1)}KB`
+    )
 
     expect(ttsAudio.length).toBeGreaterThan(0)
 
@@ -47,9 +53,8 @@ describe('E2E Voice Pipeline', () => {
       providers: {
         elevenlabs: true,
         openaiWhisper: !!openaiKey,
-        localWhisper: false,
-        webSpeech: false,
-      },
+        localWhisper: false
+      }
     })
 
     // Create a simple tone WAV to test the STT pipeline accepts it
@@ -80,15 +85,14 @@ describe('E2E Voice Pipeline', () => {
       providers: {
         elevenlabs: true,
         openaiWhisper: false,
-        localWhisper: false,
-        webSpeech: false,
-      },
+        localWhisper: false
+      }
     })
 
-    const ttsEngine = new TtsEngine({
+    const ttsEngine = new ElevenLabsTts({
       apiKey: elevenlabsKey,
       voiceId: 'pFZP5JQG7iQjIQuC4Bku',
-      modelId: 'eleven_multilingual_v2',
+      modelId: 'eleven_multilingual_v2'
     })
 
     // Step 1: STT (with silence - just testing timing)

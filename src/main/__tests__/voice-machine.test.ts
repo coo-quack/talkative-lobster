@@ -1,12 +1,18 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createActor } from 'xstate'
+import { createActor, type EventFromLogic } from 'xstate'
 import { voiceMachine } from '../voice-machine'
+
+type VoiceEvent = EventFromLogic<typeof voiceMachine>
+
+function toEvent(name: string): VoiceEvent {
+  if (name === 'STT_DONE') return { type: 'STT_DONE', text: 'test' }
+  return { type: name } as VoiceEvent
+}
 
 function actorSnapshot(events: string[]) {
   const actor = createActor(voiceMachine)
   actor.start()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for (const e of events) actor.send({ type: e } as any)
+  for (const e of events) actor.send(toEvent(e))
   const snap = actor.getSnapshot()
   actor.stop()
   return snap.value
@@ -31,15 +37,21 @@ describe('voiceMachine', () => {
   })
 
   it('thinking → speaking on TTS_PLAYING', () => {
-    expect(actorSnapshot(['SPEECH_START', 'SPEECH_END', 'STT_DONE', 'TTS_PLAYING'])).toBe('speaking')
+    expect(actorSnapshot(['SPEECH_START', 'SPEECH_END', 'STT_DONE', 'TTS_PLAYING'])).toBe(
+      'speaking'
+    )
   })
 
   it('speaking → idle on TTS_DONE', () => {
-    expect(actorSnapshot(['SPEECH_START', 'SPEECH_END', 'STT_DONE', 'TTS_PLAYING', 'TTS_DONE'])).toBe('idle')
+    expect(
+      actorSnapshot(['SPEECH_START', 'SPEECH_END', 'STT_DONE', 'TTS_PLAYING', 'TTS_DONE'])
+    ).toBe('idle')
   })
 
   it('speaking → idle on CANCEL', () => {
-    expect(actorSnapshot(['SPEECH_START', 'SPEECH_END', 'STT_DONE', 'TTS_PLAYING', 'CANCEL'])).toBe('idle')
+    expect(actorSnapshot(['SPEECH_START', 'SPEECH_END', 'STT_DONE', 'TTS_PLAYING', 'CANCEL'])).toBe(
+      'idle'
+    )
   })
 
   // Interruption: processing/thinking/speaking → listening
@@ -48,11 +60,15 @@ describe('voiceMachine', () => {
   })
 
   it('thinking → listening on SPEECH_START (interruption)', () => {
-    expect(actorSnapshot(['SPEECH_START', 'SPEECH_END', 'STT_DONE', 'SPEECH_START'])).toBe('listening')
+    expect(actorSnapshot(['SPEECH_START', 'SPEECH_END', 'STT_DONE', 'SPEECH_START'])).toBe(
+      'listening'
+    )
   })
 
   it('speaking → listening on SPEECH_START (interruption)', () => {
-    expect(actorSnapshot(['SPEECH_START', 'SPEECH_END', 'STT_DONE', 'TTS_PLAYING', 'SPEECH_START'])).toBe('listening')
+    expect(
+      actorSnapshot(['SPEECH_START', 'SPEECH_END', 'STT_DONE', 'TTS_PLAYING', 'SPEECH_START'])
+    ).toBe('listening')
   })
 
   // Edge cases
@@ -119,17 +135,32 @@ describe('voiceMachine', () => {
 
   // Full conversation cycle
   it('completes full conversation cycle', () => {
-    const events = ['SPEECH_START', 'SPEECH_END', 'STT_DONE', 'TTS_PLAYING', 'TTS_DONE', 'SPEECH_START', 'SPEECH_END', 'STT_DONE', 'TTS_PLAYING', 'TTS_DONE']
+    const events = [
+      'SPEECH_START',
+      'SPEECH_END',
+      'STT_DONE',
+      'TTS_PLAYING',
+      'TTS_DONE',
+      'SPEECH_START',
+      'SPEECH_END',
+      'STT_DONE',
+      'TTS_PLAYING',
+      'TTS_DONE'
+    ]
     expect(actorSnapshot(events)).toBe('idle')
   })
 
   // Multiple interruptions
   it('handles multiple consecutive interruptions', () => {
     const events = [
-      'SPEECH_START', 'SPEECH_END', 'STT_DONE', 'TTS_PLAYING', // speaking
+      'SPEECH_START',
+      'SPEECH_END',
+      'STT_DONE',
+      'TTS_PLAYING', // speaking
       'SPEECH_START', // interrupt → listening
-      'SPEECH_END', 'STT_DONE', // thinking
-      'SPEECH_START', // interrupt again → listening
+      'SPEECH_END',
+      'STT_DONE', // thinking
+      'SPEECH_START' // interrupt again → listening
     ]
     expect(actorSnapshot(events)).toBe('listening')
   })

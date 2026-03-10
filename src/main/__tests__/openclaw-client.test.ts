@@ -6,7 +6,7 @@ vi.mock('node:fs', () => ({
   existsSync: vi.fn().mockReturnValue(false),
   readFileSync: vi.fn(),
   writeFileSync: vi.fn(),
-  mkdirSync: vi.fn(),
+  mkdirSync: vi.fn()
 }))
 
 // Mock ws module with challenge-response simulation
@@ -30,7 +30,7 @@ vi.mock('ws', () => {
             JSON.stringify({
               type: 'event',
               event: 'connect.challenge',
-              payload: { nonce: 'test-nonce-123' },
+              payload: { nonce: 'test-nonce-123' }
             })
           )
         })
@@ -46,10 +46,7 @@ vi.mock('ws', () => {
       })
       if (connectCall) {
         const parsed = JSON.parse(connectCall[0])
-        this.emit(
-          'message',
-          JSON.stringify({ type: 'res', id: parsed.id, ok: true, payload: {} })
-        )
+        this.emit('message', JSON.stringify({ type: 'res', id: parsed.id, ok: true, payload: {} }))
       }
     }
 
@@ -72,11 +69,20 @@ vi.mock('ws', () => {
   return { default: MockWebSocket, WebSocket: MockWebSocket }
 })
 
-async function connectClient(client: OpenClawClient): Promise<any> {
+interface MockWs {
+  send: ReturnType<typeof vi.fn>
+  close: ReturnType<typeof vi.fn>
+  emit: (event: string, ...args: unknown[]) => boolean
+  resolveConnect: () => void
+  resolveChatSend: (runId: string) => void
+}
+
+async function connectClient(client: OpenClawClient): Promise<MockWs> {
   const connectPromise = client.connect()
   // Wait for challenge to arrive and connect request to be sent
   await new Promise((r) => setTimeout(r, 10))
-  const ws = client['ws'] as any
+  // biome-ignore lint/complexity/useLiteralKeys: accessing private member for testing
+  const ws = client['ws'] as unknown as MockWs
   ws.resolveConnect()
   await connectPromise
   return ws
@@ -100,7 +106,7 @@ describe('OpenClawClient', () => {
   it('sends connect request after receiving challenge', async () => {
     const ws = await connectClient(client)
     const calls = ws.send.mock.calls.map((c: string[]) => JSON.parse(c[0]))
-    const connectReq = calls.find((c: any) => c.method === 'connect')
+    const connectReq = calls.find((c: Record<string, unknown>) => c.method === 'connect')
     expect(connectReq).toBeDefined()
     expect(connectReq.params.auth.token).toBe('test-token')
     expect(connectReq.params.device.nonce).toBe('test-nonce-123')
@@ -112,7 +118,7 @@ describe('OpenClawClient', () => {
     client.sendMessage('hello')
     await new Promise((r) => setTimeout(r, 5))
     const calls = ws.send.mock.calls.map((c: string[]) => JSON.parse(c[0]))
-    const chatReq = calls.find((c: any) => c.method === 'chat.send')
+    const chatReq = calls.find((c: Record<string, unknown>) => c.method === 'chat.send')
     expect(chatReq).toBeDefined()
     expect(chatReq.params.message).toBe('hello')
     expect(chatReq.params.sessionKey).toBe('agent:main:lobster')
@@ -133,7 +139,7 @@ describe('OpenClawClient', () => {
       JSON.stringify({
         type: 'event',
         event: 'chat',
-        payload: { state: 'delta', runId: 'run-1', message: { text: 'Hello' } },
+        payload: { state: 'delta', runId: 'run-1', message: { text: 'Hello' } }
       })
     )
     expect(streamHandler).toHaveBeenCalledWith('Hello')
@@ -154,17 +160,19 @@ describe('OpenClawClient', () => {
       JSON.stringify({
         type: 'event',
         event: 'chat',
-        payload: { state: 'final', runId: 'run-2', message: { text: 'Full response' } },
+        payload: { state: 'final', runId: 'run-2', message: { text: 'Full response' } }
       })
     )
     expect(doneHandler).toHaveBeenCalledWith('Full response')
   })
 
   it('rejects pending requests on disconnect', async () => {
-    const ws = await connectClient(client)
+    await connectClient(client)
 
     // Access internal request method to create a pending request
-    const requestPromise = (client as any).request('test.method', { data: 'hello' })
+    const requestPromise = (
+      client as unknown as { request: (method: string, params: unknown) => Promise<unknown> }
+    ).request('test.method', { data: 'hello' })
 
     // Disconnect while request is pending
     client.disconnect()
@@ -190,7 +198,7 @@ describe('OpenClawClient', () => {
       JSON.stringify({
         type: 'event',
         event: 'chat',
-        payload: { state: 'error', runId: 'run-err', errorMessage: 'Rate limit exceeded' },
+        payload: { state: 'error', runId: 'run-err', errorMessage: 'Rate limit exceeded' }
       })
     )
 
@@ -207,7 +215,7 @@ describe('OpenClawClient', () => {
       JSON.stringify({
         type: 'event',
         event: 'chat',
-        payload: { state: 'delta', runId: 'unknown-run', message: { text: 'Ignored' } },
+        payload: { state: 'delta', runId: 'unknown-run', message: { text: 'Ignored' } }
       })
     )
     expect(streamHandler).not.toHaveBeenCalled()
@@ -234,7 +242,7 @@ describe('OpenClawClient', () => {
       JSON.stringify({
         type: 'event',
         event: 'chat',
-        payload: { state: 'delta', runId: 'run-cancel-1', message: { text: 'Should be ignored' } },
+        payload: { state: 'delta', runId: 'run-cancel-1', message: { text: 'Should be ignored' } }
       })
     )
     expect(streamHandler).not.toHaveBeenCalled()
@@ -245,7 +253,7 @@ describe('OpenClawClient', () => {
       JSON.stringify({
         type: 'event',
         event: 'chat',
-        payload: { state: 'final', runId: 'run-cancel-1', message: { text: 'Also ignored' } },
+        payload: { state: 'final', runId: 'run-cancel-1', message: { text: 'Also ignored' } }
       })
     )
     expect(doneHandler).not.toHaveBeenCalled()
@@ -272,7 +280,7 @@ describe('OpenClawClient', () => {
       JSON.stringify({
         type: 'event',
         event: 'chat',
-        payload: { state: 'delta', runId: 'run-late-1', message: { text: 'Ignored' } },
+        payload: { state: 'delta', runId: 'run-late-1', message: { text: 'Ignored' } }
       })
     )
     expect(doneHandler).not.toHaveBeenCalled()
@@ -299,10 +307,10 @@ describe('OpenClawClient', () => {
           message: {
             content: [
               { type: 'text', text: 'Hello ' },
-              { type: 'text', text: 'world' },
-            ],
-          },
-        },
+              { type: 'text', text: 'world' }
+            ]
+          }
+        }
       })
     )
     expect(doneHandler).toHaveBeenCalledWith('Hello world')
@@ -326,8 +334,8 @@ describe('OpenClawClient', () => {
         payload: {
           state: 'final',
           runId: 'run-string',
-          message: { content: 'Direct string content' },
-        },
+          message: { content: 'Direct string content' }
+        }
       })
     )
     expect(doneHandler).toHaveBeenCalledWith('Direct string content')
@@ -338,19 +346,20 @@ describe('OpenClawClient', () => {
     const streamHandler = vi.fn()
     client.on('stream', streamHandler)
 
-    ws.emit(
-      'message',
-      JSON.stringify({ type: 'event', event: 'tick' })
-    )
+    ws.emit('message', JSON.stringify({ type: 'event', event: 'tick' }))
     expect(streamHandler).not.toHaveBeenCalled()
   })
 
   it('handles error response for request', async () => {
     const ws = await connectClient(client)
 
-    const requestPromise = (client as any).request('test.method', {})
+    const requestPromise = (
+      client as unknown as { request: (method: string, params: unknown) => Promise<unknown> }
+    ).request('test.method', {})
     const calls = ws.send.mock.calls.map((c: string[]) => JSON.parse(c[0]))
-    const testReq = [...calls].reverse().find((c: any) => c.method === 'test.method')
+    const testReq = [...calls]
+      .reverse()
+      .find((c: Record<string, unknown>) => c.method === 'test.method')
 
     ws.emit(
       'message',
@@ -358,7 +367,7 @@ describe('OpenClawClient', () => {
         type: 'res',
         id: testReq.id,
         ok: false,
-        error: { message: 'Not authorized' },
+        error: { message: 'Not authorized' }
       })
     )
 
@@ -367,6 +376,10 @@ describe('OpenClawClient', () => {
 
   it('rejects request when not connected', async () => {
     client.disconnect()
-    await expect((client as any).request('test.method', {})).rejects.toThrow('gateway not connected')
+    await expect(
+      (
+        client as unknown as { request: (method: string, params: unknown) => Promise<unknown> }
+      ).request('test.method', {})
+    ).rejects.toThrow('gateway not connected')
   })
 })

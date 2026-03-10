@@ -1,51 +1,17 @@
-import { test, expect, _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
-import path from 'node:path'
-import fs from 'node:fs'
-import os from 'node:os'
-import { installFetchMock } from './helpers/mock-fetch'
-
-const MAIN_ENTRY = path.join(__dirname, '..', 'out', 'main', 'index.js')
-const LOBSTER_DIR = path.join(os.homedir(), '.config', 'lobster')
-const SETTINGS_PATH = path.join(LOBSTER_DIR, 'settings.json')
-const KEYS_PATH = path.join(LOBSTER_DIR, 'keys.json')
+import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
+import { launchApp, closeApp } from './helpers/app-setup'
 
 let app: ElectronApplication
 let window: Page
-let savedSettings: string | null = null
-let savedKeys: string | null = null
-
-function backupAndRemove(filePath: string): string | null {
-  if (fs.existsSync(filePath)) {
-    const content = fs.readFileSync(filePath, 'utf-8')
-    fs.unlinkSync(filePath)
-    return content
-  }
-  return null
-}
-
-function restoreFile(filePath: string, content: string | null): void {
-  if (content !== null) {
-    fs.mkdirSync(path.dirname(filePath), { recursive: true })
-    fs.writeFileSync(filePath, content)
-  }
-}
 
 test.beforeAll(async () => {
-  // Backup and remove settings + keys so tests run with fresh state
-  savedSettings = backupAndRemove(SETTINGS_PATH)
-  savedKeys = backupAndRemove(KEYS_PATH)
-
-  app = await electron.launch({ args: [MAIN_ENTRY] })
-  window = await app.firstWindow()
-  await installFetchMock(app)
-  await window.waitForLoadState('domcontentloaded')
+  const ctx = await launchApp()
+  app = ctx.app
+  window = ctx.window
 })
 
 test.afterAll(async () => {
-  await app.close()
-  // Restore settings and keys
-  restoreFile(SETTINGS_PATH, savedSettings)
-  restoreFile(KEYS_PATH, savedKeys)
+  await closeApp({ app, window })
 })
 
 // ── App launch ──────────────────────────────────────────────────────
@@ -78,7 +44,10 @@ test.describe('STT provider', () => {
   })
 
   test('shows all STT provider options', async () => {
-    const sttSelect = window.locator('.key-field label', { hasText: 'STT Provider' }).locator('..').locator('select')
+    const sttSelect = window
+      .locator('.key-field label', { hasText: 'STT Provider' })
+      .locator('..')
+      .locator('select')
     const options = sttSelect.locator('option')
     await expect(options).toHaveCount(3)
     await expect(options.nth(0)).toContainText('ElevenLabs Scribe')
@@ -87,7 +56,10 @@ test.describe('STT provider', () => {
   })
 
   test('shows whisper.cpp binary path input when localWhisper selected', async () => {
-    const sttSelect = window.locator('.key-field label', { hasText: 'STT Provider' }).locator('..').locator('select')
+    const sttSelect = window
+      .locator('.key-field label', { hasText: 'STT Provider' })
+      .locator('..')
+      .locator('select')
 
     // No whisper path field initially (default is elevenlabs)
     await expect(window.locator('label', { hasText: 'whisper.cpp Binary Path' })).not.toBeVisible()
@@ -102,21 +74,32 @@ test.describe('STT provider', () => {
   })
 
   test('does not show whisper path for OpenAI Whisper provider', async () => {
-    const sttSelect = window.locator('.key-field label', { hasText: 'STT Provider' }).locator('..').locator('select')
+    const sttSelect = window
+      .locator('.key-field label', { hasText: 'STT Provider' })
+      .locator('..')
+      .locator('select')
     await sttSelect.selectOption('openaiWhisper')
     await expect(window.locator('label', { hasText: 'whisper.cpp Binary Path' })).not.toBeVisible()
     await sttSelect.selectOption('elevenlabs')
   })
 
   test('shows ELEVENLABS_API_KEY input when ElevenLabs STT selected', async () => {
-    const sttSelect = window.locator('.key-field label', { hasText: 'STT Provider' }).locator('..').locator('select')
+    const sttSelect = window
+      .locator('.key-field label', { hasText: 'STT Provider' })
+      .locator('..')
+      .locator('select')
     await sttSelect.selectOption('elevenlabs')
-    await expect(window.locator('.key-field label', { hasText: 'ELEVENLABS_API_KEY' }).first()).toBeVisible()
+    await expect(
+      window.locator('.key-field label', { hasText: 'ELEVENLABS_API_KEY' }).first()
+    ).toBeVisible()
     await sttSelect.selectOption('elevenlabs')
   })
 
   test('shows OPENAI_API_KEY input when OpenAI Whisper selected', async () => {
-    const sttSelect = window.locator('.key-field label', { hasText: 'STT Provider' }).locator('..').locator('select')
+    const sttSelect = window
+      .locator('.key-field label', { hasText: 'STT Provider' })
+      .locator('..')
+      .locator('select')
     await sttSelect.selectOption('openaiWhisper')
     await expect(window.locator('.key-field label', { hasText: 'OPENAI_API_KEY' })).toBeVisible()
     await sttSelect.selectOption('elevenlabs')
@@ -127,12 +110,18 @@ test.describe('STT provider', () => {
 
 test.describe('TTS provider', () => {
   test('shows TTS Provider select with ElevenLabs as default', async () => {
-    const ttsSelect = window.locator('.key-field label', { hasText: 'TTS Provider' }).locator('..').locator('select')
+    const ttsSelect = window
+      .locator('.key-field label', { hasText: 'TTS Provider' })
+      .locator('..')
+      .locator('select')
     await expect(ttsSelect).toHaveValue('elevenlabs')
   })
 
   test('shows all TTS provider options', async () => {
-    const ttsSelect = window.locator('.key-field label', { hasText: 'TTS Provider' }).locator('..').locator('select')
+    const ttsSelect = window
+      .locator('.key-field label', { hasText: 'TTS Provider' })
+      .locator('..')
+      .locator('select')
     const options = ttsSelect.locator('option')
     await expect(options).toHaveCount(4)
     await expect(options.nth(0)).toContainText('ElevenLabs')
@@ -147,7 +136,10 @@ test.describe('TTS provider', () => {
   })
 
   test('shows VOICEVOX URL and Speaker ID inputs when VOICEVOX selected', async () => {
-    const ttsSelect = window.locator('.key-field label', { hasText: 'TTS Provider' }).locator('..').locator('select')
+    const ttsSelect = window
+      .locator('.key-field label', { hasText: 'TTS Provider' })
+      .locator('..')
+      .locator('select')
 
     await ttsSelect.selectOption('voicevox')
 
@@ -158,14 +150,23 @@ test.describe('TTS provider', () => {
     await expect(window.locator('label', { hasText: 'TTS Model' })).not.toBeVisible()
 
     // Check default values
-    const urlInput = window.locator('label', { hasText: 'VOICEVOX URL' }).locator('..').locator('input')
+    const urlInput = window
+      .locator('label', { hasText: 'VOICEVOX URL' })
+      .locator('..')
+      .locator('input')
     await expect(urlInput).toHaveValue('http://localhost:50021')
-    const speakerInput = window.locator('label', { hasText: 'VOICEVOX Speaker ID' }).locator('..').locator('input')
+    const speakerInput = window
+      .locator('label', { hasText: 'VOICEVOX Speaker ID' })
+      .locator('..')
+      .locator('input')
     await expect(speakerInput).toHaveValue('1')
   })
 
   test('shows Kokoro URL and Voice inputs when Kokoro selected', async () => {
-    const ttsSelect = window.locator('.key-field label', { hasText: 'TTS Provider' }).locator('..').locator('select')
+    const ttsSelect = window
+      .locator('.key-field label', { hasText: 'TTS Provider' })
+      .locator('..')
+      .locator('select')
 
     await ttsSelect.selectOption('kokoro')
 
@@ -173,12 +174,18 @@ test.describe('TTS provider', () => {
     await expect(window.locator('label', { hasText: 'Kokoro Voice' })).toBeVisible()
     await expect(window.locator('label', { hasText: 'VOICEVOX URL' })).not.toBeVisible()
 
-    const urlInput = window.locator('label', { hasText: 'Kokoro URL' }).locator('..').locator('input')
+    const urlInput = window
+      .locator('label', { hasText: 'Kokoro URL' })
+      .locator('..')
+      .locator('input')
     await expect(urlInput).toHaveValue('http://localhost:8880')
   })
 
   test('shows Piper binary and model path inputs when Piper selected', async () => {
-    const ttsSelect = window.locator('.key-field label', { hasText: 'TTS Provider' }).locator('..').locator('select')
+    const ttsSelect = window
+      .locator('.key-field label', { hasText: 'TTS Provider' })
+      .locator('..')
+      .locator('select')
 
     await ttsSelect.selectOption('piper')
 
@@ -188,7 +195,10 @@ test.describe('TTS provider', () => {
   })
 
   test('restoring ElevenLabs shows Voice and Model again', async () => {
-    const ttsSelect = window.locator('.key-field label', { hasText: 'TTS Provider' }).locator('..').locator('select')
+    const ttsSelect = window
+      .locator('.key-field label', { hasText: 'TTS Provider' })
+      .locator('..')
+      .locator('select')
 
     await ttsSelect.selectOption('elevenlabs')
 
@@ -198,23 +208,35 @@ test.describe('TTS provider', () => {
   })
 
   test('TTS Voice ID input accepts arbitrary text', async () => {
-    const voiceInput = window.locator('label', { hasText: 'TTS Voice ID' }).locator('..').locator('input')
+    const voiceInput = window
+      .locator('label', { hasText: 'TTS Voice ID' })
+      .locator('..')
+      .locator('input')
     await expect(voiceInput).toBeVisible()
     await expect(voiceInput).toHaveAttribute('type', 'text')
   })
 
   test('TTS Model select has multiple model options', async () => {
-    const modelSelect = window.locator('label', { hasText: 'TTS Model' }).locator('..').locator('select')
+    const modelSelect = window
+      .locator('label', { hasText: 'TTS Model' })
+      .locator('..')
+      .locator('select')
     const options = modelSelect.locator('option')
     const count = await options.count()
     expect(count).toBeGreaterThan(1)
   })
 
   test('Kokoro Voice select has voice options', async () => {
-    const ttsSelect = window.locator('.key-field label', { hasText: 'TTS Provider' }).locator('..').locator('select')
+    const ttsSelect = window
+      .locator('.key-field label', { hasText: 'TTS Provider' })
+      .locator('..')
+      .locator('select')
     await ttsSelect.selectOption('kokoro')
 
-    const voiceSelect = window.locator('label', { hasText: 'Kokoro Voice' }).locator('..').locator('select')
+    const voiceSelect = window
+      .locator('label', { hasText: 'Kokoro Voice' })
+      .locator('..')
+      .locator('select')
     const options = voiceSelect.locator('option')
     const count = await options.count()
     expect(count).toBeGreaterThan(1)
@@ -224,10 +246,16 @@ test.describe('TTS provider', () => {
   })
 
   test('VOICEVOX Speaker ID input accepts numbers', async () => {
-    const ttsSelect = window.locator('.key-field label', { hasText: 'TTS Provider' }).locator('..').locator('select')
+    const ttsSelect = window
+      .locator('.key-field label', { hasText: 'TTS Provider' })
+      .locator('..')
+      .locator('select')
     await ttsSelect.selectOption('voicevox')
 
-    const speakerInput = window.locator('label', { hasText: 'VOICEVOX Speaker ID' }).locator('..').locator('input')
+    const speakerInput = window
+      .locator('label', { hasText: 'VOICEVOX Speaker ID' })
+      .locator('..')
+      .locator('input')
     await expect(speakerInput).toHaveAttribute('type', 'number')
 
     // Restore default
@@ -328,7 +356,10 @@ test.describe('Check buttons', () => {
   })
 
   test('changing provider resets check status', async () => {
-    const ttsSelect = window.locator('.key-field label', { hasText: 'TTS Provider' }).locator('..').locator('select')
+    const ttsSelect = window
+      .locator('.key-field label', { hasText: 'TTS Provider' })
+      .locator('..')
+      .locator('select')
 
     // Run TTS check first
     const ttsCheck = window.locator('.connectivity-check').nth(2)

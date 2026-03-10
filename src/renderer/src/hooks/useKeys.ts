@@ -6,7 +6,8 @@ export function useKeys() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    window.lobster.getKeys()
+    window.lobster
+      .getKeys()
       .then((k: KeyInfo[]) => {
         setKeys(k)
         setLoading(false)

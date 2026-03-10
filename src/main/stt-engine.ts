@@ -29,25 +29,30 @@ export class SttEngine {
   async transcribe(audio: Float32Array, sampleRate: number): Promise<string | null> {
     const wav = this.float32ToWav(audio, sampleRate)
 
-    const chain: Array<{ name: string; enabled: boolean; timeoutMs: number; fn: (wav: Buffer) => Promise<string> }> = [
+    const chain: Array<{
+      name: string
+      enabled: boolean
+      timeoutMs: number
+      fn: (wav: Buffer) => Promise<string>
+    }> = [
       {
         name: 'elevenlabs',
         enabled: this.config.providers.elevenlabs,
         timeoutMs: API_TIMEOUT_MS,
-        fn: (w) => this.transcribeElevenlabs(w),
+        fn: (w) => this.transcribeElevenlabs(w)
       },
       {
         name: 'openaiWhisper',
         enabled: this.config.providers.openaiWhisper,
         timeoutMs: API_TIMEOUT_MS,
-        fn: (w) => this.transcribeOpenaiWhisper(w),
+        fn: (w) => this.transcribeOpenaiWhisper(w)
       },
       {
         name: 'localWhisper',
         enabled: this.config.providers.localWhisper,
         timeoutMs: LOCAL_WHISPER_TIMEOUT_MS,
-        fn: (w) => this.transcribeLocalWhisper(w),
-      },
+        fn: (w) => this.transcribeLocalWhisper(w)
+      }
     ]
 
     for (const provider of chain) {
@@ -56,8 +61,8 @@ export class SttEngine {
         const result = await Promise.race([
           provider.fn(wav),
           new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error(`${provider.name} timeout`)), provider.timeoutMs),
-          ),
+            setTimeout(() => reject(new Error(`${provider.name} timeout`)), provider.timeoutMs)
+          )
         ])
         return result
       } catch {
@@ -69,11 +74,12 @@ export class SttEngine {
   }
 
   private async transcribeElevenlabs(wav: Buffer): Promise<string> {
-    const client = new ElevenLabsClient({ apiKey: this.config.elevenlabsApiKey! })
+    if (!this.config.elevenlabsApiKey) throw new Error('ElevenLabs API key is not set')
+    const client = new ElevenLabsClient({ apiKey: this.config.elevenlabsApiKey })
     const file = new Blob([new Uint8Array(wav)], { type: 'audio/wav' })
     const result = await client.speechToText.convert({
       file,
-      modelId: 'scribe_v2',
+      modelId: 'scribe_v2'
     })
     if ('text' in result && typeof result.text === 'string') {
       return result.text
@@ -89,7 +95,7 @@ export class SttEngine {
     const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: { Authorization: `Bearer ${this.config.openaiApiKey}` },
-      body: formData,
+      body: formData
     })
 
     if (!res.ok) throw new Error(`OpenAI Whisper HTTP ${res.status}`)
@@ -105,18 +111,16 @@ export class SttEngine {
     try {
       writeFileSync(wavPath, wav)
       const modelPath = join(homedir(), WHISPER_MODEL_SUBPATH)
-      const { stdout: output } = await execFileAsync(this.config.localWhisperPath, [
-        wavPath,
-        '--model', modelPath,
-        '--language', 'ja',
-        '--no-prints',
-        '--output-txt',
-      ], {
-        timeout: LOCAL_WHISPER_TIMEOUT_MS,
-        encoding: 'utf-8',
-      })
+      const { stdout: output } = await execFileAsync(
+        this.config.localWhisperPath,
+        [wavPath, '--model', modelPath, '--language', 'ja', '--no-prints', '--output-txt'],
+        {
+          timeout: LOCAL_WHISPER_TIMEOUT_MS,
+          encoding: 'utf-8'
+        }
+      )
       // --output-txt writes audio.wav.txt next to the input file
-      const txtPath = wavPath + '.txt'
+      const txtPath = `${wavPath}.txt`
       if (existsSync(txtPath)) {
         return readFileSync(txtPath, 'utf-8').trim()
       }

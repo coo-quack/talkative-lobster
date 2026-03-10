@@ -6,7 +6,7 @@ const makeOkResponse = (data: Uint8Array): Response => {
   return {
     ok: true,
     status: 200,
-    arrayBuffer: () => Promise.resolve(data.buffer as ArrayBuffer),
+    arrayBuffer: () => Promise.resolve(data.buffer as ArrayBuffer)
   } as unknown as Response
 }
 
@@ -14,7 +14,7 @@ const makeErrorResponse = (status: number): Response => {
   return {
     ok: false,
     status,
-    arrayBuffer: () => Promise.reject(new Error('should not be called')),
+    arrayBuffer: () => Promise.reject(new Error('should not be called'))
   } as unknown as Response
 }
 
@@ -35,7 +35,9 @@ describe('KokoroTts', () => {
       const tts = new KokoroTts()
       fetchMock.mockResolvedValue(makeOkResponse(new Uint8Array([1, 2, 3])))
 
-      for await (const _ of tts.stream('hi')) { /* drain */ }
+      for await (const _ of tts.stream('hi')) {
+        /* drain */
+      }
 
       const [url] = fetchMock.mock.calls[0] as [string, RequestInit]
       expect(url).toBe('http://localhost:8880/v1/audio/speech')
@@ -45,7 +47,9 @@ describe('KokoroTts', () => {
       const tts = new KokoroTts()
       fetchMock.mockResolvedValue(makeOkResponse(new Uint8Array([1, 2, 3])))
 
-      for await (const _ of tts.stream('hi')) { /* drain */ }
+      for await (const _ of tts.stream('hi')) {
+        /* drain */
+      }
 
       const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
       const body = JSON.parse(init.body as string)
@@ -63,6 +67,11 @@ describe('KokoroTts', () => {
       const tts = new KokoroTts()
       expect(tts.isStopped).toBe(false)
     })
+
+    it('exposes encoded audio format', () => {
+      const tts = new KokoroTts()
+      expect(tts.audioFormat).toEqual({ type: 'encoded' })
+    })
   })
 
   describe('constructor with explicit arguments', () => {
@@ -70,7 +79,9 @@ describe('KokoroTts', () => {
       const tts = new KokoroTts('http://example.com:9000')
       fetchMock.mockResolvedValue(makeOkResponse(new Uint8Array([0])))
 
-      for await (const _ of tts.stream('hi')) { /* drain */ }
+      for await (const _ of tts.stream('hi')) {
+        /* drain */
+      }
 
       const [url] = fetchMock.mock.calls[0] as [string, RequestInit]
       expect(url).toBe('http://example.com:9000/v1/audio/speech')
@@ -80,7 +91,9 @@ describe('KokoroTts', () => {
       const tts = new KokoroTts(undefined, 'am_adam')
       fetchMock.mockResolvedValue(makeOkResponse(new Uint8Array([0])))
 
-      for await (const _ of tts.stream('hi')) { /* drain */ }
+      for await (const _ of tts.stream('hi')) {
+        /* drain */
+      }
 
       const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
       const body = JSON.parse(init.body as string)
@@ -93,7 +106,9 @@ describe('KokoroTts', () => {
       const tts = new KokoroTts()
       fetchMock.mockResolvedValue(makeOkResponse(new Uint8Array([10, 20])))
 
-      for await (const _ of tts.stream('Hello world')) { /* drain */ }
+      for await (const _ of tts.stream('Hello world')) {
+        /* drain */
+      }
 
       expect(fetchMock).toHaveBeenCalledOnce()
       const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
@@ -104,7 +119,9 @@ describe('KokoroTts', () => {
       const tts = new KokoroTts()
       fetchMock.mockResolvedValue(makeOkResponse(new Uint8Array([0])))
 
-      for await (const _ of tts.stream('test')) { /* drain */ }
+      for await (const _ of tts.stream('test')) {
+        /* drain */
+      }
 
       const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
       const headers = init.headers as Record<string, string>
@@ -115,7 +132,9 @@ describe('KokoroTts', () => {
       const tts = new KokoroTts('http://localhost:8880', 'jf_alpha')
       fetchMock.mockResolvedValue(makeOkResponse(new Uint8Array([0])))
 
-      for await (const _ of tts.stream('Say something')) { /* drain */ }
+      for await (const _ of tts.stream('Say something')) {
+        /* drain */
+      }
 
       const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
       const body = JSON.parse(init.body as string)
@@ -123,7 +142,7 @@ describe('KokoroTts', () => {
         model: 'kokoro',
         input: 'Say something',
         voice: 'jf_alpha',
-        response_format: 'mp3',
+        response_format: 'mp3'
       })
     })
 
@@ -160,7 +179,9 @@ describe('KokoroTts', () => {
       fetchMock.mockResolvedValue(makeErrorResponse(503))
 
       await expect(async () => {
-        for await (const _ of tts.stream('fail')) { /* drain */ }
+        for await (const _ of tts.stream('fail')) {
+          /* drain */
+        }
       }).rejects.toThrow('Kokoro TTS failed: 503')
     })
 
@@ -169,7 +190,9 @@ describe('KokoroTts', () => {
       fetchMock.mockResolvedValue(makeErrorResponse(422))
 
       await expect(async () => {
-        for await (const _ of tts.stream('bad input')) { /* drain */ }
+        for await (const _ of tts.stream('bad input')) {
+          /* drain */
+        }
       }).rejects.toThrow('422')
     })
   })
@@ -205,7 +228,9 @@ describe('KokoroTts', () => {
       tts.setUrl('http://newhost:7777')
       fetchMock.mockResolvedValue(makeOkResponse(new Uint8Array([0])))
 
-      for await (const _ of tts.stream('hi')) { /* drain */ }
+      for await (const _ of tts.stream('hi')) {
+        /* drain */
+      }
 
       const [url] = fetchMock.mock.calls[0] as [string, RequestInit]
       expect(url).toBe('http://newhost:7777/v1/audio/speech')
@@ -216,7 +241,9 @@ describe('KokoroTts', () => {
       tts.setUrl('http://other:9999')
       fetchMock.mockResolvedValue(makeOkResponse(new Uint8Array([0])))
 
-      for await (const _ of tts.stream('hi')) { /* drain */ }
+      for await (const _ of tts.stream('hi')) {
+        /* drain */
+      }
 
       const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
       const body = JSON.parse(init.body as string)
@@ -230,7 +257,9 @@ describe('KokoroTts', () => {
       tts.setVoice('am_adam')
       fetchMock.mockResolvedValue(makeOkResponse(new Uint8Array([0])))
 
-      for await (const _ of tts.stream('hi')) { /* drain */ }
+      for await (const _ of tts.stream('hi')) {
+        /* drain */
+      }
 
       const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
       const body = JSON.parse(init.body as string)
@@ -242,7 +271,9 @@ describe('KokoroTts', () => {
       tts.setVoice('jf_beta')
       fetchMock.mockResolvedValue(makeOkResponse(new Uint8Array([0])))
 
-      for await (const _ of tts.stream('hi')) { /* drain */ }
+      for await (const _ of tts.stream('hi')) {
+        /* drain */
+      }
 
       const [url] = fetchMock.mock.calls[0] as [string, RequestInit]
       expect(url).toBe('http://custom:5000/v1/audio/speech')
@@ -255,7 +286,9 @@ describe('KokoroTts', () => {
       tts.setVoice('voice_c')
       fetchMock.mockResolvedValue(makeOkResponse(new Uint8Array([0])))
 
-      for await (const _ of tts.stream('hi')) { /* drain */ }
+      for await (const _ of tts.stream('hi')) {
+        /* drain */
+      }
 
       const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
       const body = JSON.parse(init.body as string)

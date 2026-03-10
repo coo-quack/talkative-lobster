@@ -2,11 +2,16 @@ node_modules
 dist
 out
 .DS_Store
-.eslintcache
 *.log*
 
 # Test artifacts
 test-results
+
+# Screenshots
+app-screenshot.png
+
+# Worktrees
+.worktrees
 
 # VitePress
 docs/.vitepress/dist

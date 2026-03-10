@@ -1,13 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { KeyManager } from '../keys'
 
-// Mock electron safeStorage
 vi.mock('electron', () => ({
-  safeStorage: {
-    isEncryptionAvailable: () => true,
-    encryptString: (s: string) => Buffer.from(`enc:${s}`),
-    decryptString: (buf: Buffer) => buf.toString().replace('enc:', ''),
-  },
+  app: {
+    getPath: () => '/tmp/lobster-test'
+  }
 }))
 
 // Mock fs for OpenClaw config reading
@@ -15,7 +12,7 @@ vi.mock('node:fs', () => ({
   readFileSync: vi.fn(),
   existsSync: vi.fn(),
   mkdirSync: vi.fn(),
-  writeFileSync: vi.fn(),
+  writeFileSync: vi.fn()
 }))
 
 describe('KeyManager', () => {
@@ -30,11 +27,11 @@ describe('KeyManager', () => {
     expect(keys).toEqual([
       { name: 'ELEVENLABS_API_KEY', isSet: false, source: null },
       { name: 'GATEWAY_TOKEN', isSet: false, source: null },
-      { name: 'OPENAI_API_KEY', isSet: false, source: null },
+      { name: 'OPENAI_API_KEY', isSet: false, source: null }
     ])
   })
 
-  it('stores and retrieves a key via safeStorage', () => {
+  it('stores and retrieves a key', () => {
     km.set('ELEVENLABS_API_KEY', 'sk_test123', 'manual')
     const keys = km.getAll()
     const el = keys.find((k) => k.name === 'ELEVENLABS_API_KEY')
@@ -55,7 +52,7 @@ describe('KeyManager', () => {
     vi.mocked(fs.existsSync).mockReturnValue(true)
     vi.mocked(fs.readFileSync).mockReturnValue(
       JSON.stringify({
-        env: { ELEVENLABS_API_KEY: 'sk_from_openclaw' },
+        env: { ELEVENLABS_API_KEY: 'sk_from_openclaw' }
       })
     )
     const value = km.readFromOpenclaw('ELEVENLABS_API_KEY')
@@ -67,7 +64,7 @@ describe('KeyManager', () => {
     vi.mocked(fs.existsSync).mockReturnValue(true)
     vi.mocked(fs.readFileSync).mockReturnValue(
       JSON.stringify({
-        gateway: { auth: { token: 'gw_token_123' } },
+        gateway: { auth: { token: 'gw_token_123' } }
       })
     )
     const value = km.readFromOpenclaw('GATEWAY_TOKEN')
