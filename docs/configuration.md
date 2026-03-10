@@ -158,6 +158,7 @@ Settings are stored as JSON at `~/.config/lobster/settings.json`. While you can 
 
 ```json
 {
+  "gatewayUrl": "ws://127.0.0.1:18789",
   "sttProvider": "elevenlabs",
   "ttsProvider": "elevenlabs",
   "ttsVoiceId": "pFZP5JQG7iQjIQuC4Bku",
