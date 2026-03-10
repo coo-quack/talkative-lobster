@@ -10,6 +10,8 @@ interface Props {
   refresh: () => Promise<void>
   checkStatus: { ok: boolean; message: string } | null
   setCheckStatus: (s: { ok: boolean; message: string } | null) => void
+  gatewayUrl: string
+  setGatewayUrl: (url: string) => void
 }
 
 export function GatewaySettings({
@@ -18,7 +20,9 @@ export function GatewaySettings({
   setInputs,
   refresh,
   checkStatus,
-  setCheckStatus
+  setCheckStatus,
+  gatewayUrl,
+  setGatewayUrl
 }: Props) {
   const [checking, setChecking] = useState(false)
 
@@ -41,6 +45,7 @@ export function GatewaySettings({
     setChecking(true)
     setCheckStatus(null)
     try {
+      await window.lobster.setGatewayUrl?.(gatewayUrl)
       if (inputs.GATEWAY_TOKEN) {
         await window.lobster.setKey('GATEWAY_TOKEN', inputs.GATEWAY_TOKEN)
         await refresh()
@@ -59,6 +64,16 @@ export function GatewaySettings({
       <h3 className="mt-5 mb-1 w-full max-w-[400px] border-border border-t pt-4 text-left font-bold text-base text-text tracking-wide">
         Gateway Settings
       </h3>
+      <label className="mt-2 block w-full max-w-[400px] text-left text-xs text-dim">
+        Gateway URL
+        <input
+          type="text"
+          className="mt-1 w-full rounded border border-border bg-surface px-2 py-1 text-sm text-text"
+          value={gatewayUrl}
+          onChange={(e) => setGatewayUrl(e.target.value)}
+          placeholder="ws://127.0.0.1:18789"
+        />
+      </label>
       <KeyInput
         name="GATEWAY_TOKEN"
         placeholder="Enter gateway token..."

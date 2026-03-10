@@ -25,6 +25,7 @@ export interface Settings {
   piperPath: string
   piperModelPath: string
   vadSensitivity: 'auto' | number
+  gatewayUrl: string
 }
 
 const DEFAULTS: Settings = {
@@ -39,7 +40,8 @@ const DEFAULTS: Settings = {
   kokoroVoice: DEFAULT_KOKORO_VOICE,
   piperPath: '',
   piperModelPath: '',
-  vadSensitivity: 'auto' as const
+  vadSensitivity: 'auto' as const,
+  gatewayUrl: 'ws://127.0.0.1:18789'
 }
 
 export class SettingsStore {

@@ -100,6 +100,10 @@ const api = {
   setVadSensitivity: (value: 'auto' | number): Promise<void> =>
     ipcRenderer.invoke(IPC.VAD_SENSITIVITY_SET, value),
 
+  // Gateway URL
+  getGatewayUrl: (): Promise<string> => ipcRenderer.invoke(IPC.GATEWAY_URL_GET),
+  setGatewayUrl: (url: string): Promise<void> => ipcRenderer.invoke(IPC.GATEWAY_URL_SET, url),
+
   // Session control
   sessionStart: (): Promise<void> => ipcRenderer.invoke(IPC.SESSION_START),
 

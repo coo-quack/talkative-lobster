@@ -34,7 +34,6 @@ function errCause(
   return undefined
 }
 
-const DEFAULT_GATEWAY_URL = 'ws://127.0.0.1:18789'
 const SESSION_KEY = 'agent:main:lobster'
 
 const TTS_SYSTEM_PROMPT = `[TTS Output Rules]
@@ -177,7 +176,8 @@ export class Orchestrator {
     }
     console.log('[orchestrator] Connecting to gateway...')
 
-    this.wsClient = new OpenClawClient(DEFAULT_GATEWAY_URL, token, SESSION_KEY)
+    const gatewayUrl = this.settings.get('gatewayUrl')
+    this.wsClient = new OpenClawClient(gatewayUrl, token, SESSION_KEY)
 
     this.wsClient.on('connected', () => {
       this.send(IPC.CONNECTION_STATUS, 'connected')
@@ -467,13 +467,14 @@ export class Orchestrator {
 
     // Connectivity checks
     this.handleIpc(IPC.GATEWAY_CHECK, async () => {
+      const gatewayUrl = this.settings.get('gatewayUrl')
       try {
-        return await checkGateway(this.keyManager)
+        return await checkGateway(this.keyManager, gatewayUrl)
       } catch (err: unknown) {
         const cause = errCause(err)
         const message =
           cause?.code === 'ECONNREFUSED'
-            ? `Connection refused: ${DEFAULT_GATEWAY_URL}`
+            ? `Connection refused: ${gatewayUrl}`
             : errMsg(err)
         return { ok: false, message }
       }
