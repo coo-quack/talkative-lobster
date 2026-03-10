@@ -19,3 +19,28 @@
 .vp-doc a:hover {
   color: var(--vp-c-brand-2);
 }
+
+.VPHero .image-container {
+  position: relative;
+}
+
+@media (max-width: 959px) {
+  .VPHero .image-container::after {
+    display: none;
+  }
+}
+
+.VPHero .image-container::after {
+  content: '';
+  position: absolute;
+  right: -20px;
+  bottom: -20px;
+  width: 200px;
+  height: auto;
+  aspect-ratio: 462 / 640;
+  background: url('/screenshot.png') no-repeat center / contain;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  z-index: 1;
+}
