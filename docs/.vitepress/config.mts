@@ -29,9 +29,11 @@ export default defineConfig({
       {
         text: "Reference",
         items: [
-          { text: "Architecture", link: "/architecture" },
           { text: "Providers", link: "/providers" },
           { text: "Configuration", link: "/configuration" },
+          { text: "Architecture", link: "/architecture" },
+          { text: "Troubleshooting", link: "/troubleshooting" },
+          { text: "Contributing", link: "/contributing" },
         ],
       },
     ],
