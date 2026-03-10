@@ -37,7 +37,11 @@ export async function launchApp(): Promise<AppContext> {
   savedSettings = backupAndRemove(SETTINGS_PATH)
   savedKeys = backupAndRemove(KEYS_PATH)
 
-  const app = await electron.launch({ args: [MAIN_ENTRY] })
+  const args = [MAIN_ENTRY]
+  if (process.env.CI) {
+    args.push('--no-sandbox', '--disable-gpu')
+  }
+  const app = await electron.launch({ args })
   const window = await app.firstWindow()
   await installFetchMock(app)
   await window.waitForLoadState('domcontentloaded')
