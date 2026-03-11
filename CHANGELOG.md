@@ -1,4 +1,10 @@
 # Changelog
+## v1.0.2 (2026-03-11)
+
+### Chores
+
+- Add Renovate configuration with automerge on CI success
+
 
 ## v1.0.0
 
