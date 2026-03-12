@@ -6,6 +6,10 @@
 
 - Scope CI badge to main branch
 
+### Security
+
+- Fix vulnerable transitive dependencies (minimatch, tar, esbuild) via pnpm overrides
+
 ---
 
 ## v1.0.2 (2026-03-11)
