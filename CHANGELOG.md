@@ -5,6 +5,7 @@
 ### Security
 
 - Add explicit permissions to all workflow jobs
+- Add SECURITY.md security policy
 
 ---
 
