@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.0.5 (2026-03-12)
+
+### Security
+
+- Add explicit permissions to all workflow jobs
+- Add SECURITY.md security policy
+
+---
+
 ## v1.0.4 (2026-03-12)
 
 ### Security
