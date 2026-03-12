@@ -1,4 +1,13 @@
 # Changelog
+
+## v1.0.3 (2026-03-12)
+
+### Fixes
+
+- Scope CI badge to main branch
+
+---
+
 ## v1.0.2 (2026-03-11)
 
 ### Chores

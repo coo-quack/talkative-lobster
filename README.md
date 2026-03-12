@@ -1,6 +1,6 @@
 # Talkative Lobster
 
-[![CI](https://github.com/coo-quack/talkative-lobster/actions/workflows/ci.yml/badge.svg)](https://github.com/coo-quack/talkative-lobster/actions/workflows/ci.yml)
+[![CI](https://github.com/coo-quack/talkative-lobster/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/coo-quack/talkative-lobster/actions/workflows/ci.yml)
 
 **Talk to your AI — literally.**
 
