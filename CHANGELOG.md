@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.4 (2026-03-12)
+
+### Security
+
+- Fix vulnerable transitive dependencies (minimatch, tar, esbuild) via pnpm overrides
+
+---
+
 ## v1.0.3 (2026-03-12)
 
 ### Fixes
