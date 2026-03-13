@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '../shared/ipc-channels'
-import type { VoiceState, KeyInfo, SttProvider, TtsProviderType } from '../shared/types'
+import type { VoiceState, KeyInfo, SttProvider, TtsProviderType, UpdateInfo } from '../shared/types'
 
 type UnsubscribeFn = () => void
 
@@ -109,12 +109,7 @@ const api = {
 
   // App version & update check
   getAppVersion: (): Promise<string> => ipcRenderer.invoke(IPC.APP_VERSION_GET),
-  checkForUpdate: (): Promise<{
-    currentVersion: string
-    latestVersion: string | null
-    updateAvailable: boolean
-    releaseUrl: string | null
-  }> => ipcRenderer.invoke(IPC.UPDATE_CHECK),
+  checkForUpdate: (): Promise<UpdateInfo> => ipcRenderer.invoke(IPC.UPDATE_CHECK),
 
   // Connectivity checks
   checkGateway: (): Promise<{ ok: boolean; message: string }> =>

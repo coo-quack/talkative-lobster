@@ -95,3 +95,10 @@ export const TTS_MODELS: TtsModelOption[] = [
 ]
 
 export const DEFAULT_TTS_MODEL_ID = 'eleven_multilingual_v2'
+
+export interface UpdateInfo {
+  currentVersion: string
+  latestVersion: string | null
+  updateAvailable: boolean
+  releaseUrl: string | null
+}
