@@ -6,6 +6,7 @@ import type { ITtsProvider } from './tts/tts-provider'
 import type { ElevenLabsTts } from './tts/elevenlabs-tts'
 import type { VoicevoxTts } from './tts/voicevox-tts'
 import type { KokoroTts } from './tts/kokoro-tts'
+import { getAppVersion, checkForUpdate } from './update-checker'
 
 // biome-ignore lint/suspicious/noExplicitAny: IPC handlers have dynamic signatures
 type IpcHandler = (...args: any[]) => any
@@ -137,4 +138,8 @@ export function registerSettingsHandlers(deps: {
     settings.set('gatewayUrl', url)
     console.log(`[orchestrator] Gateway URL: ${url}`)
   })
+
+  // App version & update check
+  handleIpc(IPC.APP_VERSION_GET, () => getAppVersion())
+  handleIpc(IPC.UPDATE_CHECK, () => checkForUpdate())
 }

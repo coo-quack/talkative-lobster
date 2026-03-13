@@ -5,6 +5,7 @@ import { GatewaySettings } from './GatewaySettings'
 import { SttSettings } from './SttSettings'
 import { TtsSettings } from './TtsSettings'
 import { VadSettings } from './VadSettings'
+import { VersionInfo } from './VersionInfo'
 
 interface Props {
   onComplete: () => void
@@ -197,6 +198,8 @@ export function SetupModal({ onComplete }: Props) {
       >
         Start Lobster
       </button>
+
+      <VersionInfo />
     </div>
   )
 }

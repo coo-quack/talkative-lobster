@@ -64,6 +64,10 @@ export const IPC = {
   AIZUCHI_STOP: 'aizuchi:stop',
   AIZUCHI_CANCEL: 'aizuchi:cancel',
 
+  // App version & update check
+  APP_VERSION_GET: 'app:version-get',
+  UPDATE_CHECK: 'app:update-check',
+
   // Error notification
   ERROR: 'app:error'
 } as const
