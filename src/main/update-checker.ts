@@ -67,11 +67,11 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
     }
   })()
 
-  inFlightPromise.finally(() => {
+  void inFlightPromise.finally(() => {
     inFlightPromise = null
-  }).catch(() => {
-    // Swallow to avoid unhandled rejection; errors are reflected in cachedResult.
   })
+
+
 
   return inFlightPromise
 }
