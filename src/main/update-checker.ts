@@ -8,6 +8,7 @@ const CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
 
 let cachedResult: UpdateInfo | null = null
 let cacheTimestamp = 0
+let inFlightPromise: Promise<UpdateInfo> | null = null
 
 export function getAppVersion(): string {
   return app.getVersion()
@@ -19,44 +20,62 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
     return cachedResult
   }
 
+  if (inFlightPromise !== null) {
+    return inFlightPromise
+  }
+
   const currentVersion = getAppVersion()
-  try {
-    const res = await fetch(
-      `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
-      {
-        headers: { Accept: 'application/vnd.github.v3+json' },
-        signal: AbortSignal.timeout(10_000)
+
+  inFlightPromise = (async (): Promise<UpdateInfo> => {
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
+        {
+          headers: { Accept: 'application/vnd.github.v3+json' },
+          signal: AbortSignal.timeout(10_000)
+        }
+      )
+      const timestamp = Date.now()
+      if (!res.ok) {
+        const result: UpdateInfo = { currentVersion, latestVersion: null, updateAvailable: false, releaseUrl: null }
+        cachedResult = result
+        cacheTimestamp = timestamp
+        return result
       }
-    )
-    if (!res.ok) {
+      const data = (await res.json()) as { tag_name?: string; html_url?: string }
+      const latestTag = data.tag_name ?? null
+      const latestVersion = latestTag?.replace(/^v/, '') ?? null
+      const releaseUrl = data.html_url ?? null
+
+      const updateAvailable = latestVersion ? compareVersions(latestVersion, currentVersion) > 0 : false
+
+      const result: UpdateInfo = { currentVersion, latestVersion, updateAvailable, releaseUrl }
+      cachedResult = result
+      cacheTimestamp = timestamp
+      return result
+    } catch {
+      const timestamp = Date.now()
       const result: UpdateInfo = { currentVersion, latestVersion: null, updateAvailable: false, releaseUrl: null }
       cachedResult = result
-      cacheTimestamp = now
+      cacheTimestamp = timestamp
       return result
     }
-    const data = (await res.json()) as { tag_name?: string; html_url?: string }
-    const latestTag = data.tag_name ?? null
-    const latestVersion = latestTag?.replace(/^v/, '') ?? null
-    const releaseUrl = data.html_url ?? null
+  })()
 
-    const updateAvailable = latestVersion ? compareVersions(latestVersion, currentVersion) > 0 : false
+  inFlightPromise.finally(() => {
+    inFlightPromise = null
+  }).catch(() => {
+    // Swallow to avoid unhandled rejection; errors are reflected in cachedResult.
+  })
 
-    const result: UpdateInfo = { currentVersion, latestVersion, updateAvailable, releaseUrl }
-    cachedResult = result
-    cacheTimestamp = now
-    return result
-  } catch {
-    const result: UpdateInfo = { currentVersion, latestVersion: null, updateAvailable: false, releaseUrl: null }
-    cachedResult = result
-    cacheTimestamp = now
-    return result
-  }
+  return inFlightPromise
 }
 
 /** Reset the in-memory cache (intended for testing only). */
 export function resetUpdateCache(): void {
   cachedResult = null
   cacheTimestamp = 0
+  inFlightPromise = null
 }
 
 /**
