@@ -207,6 +207,13 @@ export class Orchestrator {
         .trim()
       const ttsText = cleaned || text.trim()
 
+      // Empty response (e.g. after interruption) — just recover state machine
+      if (!ttsText) {
+        console.log('[orchestrator] Empty LLM response, skipping TTS')
+        this.actor.send({ type: 'TTS_DONE' })
+        return
+      }
+
       const msg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',

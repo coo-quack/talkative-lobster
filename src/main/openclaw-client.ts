@@ -197,13 +197,14 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
             this.emit('done', content)
           } else {
             // Empty final — may happen after interruption or when the gateway
-            // sends a completion signal without a message body. Log for
-            // debugging but do not treat as an error to avoid kicking the
-            // state machine back to idle unexpectedly.
+            // sends a completion signal without a message body. Emit 'done'
+            // with empty string so the orchestrator can transition out of
+            // thinking state instead of getting stuck.
             console.warn(
               '[openclaw] Final message had no extractable text:',
               JSON.stringify(payload.message)?.slice(0, 500)
             )
+            this.emit('done', '')
           }
         } else if (payload.state === 'error') {
           this.activeRunIds.delete(payload.runId)
@@ -380,12 +381,13 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
 
     const obj = node as Record<string, unknown>
 
-    // If the object has a `type` field, only extract text from text-type blocks.
-    // This prevents picking up unrelated text from tool_use, tool_result, etc.
+    // Skip known non-text content blocks (tool_use, tool_result, etc.)
+    // but allow other typed objects (e.g. type: "message") to continue
+    // recursive traversal into their content/parts/etc.
     if (typeof obj.type === 'string') {
       if (obj.type === 'text' && typeof obj.text === 'string') return obj.text
-      // Non-text typed block — skip entirely
-      return ''
+      const skipTypes = new Set(['tool_use', 'tool_result', 'image', 'image_url'])
+      if (skipTypes.has(obj.type)) return ''
     }
 
     // Object with a `text` string field — this is the most common leaf

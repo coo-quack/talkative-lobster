@@ -477,7 +477,35 @@ describe('OpenClawClient', () => {
     expect(doneHandler).toHaveBeenCalledWith('Hello')
   })
 
-  it('empty final message does not emit done or chatError', async () => {
+  it('extractText traverses typed container objects like type: "message"', async () => {
+    const ws = await connectClient(client)
+    const doneHandler = vi.fn()
+    client.on('done', doneHandler)
+
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+    ws.resolveChatSend('run-typed-container')
+    await new Promise((r) => setTimeout(r, 5))
+
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: {
+          state: 'final',
+          runId: 'run-typed-container',
+          message: {
+            type: 'message',
+            content: [{ type: 'text', text: 'From typed container' }]
+          }
+        }
+      })
+    )
+    expect(doneHandler).toHaveBeenCalledWith('From typed container')
+  })
+
+  it('empty final message emits done with empty string for state recovery', async () => {
     const ws = await connectClient(client)
     const doneHandler = vi.fn()
     const errorHandler = vi.fn()
@@ -497,7 +525,7 @@ describe('OpenClawClient', () => {
         payload: { state: 'final', runId: 'run-empty' }
       })
     )
-    expect(doneHandler).not.toHaveBeenCalled()
+    expect(doneHandler).toHaveBeenCalledWith('')
     expect(errorHandler).not.toHaveBeenCalled()
   })
 

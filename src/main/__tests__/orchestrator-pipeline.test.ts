@@ -516,6 +516,22 @@ describe('Orchestrator pipeline', () => {
     })
   })
 
+  // ── Empty LLM response recovery ─────────────────────────────
+
+  describe('empty LLM response', () => {
+    it('empty done text recovers state machine from thinking to idle', async () => {
+      sendEvent('SPEECH_START')
+      sendEvent('SPEECH_END')
+      sendEvent('STT_DONE', { text: 'hello' })
+      expect(getState()).toBe('thinking')
+
+      // Simulate the orchestrator's done handler with empty text
+      // (as would happen when openclaw emits done with '')
+      internals(orchestrator).actor.send({ type: 'TTS_DONE' })
+      expect(getState()).toBe('idle')
+    })
+  })
+
   // ── Two consecutive conversation cycles ────────────────────────
 
   describe('consecutive cycles', () => {
