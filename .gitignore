@@ -16,3 +16,4 @@ app-screenshot.png
 # VitePress
 docs/.vitepress/dist
 docs/.vitepress/cache
+package-lock.json
