@@ -43,8 +43,12 @@ describe('update-checker', () => {
       expect(compareVersions('1.2.3-alpha', '1.2.3')).toBeLessThan(0)
     })
 
-    it('treats two prereleases with same core as equal (no string comparison)', () => {
-      expect(compareVersions('1.2.3-alpha', '1.2.3-beta')).toBe(0)
+    it('orders prereleases with same core according to SemVer', () => {
+      expect(compareVersions('1.2.3-alpha', '1.2.3-beta')).toBeLessThan(0)
+    })
+
+    it('orders numeric prerelease segments according to SemVer', () => {
+      expect(compareVersions('1.2.3-beta.1', '1.2.3-beta.2')).toBeLessThan(0)
     })
 
     it('ignores build metadata', () => {
