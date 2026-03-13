@@ -1,11 +1,5 @@
 import { useState, useEffect } from 'react'
-
-interface UpdateInfo {
-  currentVersion: string
-  latestVersion: string | null
-  updateAvailable: boolean
-  releaseUrl: string | null
-}
+import type { UpdateInfo } from '../../../shared/types'
 
 export function VersionInfo() {
   const [version, setVersion] = useState<string | null>(null)
