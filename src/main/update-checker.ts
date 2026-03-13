@@ -5,6 +5,7 @@ export type { UpdateInfo }
 
 const GITHUB_REPO = 'coo-quack/talkative-lobster'
 const CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
+const FAILURE_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes for failures
 
 let cachedResult: UpdateInfo | null = null
 let cacheTimestamp = 0
@@ -16,8 +17,12 @@ export function getAppVersion(): string {
 
 export async function checkForUpdate(): Promise<UpdateInfo> {
   const now = Date.now()
-  if (cachedResult !== null && now - cacheTimestamp < CACHE_TTL_MS) {
-    return cachedResult
+  if (cachedResult !== null) {
+    const isFailureResult = cachedResult.latestVersion === null
+    const ttl = isFailureResult ? FAILURE_CACHE_TTL_MS : CACHE_TTL_MS
+    if (now - cacheTimestamp < ttl) {
+      return cachedResult
+    }
   }
 
   if (inFlightPromise !== null) {
