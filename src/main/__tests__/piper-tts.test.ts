@@ -34,11 +34,6 @@ describe('PiperTts', () => {
   })
 
   describe('constructor', () => {
-    it('creates an instance with isStopped defaulting to false', () => {
-      const tts = new PiperTts('/usr/local/bin/piper', '/models/en.onnx')
-      expect(tts.isStopped).toBe(false)
-    })
-
     it('exposes encoded audio format', () => {
       const tts = new PiperTts('/usr/local/bin/piper', '/models/en.onnx')
       expect(tts.audioFormat).toEqual({ type: 'encoded' })
@@ -140,27 +135,6 @@ describe('PiperTts', () => {
         received.push(chunk)
       }
       expect(received).toHaveLength(0)
-    })
-  })
-
-  describe('stop()', () => {
-    it('isStopped is always false (generation counter pattern)', () => {
-      const tts = new PiperTts('/bin/piper', '/model.onnx')
-      tts.stop()
-      expect(tts.isStopped).toBe(false)
-    })
-  })
-
-  describe('isStopped', () => {
-    it('is always false regardless of stop/stream calls', async () => {
-      const tts = new PiperTts('/bin/piper', '/model.onnx')
-      tts.stop()
-      expect(tts.isStopped).toBe(false)
-
-      for await (const _ of tts.stream('reset')) {
-        /* drain */
-      }
-      expect(tts.isStopped).toBe(false)
     })
   })
 })

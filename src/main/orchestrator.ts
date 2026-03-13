@@ -260,9 +260,9 @@ export class Orchestrator {
     try {
       this.send(IPC.TTS_FORMAT, this.ttsProvider.audioFormat)
       for (const chunk of chunks) {
-        if (this.ttsProvider.isStopped || gen !== this.ttsGeneration) break
+        if (gen !== this.ttsGeneration) break
         for await (const audio of this.ttsProvider.stream(chunk)) {
-          if (this.ttsProvider.isStopped || gen !== this.ttsGeneration) break
+          if (gen !== this.ttsGeneration) break
           this.send(IPC.TTS_AUDIO, new Uint8Array(audio).buffer)
           audioSent = true
         }
@@ -283,9 +283,7 @@ export class Orchestrator {
     if (gen !== this.ttsGeneration) return
 
     this.ttsPlaying = false
-    if (!this.ttsProvider.isStopped) {
-      this.send(IPC.TTS_STOP, null)
-    }
+    this.send(IPC.TTS_STOP, null)
     // Only transition to idle if no audio was sent to renderer.
     // If audio was sent, the renderer will send TTS_PLAYBACK_DONE when done.
     if (!audioSent) {

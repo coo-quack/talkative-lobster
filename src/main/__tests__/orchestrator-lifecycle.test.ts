@@ -58,9 +58,6 @@ function createMockTtsProvider(chunks: Buffer[] = [Buffer.from([1, 2, 3])]): ITt
   let generation = 0
   return {
     audioFormat: { type: 'encoded' as const },
-    get isStopped() {
-      return false
-    },
     stop() {
       generation++
     },
@@ -245,7 +242,6 @@ describe('Orchestrator lifecycle', () => {
       internals(orchestrator).ttsProvider = mockTts
 
       getIpcOn(IPC.VOICE_STOP)()
-      expect(mockTts.isStopped).toBe(false)
       expect(getState()).toBe('idle')
     })
 
@@ -343,7 +339,6 @@ describe('Orchestrator lifecycle', () => {
       // User interrupts
       getIpcOn(IPC.VOICE_START)()
       expect(getState()).toBe('listening')
-      expect(mockTts.isStopped).toBe(false)
 
       // Continue with new cycle
       sendEvent('SPEECH_END')

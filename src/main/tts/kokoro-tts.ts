@@ -9,10 +9,6 @@ export class KokoroTts implements ITtsProvider {
 
   readonly audioFormat: TtsAudioFormat = { type: 'encoded' }
 
-  get isStopped(): boolean {
-    return false
-  }
-
   constructor(url?: string, voice?: string) {
     this.url = url ?? DEFAULT_URL
     this.voice = voice ?? DEFAULT_VOICE

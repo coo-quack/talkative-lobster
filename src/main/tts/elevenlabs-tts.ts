@@ -22,10 +22,6 @@ export class ElevenLabsTts implements ITtsProvider {
     bitDepth: 16
   }
 
-  get isStopped(): boolean {
-    return false
-  }
-
   constructor(config: ElevenLabsTtsConfig) {
     this.client = new ElevenLabsClient({ apiKey: config.apiKey })
     this.voiceId = config.voiceId

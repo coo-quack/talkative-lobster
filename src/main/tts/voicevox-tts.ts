@@ -9,10 +9,6 @@ export class VoicevoxTts implements ITtsProvider {
 
   readonly audioFormat: TtsAudioFormat = { type: 'encoded' }
 
-  get isStopped(): boolean {
-    return false
-  }
-
   constructor(url?: string, speakerId = 1) {
     this.url = url ?? DEFAULT_URL
     this.speakerId = speakerId

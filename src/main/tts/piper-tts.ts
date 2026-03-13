@@ -14,10 +14,6 @@ export class PiperTts implements ITtsProvider {
 
   readonly audioFormat: TtsAudioFormat = { type: 'encoded' }
 
-  get isStopped(): boolean {
-    return false
-  }
-
   constructor(binaryPath: string, modelPath: string) {
     this.binaryPath = binaryPath
     this.modelPath = modelPath

@@ -44,14 +44,8 @@ describe('ElevenLabsTts', () => {
     })
   })
 
-  it('isStopped is always false (generation counter pattern)', () => {
-    engine.stop()
-    expect(engine.isStopped).toBe(false)
-  })
-
   it('updates voice and model', () => {
     engine.setVoiceId('new-voice')
     engine.setModelId('new-model')
-    expect(engine.isStopped).toBe(false)
   })
 })

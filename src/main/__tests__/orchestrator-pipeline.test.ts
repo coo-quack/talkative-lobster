@@ -58,9 +58,6 @@ function createMockTtsProvider(chunks: Buffer[] = [Buffer.from([1, 2, 3])]): ITt
   let generation = 0
   return {
     audioFormat: { type: 'encoded' as const },
-    get isStopped() {
-      return false
-    },
     stop() {
       generation++
     },
@@ -272,9 +269,6 @@ describe('Orchestrator pipeline', () => {
     it('TTS connection error → error IPC + state stays consistent', async () => {
       const mockTts: ITtsProvider = {
         audioFormat: { type: 'encoded' },
-        get isStopped() {
-          return false
-        },
         stop() {},
         // biome-ignore lint/correctness/useYield: throw-only generator for error testing
         stream: async function* (_text: string): AsyncGenerator<Buffer> {
@@ -297,9 +291,6 @@ describe('Orchestrator pipeline', () => {
     it('TTS ECONNREFUSED → descriptive error with address', async () => {
       const mockTts: ITtsProvider = {
         audioFormat: { type: 'encoded' },
-        get isStopped() {
-          return false
-        },
         stop() {},
         // biome-ignore lint/correctness/useYield: throw-only generator for error testing
         stream: async function* (_text: string): AsyncGenerator<Buffer> {
@@ -335,7 +326,6 @@ describe('Orchestrator pipeline', () => {
 
       getIpcOn(IPC.VOICE_START)()
       expect(getState()).toBe('listening')
-      expect(mockTts.isStopped).toBe(false)
       expect(internals(orchestrator).ttsPlaying).toBe(false)
     })
 
@@ -365,7 +355,6 @@ describe('Orchestrator pipeline', () => {
 
       getIpcOn(IPC.VOICE_INTERRUPT)()
       expect(getState()).toBe('listening')
-      expect(mockTts.isStopped).toBe(false)
     })
   })
 
@@ -472,7 +461,7 @@ describe('Orchestrator pipeline', () => {
   // ── TTS reset after interrupt ────────────────────────────────
 
   describe('TTS reset after interrupt', () => {
-    it('interrupt then new TTS cycle → isStopped is reset', async () => {
+    it('interrupt then new TTS cycle works correctly', async () => {
       const mockTts = createMockTtsProvider([Buffer.from([1, 2, 3])])
       internals(orchestrator).ttsProvider = mockTts
 
@@ -482,17 +471,16 @@ describe('Orchestrator pipeline', () => {
       sendEvent('STT_DONE', { text: 'hello' })
       expect(getState()).toBe('thinking')
 
-      // Interrupt — sets isStopped = true
+      // Interrupt
       getIpcOn(IPC.VOICE_START)()
       expect(getState()).toBe('listening')
-      expect(mockTts.isStopped).toBe(false)
 
       // New cycle
       sendEvent('SPEECH_END')
       sendEvent('STT_DONE', { text: 'world' })
       expect(getState()).toBe('thinking')
 
-      // handleTts should reset isStopped and produce audio
+      // handleTts should produce audio
       await internals(orchestrator).handleTts('new response')
 
       const audioCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.TTS_AUDIO)

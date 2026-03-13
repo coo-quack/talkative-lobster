@@ -175,7 +175,9 @@ describe('VoicevoxTts', () => {
       tts.stop()
 
       const queryResponse = mockResponse({ json: {} })
-      const synthResponse = mockResponse({ arrayBuffer: new Uint8Array([1, 2]).buffer as ArrayBuffer })
+      const synthResponse = mockResponse({
+        arrayBuffer: new Uint8Array([1, 2]).buffer as ArrayBuffer
+      })
       fetchMock.mockResolvedValueOnce(queryResponse).mockResolvedValueOnce(synthResponse)
 
       const chunks: Buffer[] = []
@@ -185,18 +187,6 @@ describe('VoicevoxTts', () => {
 
       // New stream() increments generation, so it proceeds normally
       expect(chunks).toHaveLength(1)
-    })
-  })
-
-  // ------------------------------------------------------------------
-  // 5. isStopped property
-  // ------------------------------------------------------------------
-  describe('isStopped', () => {
-    it('is always false (generation counter pattern)', () => {
-      const tts = new VoicevoxTts()
-      expect(tts.isStopped).toBe(false)
-      tts.stop()
-      expect(tts.isStopped).toBe(false)
     })
   })
 })
