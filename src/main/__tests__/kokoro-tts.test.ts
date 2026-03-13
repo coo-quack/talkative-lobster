@@ -161,14 +161,14 @@ describe('KokoroTts', () => {
       expect(Array.from(chunks[0])).toEqual([0xde, 0xad, 0xbe, 0xef])
     })
 
-    it('resets isStopped to false at the start of each call', async () => {
+    it('isStopped is always false with generation counter pattern', async () => {
       const tts = new KokoroTts()
       tts.stop()
-      expect(tts.isStopped).toBe(true)
+      expect(tts.isStopped).toBe(false)
 
       fetchMock.mockResolvedValue(makeOkResponse(new Uint8Array([1])))
       const gen = tts.stream('reset test')
-      await gen.next() // advance past the fetch + yield
+      await gen.next()
       await gen.return(undefined)
 
       expect(tts.isStopped).toBe(false)
@@ -198,10 +198,10 @@ describe('KokoroTts', () => {
   })
 
   describe('stop()', () => {
-    it('sets isStopped to true', () => {
+    it('isStopped remains false after stop() (generation counter invalidates streams instead)', () => {
       const tts = new KokoroTts()
       tts.stop()
-      expect(tts.isStopped).toBe(true)
+      expect(tts.isStopped).toBe(false)
     })
 
     it('prevents the buffer from being yielded when stop() is called before yield', async () => {

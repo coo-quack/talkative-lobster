@@ -6,6 +6,5 @@ export interface ITtsProvider {
   readonly audioFormat: TtsAudioFormat
   stream(text: string): AsyncGenerator<Buffer>
   stop(): void
-  reset(): void
   readonly isStopped: boolean
 }

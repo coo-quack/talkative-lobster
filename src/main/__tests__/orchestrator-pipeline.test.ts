@@ -55,21 +55,19 @@ vi.mock('../stt-engine', () => ({
 }))
 
 function createMockTtsProvider(chunks: Buffer[] = [Buffer.from([1, 2, 3])]): ITtsProvider {
-  let stopped = false
+  let generation = 0
   return {
     audioFormat: { type: 'encoded' as const },
     get isStopped() {
-      return stopped
+      return false
     },
     stop() {
-      stopped = true
-    },
-    reset() {
-      stopped = false
+      generation++
     },
     async *stream(_text: string) {
+      const gen = ++generation
       for (const chunk of chunks) {
-        if (stopped) return
+        if (gen !== generation) return
         yield chunk
       }
     }
@@ -278,7 +276,6 @@ describe('Orchestrator pipeline', () => {
           return false
         },
         stop() {},
-        reset() {},
         // biome-ignore lint/correctness/useYield: throw-only generator for error testing
         stream: async function* (_text: string): AsyncGenerator<Buffer> {
           throw new Error('Connection failed')
@@ -304,7 +301,6 @@ describe('Orchestrator pipeline', () => {
           return false
         },
         stop() {},
-        reset() {},
         // biome-ignore lint/correctness/useYield: throw-only generator for error testing
         stream: async function* (_text: string): AsyncGenerator<Buffer> {
           const err = Object.assign(new Error('fetch failed'), {
@@ -339,7 +335,7 @@ describe('Orchestrator pipeline', () => {
 
       getIpcOn(IPC.VOICE_START)()
       expect(getState()).toBe('listening')
-      expect(mockTts.isStopped).toBe(true)
+      expect(mockTts.isStopped).toBe(false)
       expect(internals(orchestrator).ttsPlaying).toBe(false)
     })
 
@@ -369,7 +365,7 @@ describe('Orchestrator pipeline', () => {
 
       getIpcOn(IPC.VOICE_INTERRUPT)()
       expect(getState()).toBe('listening')
-      expect(mockTts.isStopped).toBe(true)
+      expect(mockTts.isStopped).toBe(false)
     })
   })
 
@@ -489,7 +485,7 @@ describe('Orchestrator pipeline', () => {
       // Interrupt — sets isStopped = true
       getIpcOn(IPC.VOICE_START)()
       expect(getState()).toBe('listening')
-      expect(mockTts.isStopped).toBe(true)
+      expect(mockTts.isStopped).toBe(false)
 
       // New cycle
       sendEvent('SPEECH_END')

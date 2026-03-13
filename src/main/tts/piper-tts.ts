@@ -10,12 +10,12 @@ import type { ITtsProvider, TtsAudioFormat } from './tts-provider'
 export class PiperTts implements ITtsProvider {
   private binaryPath: string
   private modelPath: string
-  private stopped = false
+  private generation = 0
 
   readonly audioFormat: TtsAudioFormat = { type: 'encoded' }
 
   get isStopped(): boolean {
-    return this.stopped
+    return false
   }
 
   constructor(binaryPath: string, modelPath: string) {
@@ -24,7 +24,7 @@ export class PiperTts implements ITtsProvider {
   }
 
   async *stream(text: string): AsyncGenerator<Buffer> {
-    this.stopped = false
+    const gen = ++this.generation
 
     const dir = mkdtempSync(join(tmpdir(), 'lobster-piper-'))
     const inputPath = join(dir, 'input.txt')
@@ -39,7 +39,7 @@ export class PiperTts implements ITtsProvider {
         { timeout: 30_000 }
       )
 
-      if (!this.stopped) {
+      if (gen === this.generation) {
         const wav = readFileSync(outputPath)
         yield wav
       }
@@ -49,10 +49,6 @@ export class PiperTts implements ITtsProvider {
   }
 
   stop(): void {
-    this.stopped = true
-  }
-
-  reset(): void {
-    this.stopped = false
+    this.generation++
   }
 }

@@ -44,9 +44,9 @@ describe('ElevenLabsTts', () => {
     })
   })
 
-  it('can be stopped mid-stream', () => {
+  it('isStopped is always false (generation counter pattern)', () => {
     engine.stop()
-    expect(engine.isStopped).toBe(true)
+    expect(engine.isStopped).toBe(false)
   })
 
   it('updates voice and model', () => {

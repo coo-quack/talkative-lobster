@@ -144,18 +144,18 @@ describe('PiperTts', () => {
   })
 
   describe('stop()', () => {
-    it('sets isStopped to true', () => {
+    it('isStopped is always false (generation counter pattern)', () => {
       const tts = new PiperTts('/bin/piper', '/model.onnx')
       tts.stop()
-      expect(tts.isStopped).toBe(true)
+      expect(tts.isStopped).toBe(false)
     })
   })
 
   describe('isStopped', () => {
-    it('resets to false at the start of each stream() call', async () => {
+    it('is always false regardless of stop/stream calls', async () => {
       const tts = new PiperTts('/bin/piper', '/model.onnx')
       tts.stop()
-      expect(tts.isStopped).toBe(true)
+      expect(tts.isStopped).toBe(false)
 
       for await (const _ of tts.stream('reset')) {
         /* drain */

@@ -251,10 +251,6 @@ export class Orchestrator {
     }
     this.ttsPlaying = true
 
-    // Clear the stopped flag from any previous interruption so the
-    // new TTS cycle can proceed.
-    this.ttsProvider.reset()
-
     // Track this TTS invocation so stale callbacks from a previous
     // (interrupted) handleTts call cannot mutate state.
     const gen = ++this.ttsGeneration
