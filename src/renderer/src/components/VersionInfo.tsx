@@ -6,15 +6,14 @@ export function VersionInfo() {
   const [update, setUpdate] = useState<UpdateInfo | null>(null)
 
   useEffect(() => {
-    try {
-      window.lobster?.getAppVersion?.()?.then(setVersion, () => {})
-    } catch {
-      /* missing API */
+    const versionPromise = window.lobster?.getAppVersion?.()
+    if (versionPromise) {
+      versionPromise.then(setVersion).catch(() => {})
     }
-    try {
-      window.lobster?.checkForUpdate?.()?.then(setUpdate, () => {})
-    } catch {
-      /* missing API */
+
+    const updatePromise = window.lobster?.checkForUpdate?.()
+    if (updatePromise) {
+      updatePromise.then(setUpdate).catch(() => {})
     }
   }, [])
 
