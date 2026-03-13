@@ -4,6 +4,7 @@ import type { UpdateInfo } from '../shared/types'
 export type { UpdateInfo }
 
 const GITHUB_REPO = 'coo-quack/talkative-lobster'
+const USER_AGENT = 'talkative-lobster-update-checker'
 const CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
 const FAILURE_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes for failures
 
@@ -34,7 +35,11 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
   inFlightPromise = (async (): Promise<UpdateInfo> => {
     try {
       const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
-        headers: { Accept: 'application/vnd.github.v3+json' },
+        headers: {
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': USER_AGENT,
+          'X-GitHub-Api-Version': '2022-11-28'
+        },
         signal: AbortSignal.timeout(10_000)
       })
       const timestamp = Date.now()
