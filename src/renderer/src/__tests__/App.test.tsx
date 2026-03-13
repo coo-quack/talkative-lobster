@@ -72,6 +72,14 @@ const mockLobster = {
   readKeyFromOpenclaw: vi.fn().mockResolvedValue(null),
   readKeyFromEnv: vi.fn().mockResolvedValue(null),
   setKey: vi.fn().mockResolvedValue(undefined),
+  // App version & update
+  getAppVersion: vi.fn().mockResolvedValue('1.0.5'),
+  checkForUpdate: vi.fn().mockResolvedValue({
+    currentVersion: '1.0.5',
+    latestVersion: '1.0.5',
+    updateAvailable: false,
+    releaseUrl: null
+  }),
   // Aizuchi audio
   onAizuchiFormat: vi.fn(noop),
   onAizuchiAudio: vi.fn(noop),

@@ -21,7 +21,14 @@ const mockLobster = {
   voiceStart: vi.fn(),
   voiceStop: vi.fn(),
   voiceInterrupt: vi.fn(),
-  sendAudioChunk: vi.fn()
+  sendAudioChunk: vi.fn(),
+  getAppVersion: vi.fn().mockResolvedValue('1.0.5'),
+  checkForUpdate: vi.fn().mockResolvedValue({
+    currentVersion: '1.0.5',
+    latestVersion: '1.0.5',
+    updateAvailable: false,
+    releaseUrl: null
+  })
 }
 
 beforeEach(() => {

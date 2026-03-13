@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.1.0 (2026-03-14)
+
+### Features
+
+- Show app version and update notification in voice view
+- Check for updates via GitHub Releases API with caching (1h success / 5min failure TTL)
+
+### Fixes
+
+- Support multi-model LLM response formats (nested content arrays, typed containers)
+- Fix TTS interrupt — replace stopped boolean with generation counter pattern
+- Strip `<thinking>` tags alongside `<think>` from LLM responses
+- Recover from empty LLM final messages instead of getting stuck in thinking state
+- Safe JSON.stringify for unserializable final messages
+
+### Refactors
+
+- Remove `isStopped` from TTS provider interface — generation counter is sufficient
+- Hoist `SKIP_CONTENT_TYPES` to module-level constant in openclaw-client
+
+---
+
 ## v1.0.5 (2026-03-12)
 
 ### Security

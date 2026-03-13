@@ -60,12 +60,6 @@ describe('KokoroTts', () => {
       const tts: ITtsProvider = new KokoroTts()
       expect(typeof tts.stream).toBe('function')
       expect(typeof tts.stop).toBe('function')
-      expect(typeof tts.isStopped).toBe('boolean')
-    })
-
-    it('isStopped is false initially', () => {
-      const tts = new KokoroTts()
-      expect(tts.isStopped).toBe(false)
     })
 
     it('exposes encoded audio format', () => {
@@ -161,19 +155,6 @@ describe('KokoroTts', () => {
       expect(Array.from(chunks[0])).toEqual([0xde, 0xad, 0xbe, 0xef])
     })
 
-    it('resets isStopped to false at the start of each call', async () => {
-      const tts = new KokoroTts()
-      tts.stop()
-      expect(tts.isStopped).toBe(true)
-
-      fetchMock.mockResolvedValue(makeOkResponse(new Uint8Array([1])))
-      const gen = tts.stream('reset test')
-      await gen.next() // advance past the fetch + yield
-      await gen.return(undefined)
-
-      expect(tts.isStopped).toBe(false)
-    })
-
     it('throws on a non-OK response', async () => {
       const tts = new KokoroTts()
       fetchMock.mockResolvedValue(makeErrorResponse(503))
@@ -198,12 +179,6 @@ describe('KokoroTts', () => {
   })
 
   describe('stop()', () => {
-    it('sets isStopped to true', () => {
-      const tts = new KokoroTts()
-      tts.stop()
-      expect(tts.isStopped).toBe(true)
-    })
-
     it('prevents the buffer from being yielded when stop() is called before yield', async () => {
       const tts = new KokoroTts()
 

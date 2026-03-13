@@ -57,6 +57,7 @@ export class Orchestrator {
   private messages: ChatMessage[] = []
   private sttInProgress = false
   private ttsPlaying = false
+  private ttsGeneration = 0
   private isFirstMessage = true
   private aizuchi: AizuchiManager
   private ipcCleanup: (() => void)[] = []
@@ -198,23 +199,29 @@ export class Orchestrator {
 
     this.wsClient.on('done', (text: string) => {
       console.log(`[orchestrator] LLM done: "${text.slice(0, 100)}..."`)
-      // Strip <think>...</think> reasoning blocks and <final> tags from the response
+      // Strip reasoning blocks and <final> tags from the response
       const cleaned = text
         .replace(/<think>[\s\S]*?<\/think>\s*/g, '')
+        .replace(/<thinking>[\s\S]*?<\/thinking>\s*/g, '')
         .replace(/<\/?final>/g, '')
         .trim()
-      const ttsText = cleaned || text.trim()
+      // Empty response (e.g. after interruption or thinking-only output)
+      if (!cleaned) {
+        console.log('[orchestrator] Empty LLM response, skipping TTS')
+        this.actor.send({ type: 'TTS_DONE' })
+        return
+      }
 
       const msg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        text: ttsText,
+        text: cleaned,
         timestamp: Date.now()
       }
       this.pushMessage(msg)
       this.send(IPC.CHAT_MESSAGE, msg)
 
-      this.handleTts(ttsText)
+      this.handleTts(cleaned)
     })
 
     this.wsClient.on('chatError', (message: string) => {
@@ -249,21 +256,25 @@ export class Orchestrator {
     }
     this.ttsPlaying = true
 
-    // Split text into sentence chunks to handle TTS character limits
+    // Track this TTS invocation so stale callbacks from a previous
+    // (interrupted) handleTts call cannot mutate state.
+    const gen = ++this.ttsGeneration
     const chunks = splitTextForTts(text)
     let audioSent = false
 
     try {
       this.send(IPC.TTS_FORMAT, this.ttsProvider.audioFormat)
       for (const chunk of chunks) {
-        if (this.ttsProvider.isStopped) break
+        if (gen !== this.ttsGeneration) break
         for await (const audio of this.ttsProvider.stream(chunk)) {
-          if (this.ttsProvider.isStopped) break
+          if (gen !== this.ttsGeneration) break
           this.send(IPC.TTS_AUDIO, new Uint8Array(audio).buffer)
           audioSent = true
         }
       }
     } catch (err: unknown) {
+      // If this TTS invocation was superseded, silently discard the error
+      if (gen !== this.ttsGeneration) return
       const cause = errCause(err)
       const msg =
         cause?.code === 'ECONNREFUSED'
@@ -273,10 +284,11 @@ export class Orchestrator {
       this.send(IPC.ERROR, msg)
     }
 
+    // Stale invocation — a newer handleTts is now in control
+    if (gen !== this.ttsGeneration) return
+
     this.ttsPlaying = false
-    if (!this.ttsProvider.isStopped) {
-      this.send(IPC.TTS_STOP, null)
-    }
+    this.send(IPC.TTS_STOP, null)
     // Only transition to idle if no audio was sent to renderer.
     // If audio was sent, the renderer will send TTS_PLAYBACK_DONE when done.
     if (!audioSent) {
@@ -383,10 +395,11 @@ export class Orchestrator {
         currentState === 'thinking' ||
         currentState === 'speaking'
       ) {
-        // Cancel all in-progress processing
+        // Cancel all in-progress processing and invalidate any running handleTts
         this.ttsProvider?.stop()
         this.wsClient?.cancelActiveRuns()
         this.ttsPlaying = false
+        this.ttsGeneration++
         console.log(`[orchestrator] User interrupted in ${currentState}`)
       }
       this.actor.send({ type: 'SPEECH_START' })
@@ -398,6 +411,7 @@ export class Orchestrator {
         this.ttsProvider?.stop()
         this.wsClient?.cancelActiveRuns()
         this.ttsPlaying = false
+        this.ttsGeneration++
         this.sttInProgress = false
         console.log(`[orchestrator] Stop requested in ${currentState}`)
       }
@@ -407,6 +421,7 @@ export class Orchestrator {
     this.onIpc(IPC.VOICE_INTERRUPT, () => {
       this.ttsProvider?.stop()
       this.ttsPlaying = false
+      this.ttsGeneration++
       this.actor.send({ type: 'SPEECH_START' })
     })
 

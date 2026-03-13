@@ -63,18 +63,16 @@ vi.mock('../stt-engine', () => ({
 // ── TTS mocks ───────────────────────────────────────────────────────
 
 function createMockTtsProvider(chunks: Buffer[] = [Buffer.from([1, 2, 3])]): ITtsProvider {
-  let stopped = false
+  let generation = 0
   return {
     audioFormat: { type: 'encoded' as const },
-    get isStopped() {
-      return stopped
-    },
     stop() {
-      stopped = true
+      generation++
     },
     async *stream(_text: string) {
+      const gen = ++generation
       for (const chunk of chunks) {
-        if (stopped) return
+        if (gen !== generation) return
         yield chunk
       }
     }
@@ -220,7 +218,6 @@ describe('Orchestrator', () => {
 
       getIpcOn(IPC.VOICE_START)()
       expect(getState()).toBe('listening')
-      expect(mockTts.isStopped).toBe(true)
       expect(mockWsClient.cancelActiveRuns).toHaveBeenCalled()
     })
 
@@ -235,7 +232,6 @@ describe('Orchestrator', () => {
 
       getIpcOn(IPC.VOICE_START)()
       expect(getState()).toBe('listening')
-      expect(mockTts.isStopped).toBe(true)
     })
 
     it('interrupts during speaking: cancels TTS and LLM, resets flags', () => {
@@ -260,7 +256,6 @@ describe('Orchestrator', () => {
 
       getIpcOn(IPC.VOICE_START)()
       expect(getState()).toBe('listening')
-      expect(mockTts.isStopped).toBe(false)
     })
   })
 
@@ -294,7 +289,6 @@ describe('Orchestrator', () => {
 
       getIpcOn(IPC.VOICE_STOP)()
       expect(getState()).toBe('idle')
-      expect(mockTts.isStopped).toBe(true)
       expect(mockWsClient.cancelActiveRuns).toHaveBeenCalled()
       expect(internals(orchestrator).ttsPlaying).toBe(false)
       expect(internals(orchestrator).sttInProgress).toBe(false)
@@ -424,7 +418,6 @@ describe('Orchestrator', () => {
 
       getIpcOn(IPC.VOICE_INTERRUPT)()
       expect(getState()).toBe('listening')
-      expect(mockTts.isStopped).toBe(true)
       expect(internals(orchestrator).ttsPlaying).toBe(false)
     })
   })
@@ -521,17 +514,17 @@ describe('Orchestrator', () => {
     })
 
     it('does not send audio when TTS was stopped mid-stream', async () => {
-      let streamCalled = false
+      let generation = 0
       const mockTts: ITtsProvider = {
         audioFormat: { type: 'encoded' },
-        get isStopped() {
-          return streamCalled
-        },
         stop() {
-          streamCalled = true
+          generation++
         },
         async *stream(_text: string) {
-          streamCalled = true
+          const gen = ++generation
+          // Simulate stop happening during stream
+          mockTts.stop()
+          if (gen !== generation) return
           yield Buffer.from([1, 2, 3])
         }
       }
@@ -546,9 +539,6 @@ describe('Orchestrator', () => {
     it('handles TTS error gracefully', async () => {
       const mockTts: ITtsProvider = {
         audioFormat: { type: 'encoded' },
-        get isStopped() {
-          return false
-        },
         stop() {},
         // biome-ignore lint/correctness/useYield: throw-only generator for error testing
         stream: async function* (_text: string): AsyncGenerator<Buffer> {
@@ -567,9 +557,6 @@ describe('Orchestrator', () => {
     it('handles ECONNREFUSED error with descriptive message', async () => {
       const mockTts: ITtsProvider = {
         audioFormat: { type: 'encoded' },
-        get isStopped() {
-          return false
-        },
         stop() {},
         // biome-ignore lint/correctness/useYield: throw-only generator for error testing
         stream: async function* (_text: string): AsyncGenerator<Buffer> {
@@ -596,7 +583,7 @@ describe('Orchestrator', () => {
 
       await internals(orchestrator).handleTts('hello')
 
-      expect(mockTts.isStopped).toBe(true)
+      // Previous TTS was cancelled (TTS_CANCEL sent to renderer)
       const cancelCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.TTS_CANCEL)
       expect(cancelCall).toBeDefined()
     })

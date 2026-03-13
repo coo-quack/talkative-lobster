@@ -5,13 +5,9 @@ const DEFAULT_VOICE = 'jf_alpha'
 export class KokoroTts implements ITtsProvider {
   private url: string
   private voice: string
-  private stopped = false
+  private generation = 0
 
   readonly audioFormat: TtsAudioFormat = { type: 'encoded' }
-
-  get isStopped(): boolean {
-    return this.stopped
-  }
 
   constructor(url?: string, voice?: string) {
     this.url = url ?? DEFAULT_URL
@@ -19,7 +15,7 @@ export class KokoroTts implements ITtsProvider {
   }
 
   async *stream(text: string): AsyncGenerator<Buffer> {
-    this.stopped = false
+    const gen = ++this.generation
 
     const res = await fetch(`${this.url}/v1/audio/speech`, {
       method: 'POST',
@@ -34,7 +30,7 @@ export class KokoroTts implements ITtsProvider {
     if (!res.ok) throw new Error(`Kokoro TTS failed: ${res.status}`)
 
     const buf = Buffer.from(await res.arrayBuffer())
-    if (!this.stopped) {
+    if (gen === this.generation) {
       yield buf
     }
   }
@@ -48,6 +44,6 @@ export class KokoroTts implements ITtsProvider {
   }
 
   stop(): void {
-    this.stopped = true
+    this.generation++
   }
 }
