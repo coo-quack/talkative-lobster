@@ -81,8 +81,10 @@ export function resetUpdateCache(): void {
 /**
  * Compare two semver strings. Returns > 0 if a > b, < 0 if a < b, 0 if equal.
  * Handles prerelease identifiers (e.g. `1.2.3-beta.1`): a release version is
- * considered greater than a prerelease with the same major.minor.patch.
- * Non-numeric segments and build metadata (+...) are ignored gracefully.
+ * considered greater than a prerelease with the same major.minor.patch, and
+ * prereleases with the same core version are ordered according to SemVer
+ * precedence rules. Non-numeric segments in the core and build metadata (+...)
+ * are ignored gracefully.
  */
 export function compareVersions(a: string, b: string): number {
   // Strip build metadata (+...) then split into core and prerelease on first '-'
@@ -96,6 +98,45 @@ export function compareVersions(a: string, b: string): number {
       return Number.isFinite(n) ? n : 0
     })
     return { parts, prerelease }
+  }
+
+  // Compare prerelease identifiers per SemVer §11
+  const comparePrerelease = (ra: string, rb: string): number => {
+    const ida = ra.split('.')
+    const idb = rb.split('.')
+    const maxLen = Math.max(ida.length, idb.length)
+
+    const isNumeric = (id: string): boolean => /^[0-9]+$/.test(id)
+
+    for (let i = 0; i < maxLen; i++) {
+      const aId = ida[i]
+      const bId = idb[i]
+
+      if (aId === undefined && bId === undefined) break
+      if (aId === undefined) return -1 // shorter set has lower precedence
+      if (bId === undefined) return 1
+
+      const aIsNum = isNumeric(aId)
+      const bIsNum = isNumeric(bId)
+
+      if (aIsNum && bIsNum) {
+        const aNum = Number(aId)
+        const bNum = Number(bId)
+        if (aNum > bNum) return 1
+        if (aNum < bNum) return -1
+        continue
+      }
+
+      // Numeric identifiers have lower precedence than non-numeric
+      if (aIsNum && !bIsNum) return -1
+      if (!aIsNum && bIsNum) return 1
+
+      // Both non-numeric: compare lexicographically
+      if (aId > bId) return 1
+      if (aId < bId) return -1
+    }
+
+    return 0
   }
 
   const pa = parse(a)
@@ -112,5 +153,8 @@ export function compareVersions(a: string, b: string): number {
   // Numeric parts are equal: release > prerelease (semver §11.3)
   if (pa.prerelease === null && pb.prerelease !== null) return 1
   if (pa.prerelease !== null && pb.prerelease === null) return -1
+  if (pa.prerelease !== null && pb.prerelease !== null) {
+    return comparePrerelease(pa.prerelease, pb.prerelease)
+  }
   return 0
 }
