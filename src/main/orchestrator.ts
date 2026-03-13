@@ -205,10 +205,8 @@ export class Orchestrator {
         .replace(/<thinking>[\s\S]*?<\/thinking>\s*/g, '')
         .replace(/<\/?final>/g, '')
         .trim()
-      const ttsText = cleaned || text.trim()
-
-      // Empty response (e.g. after interruption) — just recover state machine
-      if (!ttsText) {
+      // Empty response (e.g. after interruption or thinking-only output)
+      if (!cleaned) {
         console.log('[orchestrator] Empty LLM response, skipping TTS')
         this.actor.send({ type: 'TTS_DONE' })
         return
@@ -217,13 +215,13 @@ export class Orchestrator {
       const msg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        text: ttsText,
+        text: cleaned,
         timestamp: Date.now()
       }
       this.pushMessage(msg)
       this.send(IPC.CHAT_MESSAGE, msg)
 
-      this.handleTts(ttsText)
+      this.handleTts(cleaned)
     })
 
     this.wsClient.on('chatError', (message: string) => {

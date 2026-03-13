@@ -13,6 +13,9 @@ import type { IGatewayClient } from './gateway-client'
 
 const PROTOCOL_VERSION = 3
 
+/** Content block types that should be skipped during text extraction */
+const SKIP_CONTENT_TYPES = new Set(['tool_use', 'tool_result', 'image', 'image_url'])
+
 export class OpenClawClient extends EventEmitter implements IGatewayClient {
   private ws: WebSocket | null = null
   private pending = new Map<
@@ -200,10 +203,14 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
             // sends a completion signal without a message body. Emit 'done'
             // with empty string so the orchestrator can transition out of
             // thinking state instead of getting stuck.
-            console.warn(
-              '[openclaw] Final message had no extractable text:',
-              JSON.stringify(payload.message)?.slice(0, 500)
-            )
+            try {
+              console.warn(
+                '[openclaw] Final message had no extractable text:',
+                JSON.stringify(payload.message)?.slice(0, 500)
+              )
+            } catch {
+              console.warn('[openclaw] Final message had no extractable text (unserializable)')
+            }
             this.emit('done', '')
           }
         } else if (payload.state === 'error') {
@@ -386,8 +393,7 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
     // recursive traversal into their content/parts/etc.
     if (typeof obj.type === 'string') {
       if (obj.type === 'text' && typeof obj.text === 'string') return obj.text
-      const skipTypes = new Set(['tool_use', 'tool_result', 'image', 'image_url'])
-      if (skipTypes.has(obj.type)) return ''
+      if (SKIP_CONTENT_TYPES.has(obj.type)) return ''
     }
 
     // Object with a `text` string field — this is the most common leaf
