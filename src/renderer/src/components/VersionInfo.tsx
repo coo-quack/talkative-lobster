@@ -2,25 +2,20 @@ import { useState, useEffect } from 'react'
 import type { UpdateInfo } from '../../../shared/types'
 
 export function VersionInfo() {
-  const [version, setVersion] = useState<string | null>(null)
   const [update, setUpdate] = useState<UpdateInfo | null>(null)
 
   useEffect(() => {
-    window.lobster
-      ?.getAppVersion?.()
-      ?.then(setVersion)
-      .catch(() => {})
     window.lobster
       ?.checkForUpdate?.()
       ?.then(setUpdate)
       .catch(() => {})
   }, [])
 
-  if (!version) return null
+  if (!update) return null
 
   return (
     <div className="mt-4 border-border border-t pt-3 text-center text-xs text-neutral-500">
-      <span>v{version}</span>
+      <span>v{update.currentVersion}</span>
       {update?.updateAvailable && update.releaseUrl && (
         <span className="ml-2">
           —{' '}
