@@ -72,6 +72,9 @@ function createMockTtsProvider(chunks: Buffer[] = [Buffer.from([1, 2, 3])]): ITt
     stop() {
       stopped = true
     },
+    reset() {
+      stopped = false
+    },
     async *stream(_text: string) {
       for (const chunk of chunks) {
         if (stopped) return
@@ -530,6 +533,9 @@ describe('Orchestrator', () => {
         stop() {
           streamCalled = true
         },
+        reset() {
+          streamCalled = false
+        },
         async *stream(_text: string) {
           streamCalled = true
           yield Buffer.from([1, 2, 3])
@@ -550,6 +556,7 @@ describe('Orchestrator', () => {
           return false
         },
         stop() {},
+        reset() {},
         // biome-ignore lint/correctness/useYield: throw-only generator for error testing
         stream: async function* (_text: string): AsyncGenerator<Buffer> {
           throw new Error('TTS connection failed')
@@ -571,6 +578,7 @@ describe('Orchestrator', () => {
           return false
         },
         stop() {},
+        reset() {},
         // biome-ignore lint/correctness/useYield: throw-only generator for error testing
         stream: async function* (_text: string): AsyncGenerator<Buffer> {
           const err = Object.assign(new Error('fetch failed'), {
@@ -596,9 +604,12 @@ describe('Orchestrator', () => {
 
       await internals(orchestrator).handleTts('hello')
 
-      expect(mockTts.isStopped).toBe(true)
+      // Previous TTS was cancelled (TTS_CANCEL sent to renderer)
       const cancelCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.TTS_CANCEL)
       expect(cancelCall).toBeDefined()
+      // isStopped is false at the end because reset() is called after stop()
+      // to allow the new TTS cycle to proceed
+      expect(mockTts.isStopped).toBe(false)
     })
   })
 

@@ -64,6 +64,9 @@ function createMockTtsProvider(chunks: Buffer[] = [Buffer.from([1, 2, 3])]): ITt
     stop() {
       stopped = true
     },
+    reset() {
+      stopped = false
+    },
     async *stream(_text: string) {
       for (const chunk of chunks) {
         if (stopped) return

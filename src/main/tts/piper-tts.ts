@@ -51,4 +51,8 @@ export class PiperTts implements ITtsProvider {
   stop(): void {
     this.stopped = true
   }
+
+  reset(): void {
+    this.stopped = false
+  }
 }

@@ -193,7 +193,18 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
           const content =
             this.extractText(payload.message) ?? this.lastAgentText.get(payload.runId) ?? null
           this.lastAgentText.delete(payload.runId)
-          if (content) this.emit('done', content)
+          if (content) {
+            this.emit('done', content)
+          } else {
+            // Empty final — may happen after interruption or when the gateway
+            // sends a completion signal without a message body. Log for
+            // debugging but do not treat as an error to avoid kicking the
+            // state machine back to idle unexpectedly.
+            console.warn(
+              '[openclaw] Final message had no extractable text:',
+              JSON.stringify(payload.message)?.slice(0, 500)
+            )
+          }
         } else if (payload.state === 'error') {
           this.activeRunIds.delete(payload.runId)
           this.lastAgentText.delete(payload.runId)
@@ -211,12 +222,9 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
         }
         // Buffer the latest assistant text from agent events as fallback
         // in case the chat final event arrives without a message body.
-        if (
-          payload.stream === 'assistant' &&
-          payload.runId &&
-          typeof payload.data?.text === 'string'
-        ) {
-          this.lastAgentText.set(payload.runId, payload.data.text)
+        if (payload.stream === 'assistant' && payload.runId) {
+          const text = this.extractText(payload.data ?? null)
+          if (text) this.lastAgentText.set(payload.runId, text)
         }
       }
 
@@ -338,21 +346,84 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
     })
   }
 
+  /**
+   * Recursively extract text from an LLM response regardless of provider.
+   *
+   * Instead of branching on provider name, we inspect the actual data
+   * structure and collect text from wherever it lives:
+   *
+   *   - string value at `.text` or `.content`
+   *   - array at `.content`, `.parts`, `.choices`, or `.candidates`
+   *     → recurse into each element
+   *   - object at `.message`, `.delta`, or `.content`
+   *     → recurse into it
+   *
+   * A depth limit prevents runaway recursion on unexpected payloads.
+   */
   private extractText(message: unknown): string | null {
-    if (!message || typeof message !== 'object') return null
-    const msg = message as Record<string, unknown>
-    if (typeof msg.text === 'string') return msg.text
-    if (Array.isArray(msg.content)) {
-      const textParts = msg.content
-        .filter(
-          (c: unknown) =>
-            typeof c === 'object' && c !== null && (c as Record<string, unknown>).type === 'text'
-        )
-        .map((c: unknown) => (c as Record<string, unknown>).text as string)
-      return textParts.join('') || null
+    const result = this.collectText(message, 6)
+    return result || null
+  }
+
+  private collectText(node: unknown, depth: number): string {
+    if (depth <= 0 || node == null) return ''
+
+    // Leaf: plain string — return as-is
+    if (typeof node === 'string') return node
+
+    if (typeof node !== 'object') return ''
+
+    // Array: collect text from each element
+    if (Array.isArray(node)) {
+      return node.map((el) => this.collectText(el, depth - 1)).join('')
     }
-    if (typeof msg.content === 'string') return msg.content
-    return null
+
+    const obj = node as Record<string, unknown>
+
+    // If the object has a `type` field, only extract text from text-type blocks.
+    // This prevents picking up unrelated text from tool_use, tool_result, etc.
+    if (typeof obj.type === 'string') {
+      if (obj.type === 'text' && typeof obj.text === 'string') return obj.text
+      // Non-text typed block — skip entirely
+      return ''
+    }
+
+    // Object with a `text` string field — this is the most common leaf
+    if (typeof obj.text === 'string') return obj.text
+
+    // Object with `content` — may be string, array of blocks, or nested object
+    if (obj.content !== undefined) {
+      const inner = this.collectText(obj.content, depth - 1)
+      if (inner) return inner
+    }
+
+    // Object with `parts` array (list of content parts)
+    if (Array.isArray(obj.parts)) {
+      const inner = this.collectText(obj.parts, depth - 1)
+      if (inner) return inner
+    }
+
+    // Object wrapping items in `choices` or `candidates` arrays
+    if (Array.isArray(obj.choices)) {
+      const inner = this.collectText(obj.choices, depth - 1)
+      if (inner) return inner
+    }
+    if (Array.isArray(obj.candidates)) {
+      const inner = this.collectText(obj.candidates, depth - 1)
+      if (inner) return inner
+    }
+
+    // Object with `message` or `delta` sub-object
+    if (obj.message && typeof obj.message === 'object') {
+      const inner = this.collectText(obj.message, depth - 1)
+      if (inner) return inner
+    }
+    if (obj.delta && typeof obj.delta === 'object') {
+      const inner = this.collectText(obj.delta, depth - 1)
+      if (inner) return inner
+    }
+
+    return ''
   }
 
   private scheduleReconnect(): void {
