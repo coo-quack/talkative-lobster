@@ -33,16 +33,18 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
 
   inFlightPromise = (async (): Promise<UpdateInfo> => {
     try {
-      const res = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
-        {
-          headers: { Accept: 'application/vnd.github.v3+json' },
-          signal: AbortSignal.timeout(10_000)
-        }
-      )
+      const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
+        headers: { Accept: 'application/vnd.github.v3+json' },
+        signal: AbortSignal.timeout(10_000)
+      })
       const timestamp = Date.now()
       if (!res.ok) {
-        const result: UpdateInfo = { currentVersion, latestVersion: null, updateAvailable: false, releaseUrl: null }
+        const result: UpdateInfo = {
+          currentVersion,
+          latestVersion: null,
+          updateAvailable: false,
+          releaseUrl: null
+        }
         cachedResult = result
         cacheTimestamp = timestamp
         return result
@@ -52,7 +54,9 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
       const latestVersion = latestTag?.replace(/^v/, '') ?? null
       const releaseUrl = data.html_url ?? null
 
-      const updateAvailable = latestVersion ? compareVersions(latestVersion, currentVersion) > 0 : false
+      const updateAvailable = latestVersion
+        ? compareVersions(latestVersion, currentVersion) > 0
+        : false
 
       const result: UpdateInfo = { currentVersion, latestVersion, updateAvailable, releaseUrl }
       cachedResult = result
@@ -60,7 +64,12 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
       return result
     } catch {
       const timestamp = Date.now()
-      const result: UpdateInfo = { currentVersion, latestVersion: null, updateAvailable: false, releaseUrl: null }
+      const result: UpdateInfo = {
+        currentVersion,
+        latestVersion: null,
+        updateAvailable: false,
+        releaseUrl: null
+      }
       cachedResult = result
       cacheTimestamp = timestamp
       return result
@@ -70,8 +79,6 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
   void inFlightPromise.finally(() => {
     inFlightPromise = null
   })
-
-
 
   return inFlightPromise
 }
