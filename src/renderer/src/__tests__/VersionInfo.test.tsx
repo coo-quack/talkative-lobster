@@ -6,6 +6,7 @@ import { VersionInfo } from '../components/VersionInfo'
 
 beforeEach(() => {
   ;(window as unknown as { lobster: Record<string, unknown> }).lobster = {
+    getAppVersion: vi.fn().mockResolvedValue('1.2.3'),
     checkForUpdate: vi.fn().mockResolvedValue({
       currentVersion: '1.2.3',
       latestVersion: '1.2.3',
@@ -20,13 +21,25 @@ afterEach(() => {
 })
 
 describe('VersionInfo', () => {
-  it('displays the current version', async () => {
+  it('displays the current version immediately from getAppVersion', async () => {
     render(<VersionInfo />)
     expect(await screen.findByText('v1.2.3')).toBeInTheDocument()
   })
 
+  it('shows version even when checkForUpdate is slow', async () => {
+    ;(window as unknown as { lobster: Record<string, unknown> }).lobster = {
+      getAppVersion: vi.fn().mockResolvedValue('1.2.3'),
+      checkForUpdate: vi.fn().mockReturnValue(new Promise(() => {})) // never resolves
+    }
+
+    render(<VersionInfo />)
+    expect(await screen.findByText('v1.2.3')).toBeInTheDocument()
+    expect(screen.queryByText(/available/)).not.toBeInTheDocument()
+  })
+
   it('shows update link when a newer version is available', async () => {
     ;(window as unknown as { lobster: Record<string, unknown> }).lobster = {
+      getAppVersion: vi.fn().mockResolvedValue('1.2.3'),
       checkForUpdate: vi.fn().mockResolvedValue({
         currentVersion: '1.2.3',
         latestVersion: '1.3.0',
@@ -51,7 +64,7 @@ describe('VersionInfo', () => {
     expect(screen.queryByText(/available/)).not.toBeInTheDocument()
   })
 
-  it('renders nothing when checkForUpdate is unavailable', async () => {
+  it('renders nothing when APIs are unavailable', async () => {
     ;(window as unknown as { lobster: Record<string, unknown> }).lobster = {}
 
     const { container } = render(<VersionInfo />)
