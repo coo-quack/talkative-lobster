@@ -5,13 +5,9 @@ const DEFAULT_URL = 'http://localhost:50021'
 export class VoicevoxTts implements ITtsProvider {
   private url: string
   private speakerId: number
-  private stopped = false
+  private generation = 0
 
   readonly audioFormat: TtsAudioFormat = { type: 'encoded' }
-
-  get isStopped(): boolean {
-    return this.stopped
-  }
 
   constructor(url?: string, speakerId = 1) {
     this.url = url ?? DEFAULT_URL
@@ -19,7 +15,7 @@ export class VoicevoxTts implements ITtsProvider {
   }
 
   async *stream(text: string): AsyncGenerator<Buffer> {
-    this.stopped = false
+    const gen = ++this.generation
 
     const queryRes = await fetch(
       `${this.url}/audio_query?text=${encodeURIComponent(text)}&speaker=${this.speakerId}`,
@@ -35,12 +31,12 @@ export class VoicevoxTts implements ITtsProvider {
     })
     if (!synthRes.ok) throw new Error(`VOICEVOX synthesis failed: ${synthRes.status}`)
 
-    if (this.stopped) return
+    if (gen !== this.generation) return
 
     // Yield the complete WAV as a single buffer — decodeAudioData requires
     // a valid audio file with headers, so splitting would cause decode failures.
     const buf = Buffer.from(await synthRes.arrayBuffer())
-    if (!this.stopped) yield buf
+    if (gen === this.generation) yield buf
   }
 
   setUrl(url: string): void {
@@ -48,6 +44,6 @@ export class VoicevoxTts implements ITtsProvider {
   }
 
   stop(): void {
-    this.stopped = true
+    this.generation++
   }
 }

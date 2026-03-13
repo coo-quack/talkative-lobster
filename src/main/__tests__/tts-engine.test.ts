@@ -44,14 +44,8 @@ describe('ElevenLabsTts', () => {
     })
   })
 
-  it('can be stopped mid-stream', () => {
-    engine.stop()
-    expect(engine.isStopped).toBe(true)
-  })
-
   it('updates voice and model', () => {
     engine.setVoiceId('new-voice')
     engine.setModelId('new-model')
-    expect(engine.isStopped).toBe(false)
   })
 })

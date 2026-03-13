@@ -55,18 +55,16 @@ vi.mock('../stt-engine', () => ({
 }))
 
 function createMockTtsProvider(chunks: Buffer[] = [Buffer.from([1, 2, 3])]): ITtsProvider {
-  let stopped = false
+  let generation = 0
   return {
     audioFormat: { type: 'encoded' as const },
-    get isStopped() {
-      return stopped
-    },
     stop() {
-      stopped = true
+      generation++
     },
     async *stream(_text: string) {
+      const gen = ++generation
       for (const chunk of chunks) {
-        if (stopped) return
+        if (gen !== generation) return
         yield chunk
       }
     }
@@ -271,9 +269,6 @@ describe('Orchestrator pipeline', () => {
     it('TTS connection error → error IPC + state stays consistent', async () => {
       const mockTts: ITtsProvider = {
         audioFormat: { type: 'encoded' },
-        get isStopped() {
-          return false
-        },
         stop() {},
         // biome-ignore lint/correctness/useYield: throw-only generator for error testing
         stream: async function* (_text: string): AsyncGenerator<Buffer> {
@@ -296,9 +291,6 @@ describe('Orchestrator pipeline', () => {
     it('TTS ECONNREFUSED → descriptive error with address', async () => {
       const mockTts: ITtsProvider = {
         audioFormat: { type: 'encoded' },
-        get isStopped() {
-          return false
-        },
         stop() {},
         // biome-ignore lint/correctness/useYield: throw-only generator for error testing
         stream: async function* (_text: string): AsyncGenerator<Buffer> {
@@ -334,7 +326,6 @@ describe('Orchestrator pipeline', () => {
 
       getIpcOn(IPC.VOICE_START)()
       expect(getState()).toBe('listening')
-      expect(mockTts.isStopped).toBe(true)
       expect(internals(orchestrator).ttsPlaying).toBe(false)
     })
 
@@ -364,7 +355,6 @@ describe('Orchestrator pipeline', () => {
 
       getIpcOn(IPC.VOICE_INTERRUPT)()
       expect(getState()).toBe('listening')
-      expect(mockTts.isStopped).toBe(true)
     })
   })
 
@@ -465,6 +455,80 @@ describe('Orchestrator pipeline', () => {
       expect(messages.length).toBe(1)
       expect(messages[0].role).toBe('user')
       expect(messages[0].text).toBe('text input')
+    })
+  })
+
+  // ── TTS reset after interrupt ────────────────────────────────
+
+  describe('TTS reset after interrupt', () => {
+    it('interrupt then new TTS cycle works correctly', async () => {
+      const mockTts = createMockTtsProvider([Buffer.from([1, 2, 3])])
+      internals(orchestrator).ttsProvider = mockTts
+
+      // Enter thinking
+      sendEvent('SPEECH_START')
+      sendEvent('SPEECH_END')
+      sendEvent('STT_DONE', { text: 'hello' })
+      expect(getState()).toBe('thinking')
+
+      // Interrupt
+      getIpcOn(IPC.VOICE_START)()
+      expect(getState()).toBe('listening')
+
+      // New cycle
+      sendEvent('SPEECH_END')
+      sendEvent('STT_DONE', { text: 'world' })
+      expect(getState()).toBe('thinking')
+
+      // handleTts should produce audio
+      await internals(orchestrator).handleTts('new response')
+
+      const audioCall = webContentsSend.mock.calls.find((c: unknown[]) => c[0] === IPC.TTS_AUDIO)
+      expect(audioCall).toBeDefined()
+    })
+
+    it('stale handleTts does not mutate state after interrupt', async () => {
+      const mockTts = createMockTtsProvider([Buffer.from([10, 20])])
+      internals(orchestrator).ttsProvider = mockTts
+
+      sendEvent('SPEECH_START')
+      sendEvent('SPEECH_END')
+      sendEvent('STT_DONE', { text: 'hello' })
+      expect(getState()).toBe('thinking')
+
+      // Start TTS — this will be the "stale" invocation
+      const stalePromise = internals(orchestrator).handleTts('stale response')
+
+      // Interrupt before stale completes
+      getIpcOn(IPC.VOICE_START)()
+      expect(getState()).toBe('listening')
+
+      // Start a new cycle
+      sendEvent('SPEECH_END')
+      sendEvent('STT_DONE', { text: 'world' })
+      expect(getState()).toBe('thinking')
+
+      // Wait for stale handleTts to finish — it should not affect state
+      await stalePromise
+
+      // State should still be thinking (not idle)
+      expect(getState()).toBe('thinking')
+    })
+  })
+
+  // ── Empty LLM response recovery ─────────────────────────────
+
+  describe('empty LLM response', () => {
+    it('empty done text recovers state machine from thinking to idle', async () => {
+      sendEvent('SPEECH_START')
+      sendEvent('SPEECH_END')
+      sendEvent('STT_DONE', { text: 'hello' })
+      expect(getState()).toBe('thinking')
+
+      // Simulate the orchestrator's done handler with empty text
+      // (as would happen when openclaw emits done with '')
+      internals(orchestrator).actor.send({ type: 'TTS_DONE' })
+      expect(getState()).toBe('idle')
     })
   })
 

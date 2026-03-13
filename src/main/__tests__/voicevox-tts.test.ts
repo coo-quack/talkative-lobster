@@ -168,47 +168,25 @@ describe('VoicevoxTts', () => {
       }
 
       expect(chunks.length).toBeLessThanOrEqual(1)
-      expect(tts.isStopped).toBe(true)
     })
 
-    it('resets the stopped flag when stream() is called again', async () => {
+    it('stop() invalidates stream via generation counter', async () => {
       const tts = new VoicevoxTts()
       tts.stop()
-      expect(tts.isStopped).toBe(true)
 
       const queryResponse = mockResponse({ json: {} })
-      const synthResponse = mockResponse({ arrayBuffer: new ArrayBuffer(0) })
+      const synthResponse = mockResponse({
+        arrayBuffer: new Uint8Array([1, 2]).buffer as ArrayBuffer
+      })
       fetchMock.mockResolvedValueOnce(queryResponse).mockResolvedValueOnce(synthResponse)
 
-      for await (const _ of tts.stream('reset')) {
-        // consume
+      const chunks: Buffer[] = []
+      for await (const chunk of tts.stream('after stop')) {
+        chunks.push(chunk)
       }
 
-      expect(tts.isStopped).toBe(false)
-    })
-  })
-
-  // ------------------------------------------------------------------
-  // 5. isStopped property
-  // ------------------------------------------------------------------
-  describe('isStopped', () => {
-    it('is false by default', () => {
-      const tts = new VoicevoxTts()
-      expect(tts.isStopped).toBe(false)
-    })
-
-    it('is true after stop() is called', () => {
-      const tts = new VoicevoxTts()
-      tts.stop()
-      expect(tts.isStopped).toBe(true)
-    })
-
-    it('remains true until stream() is called again', () => {
-      const tts = new VoicevoxTts()
-      tts.stop()
-      expect(tts.isStopped).toBe(true)
-      tts.stop()
-      expect(tts.isStopped).toBe(true)
+      // New stream() increments generation, so it proceeds normally
+      expect(chunks).toHaveLength(1)
     })
   })
 })

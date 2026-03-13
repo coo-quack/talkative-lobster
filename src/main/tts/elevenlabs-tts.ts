@@ -13,17 +13,13 @@ export class ElevenLabsTts implements ITtsProvider {
   private client: ElevenLabsClient
   private voiceId: string
   private modelId: string
-  private stopped = false
+  private generation = 0
 
   readonly audioFormat: TtsAudioFormat = {
     type: 'pcm',
     sampleRate: PCM_SAMPLE_RATE,
     channels: 1,
     bitDepth: 16
-  }
-
-  get isStopped(): boolean {
-    return this.stopped
   }
 
   constructor(config: ElevenLabsTtsConfig) {
@@ -33,14 +29,14 @@ export class ElevenLabsTts implements ITtsProvider {
   }
 
   async *stream(text: string): AsyncGenerator<Buffer> {
-    this.stopped = false
+    const gen = ++this.generation
     const audioStream = await this.client.textToSpeech.stream(this.voiceId, {
       text,
       modelId: this.modelId,
       outputFormat: `pcm_${PCM_SAMPLE_RATE}`
     })
     for await (const chunk of audioStream) {
-      if (this.stopped) return
+      if (gen !== this.generation) return
       yield Buffer.from(chunk)
     }
   }
@@ -54,6 +50,6 @@ export class ElevenLabsTts implements ITtsProvider {
   }
 
   stop(): void {
-    this.stopped = true
+    this.generation++
   }
 }

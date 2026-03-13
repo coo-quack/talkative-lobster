@@ -55,18 +55,16 @@ vi.mock('../stt-engine', () => ({
 }))
 
 function createMockTtsProvider(chunks: Buffer[] = [Buffer.from([1, 2, 3])]): ITtsProvider {
-  let stopped = false
+  let generation = 0
   return {
     audioFormat: { type: 'encoded' as const },
-    get isStopped() {
-      return stopped
-    },
     stop() {
-      stopped = true
+      generation++
     },
     async *stream(_text: string) {
+      const gen = ++generation
       for (const chunk of chunks) {
-        if (stopped) return
+        if (gen !== generation) return
         yield chunk
       }
     }
@@ -244,7 +242,6 @@ describe('Orchestrator lifecycle', () => {
       internals(orchestrator).ttsProvider = mockTts
 
       getIpcOn(IPC.VOICE_STOP)()
-      expect(mockTts.isStopped).toBe(true)
       expect(getState()).toBe('idle')
     })
 
@@ -342,7 +339,6 @@ describe('Orchestrator lifecycle', () => {
       // User interrupts
       getIpcOn(IPC.VOICE_START)()
       expect(getState()).toBe('listening')
-      expect(mockTts.isStopped).toBe(true)
 
       // Continue with new cycle
       sendEvent('SPEECH_END')

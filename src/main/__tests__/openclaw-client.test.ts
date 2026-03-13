@@ -286,6 +286,33 @@ describe('OpenClawClient', () => {
     expect(doneHandler).not.toHaveBeenCalled()
   })
 
+  // ── extractText: multi-provider format support ─────────────────
+
+  it('extractText handles direct text field', async () => {
+    const ws = await connectClient(client)
+    const doneHandler = vi.fn()
+    client.on('done', doneHandler)
+
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+    ws.resolveChatSend('run-text')
+    await new Promise((r) => setTimeout(r, 5))
+
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: {
+          state: 'final',
+          runId: 'run-text',
+          message: { text: 'Direct text' }
+        }
+      })
+    )
+    expect(doneHandler).toHaveBeenCalledWith('Direct text')
+  })
+
   it('extractText handles content array format', async () => {
     const ws = await connectClient(client)
     const doneHandler = vi.fn()
@@ -339,6 +366,167 @@ describe('OpenClawClient', () => {
       })
     )
     expect(doneHandler).toHaveBeenCalledWith('Direct string content')
+  })
+
+  it('extractText handles OpenAI choices format', async () => {
+    const ws = await connectClient(client)
+    const doneHandler = vi.fn()
+    client.on('done', doneHandler)
+
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+    ws.resolveChatSend('run-choices')
+    await new Promise((r) => setTimeout(r, 5))
+
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: {
+          state: 'final',
+          runId: 'run-choices',
+          message: {
+            choices: [{ message: { content: 'OpenAI response' } }]
+          }
+        }
+      })
+    )
+    expect(doneHandler).toHaveBeenCalledWith('OpenAI response')
+  })
+
+  it('extractText handles Gemini parts format', async () => {
+    const ws = await connectClient(client)
+    const doneHandler = vi.fn()
+    client.on('done', doneHandler)
+
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+    ws.resolveChatSend('run-parts')
+    await new Promise((r) => setTimeout(r, 5))
+
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: {
+          state: 'final',
+          runId: 'run-parts',
+          message: { parts: [{ text: 'Gemini response' }] }
+        }
+      })
+    )
+    expect(doneHandler).toHaveBeenCalledWith('Gemini response')
+  })
+
+  it('extractText handles Gemini candidates format', async () => {
+    const ws = await connectClient(client)
+    const doneHandler = vi.fn()
+    client.on('done', doneHandler)
+
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+    ws.resolveChatSend('run-candidates')
+    await new Promise((r) => setTimeout(r, 5))
+
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: {
+          state: 'final',
+          runId: 'run-candidates',
+          message: {
+            candidates: [{ content: { parts: [{ text: 'Gemini candidate' }] } }]
+          }
+        }
+      })
+    )
+    expect(doneHandler).toHaveBeenCalledWith('Gemini candidate')
+  })
+
+  it('extractText skips tool_use blocks in content array', async () => {
+    const ws = await connectClient(client)
+    const doneHandler = vi.fn()
+    client.on('done', doneHandler)
+
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+    ws.resolveChatSend('run-tool')
+    await new Promise((r) => setTimeout(r, 5))
+
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: {
+          state: 'final',
+          runId: 'run-tool',
+          message: {
+            content: [
+              { type: 'text', text: 'Hello' },
+              { type: 'tool_use', name: 'search', input: { text: 'should be ignored' } }
+            ]
+          }
+        }
+      })
+    )
+    expect(doneHandler).toHaveBeenCalledWith('Hello')
+  })
+
+  it('extractText traverses typed container objects like type: "message"', async () => {
+    const ws = await connectClient(client)
+    const doneHandler = vi.fn()
+    client.on('done', doneHandler)
+
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+    ws.resolveChatSend('run-typed-container')
+    await new Promise((r) => setTimeout(r, 5))
+
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: {
+          state: 'final',
+          runId: 'run-typed-container',
+          message: {
+            type: 'message',
+            content: [{ type: 'text', text: 'From typed container' }]
+          }
+        }
+      })
+    )
+    expect(doneHandler).toHaveBeenCalledWith('From typed container')
+  })
+
+  it('empty final message emits done with empty string for state recovery', async () => {
+    const ws = await connectClient(client)
+    const doneHandler = vi.fn()
+    const errorHandler = vi.fn()
+    client.on('done', doneHandler)
+    client.on('chatError', errorHandler)
+
+    client.sendMessage('hello')
+    await new Promise((r) => setTimeout(r, 5))
+    ws.resolveChatSend('run-empty')
+    await new Promise((r) => setTimeout(r, 5))
+
+    ws.emit(
+      'message',
+      JSON.stringify({
+        type: 'event',
+        event: 'chat',
+        payload: { state: 'final', runId: 'run-empty' }
+      })
+    )
+    expect(doneHandler).toHaveBeenCalledWith('')
+    expect(errorHandler).not.toHaveBeenCalled()
   })
 
   it('ignores tick events', async () => {
