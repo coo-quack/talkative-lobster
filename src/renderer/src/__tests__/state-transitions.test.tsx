@@ -83,7 +83,15 @@ const mockLobster = {
   onAizuchiFormat: vi.fn(noop),
   onAizuchiAudio: vi.fn(noop),
   onAizuchiStop: vi.fn(noop),
-  onAizuchiCancel: vi.fn(noop)
+  onAizuchiCancel: vi.fn(noop),
+  // App version & update
+  getAppVersion: vi.fn().mockResolvedValue('1.0.5'),
+  checkForUpdate: vi.fn().mockResolvedValue({
+    currentVersion: '1.0.5',
+    latestVersion: '1.0.5',
+    updateAvailable: false,
+    releaseUrl: null
+  })
 }
 
 // ── Mock hooks ────────────────────────────────────────────────────────

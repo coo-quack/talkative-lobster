@@ -7,12 +7,12 @@ export function VersionInfo() {
 
   useEffect(() => {
     window.lobster
-      .getAppVersion()
-      .then(setVersion)
+      ?.getAppVersion?.()
+      ?.then(setVersion)
       .catch(() => {})
     window.lobster
-      .checkForUpdate()
-      .then(setUpdate)
+      ?.checkForUpdate?.()
+      ?.then(setUpdate)
       .catch(() => {})
   }, [])
 
