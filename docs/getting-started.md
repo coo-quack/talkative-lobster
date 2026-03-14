@@ -19,39 +19,7 @@ If OpenClaw is installed, the app can auto-load your `GATEWAY_TOKEN` and API key
 
 ## Install
 
-Download the installer for your platform from the [Download](/download) page, or grab it directly from the [GitHub Releases](https://github.com/coo-quack/talkative-lobster/releases/latest) page.
-
-| Platform | File |
-|----------|------|
-| macOS (Apple Silicon) | `talkative-lobster-arm64.dmg` |
-| macOS (Intel) | `talkative-lobster-x64.dmg` |
-| Windows | `talkative-lobster-x64-setup.exe` |
-| Linux | `talkative-lobster-x86_64.AppImage` or `talkative-lobster-amd64.deb` |
-
-::: tip macOS — unsigned app warning
-The app is not signed with an Apple Developer ID. On first launch, macOS will show a warning. Go to **System Settings > Privacy & Security** and click **Open Anyway**.
-:::
-
-## Supported Providers
-
-### Speech-to-Text (STT)
-
-| Provider | Type | API Key |
-|----------|------|---------|
-| [ElevenLabs Scribe](https://elevenlabs.io) | Cloud | Required |
-| [OpenAI Whisper](https://platform.openai.com) | Cloud | Required |
-| [whisper.cpp](https://github.com/ggerganov/whisper.cpp) | Local | Not needed |
-
-### Text-to-Speech (TTS)
-
-| Provider | Type | API Key |
-|----------|------|---------|
-| [ElevenLabs](https://elevenlabs.io) | Cloud | Required |
-| [VOICEVOX](https://voicevox.hiroshiba.jp/) | Local (Japanese) | Not needed |
-| [Kokoro](https://github.com/hexgrad/kokoro) | Local (JP / EN) | Not needed |
-| [Piper](https://github.com/rhasspy/piper) | Local (multilingual) | Not needed |
-
-See the [Providers](/providers) page for detailed setup instructions and available voices.
+Download and install the app for your platform from the [Download](/download) page. For detailed OS-specific instructions, see the [Installation](/install) page.
 
 ## First Launch
 
@@ -62,6 +30,8 @@ On first launch, the **Settings modal** opens automatically and walks you throug
 3. **TTS Provider** — choose a text-to-speech provider and configure voice settings
 
 Each section has a **Test** button to verify the connection. All three checks must pass before you can start.
+
+See the [Providers](/providers) page for detailed setup instructions and available voices.
 
 ## Usage
 
@@ -89,6 +59,9 @@ Click the **STOP** button to cancel the current operation. This works during any
 
 Click the **gear icon** in the bottom-right corner to reopen the Settings modal at any time. Changes take effect immediately — no restart required.
 
-## Development
+## Next Steps
 
-To run from source for development, see [Contributing](/contributing).
+- [Providers](/providers) — detailed STT and TTS provider configuration
+- [Configuration](/configuration) — all settings explained
+- [Troubleshooting](/troubleshooting) — common issues and solutions
+- [Contributing](/contributing) — development setup for contributors
