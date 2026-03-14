@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll } from 'vitest'
-import { ElevenLabsTts } from '../../tts/elevenlabs-tts'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { SttEngine } from '../../stt-engine'
+import { ElevenLabsTts } from '../../tts/elevenlabs-tts'
 import { requireApiKey } from './helpers'
 
 let elevenlabsKey: string

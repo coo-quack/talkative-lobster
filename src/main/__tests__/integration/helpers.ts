@@ -1,6 +1,6 @@
-import { readFileSync, existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
+import { join } from 'node:path'
 
 export function getApiKey(name: string): string | null {
   // 1. Environment variable

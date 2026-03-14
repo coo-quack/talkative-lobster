@@ -1,7 +1,7 @@
-import { _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
-import path from 'node:path'
 import fs from 'node:fs'
 import os from 'node:os'
+import path from 'node:path'
+import { type ElectronApplication, _electron as electron, type Page } from '@playwright/test'
 import { installFetchMock } from './mock-fetch'
 import { seedTestKeys } from './seed-keys'
 

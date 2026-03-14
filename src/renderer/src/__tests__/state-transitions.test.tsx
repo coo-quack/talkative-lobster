@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, act, cleanup } from '@testing-library/react'
+
+import { act, cleanup, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
-import App from '../App'
 import type { VoiceState } from '../../../shared/types'
+import App from '../App'
 
 // ── Mock lobster API ─────────────────────────────────────────────────
 
@@ -84,6 +85,12 @@ const mockLobster = {
   onAizuchiAudio: vi.fn(noop),
   onAizuchiStop: vi.fn(noop),
   onAizuchiCancel: vi.fn(noop),
+  // VAD & Gateway
+  getVadSensitivity: vi.fn().mockResolvedValue('auto'),
+  setVadSensitivity: vi.fn().mockResolvedValue(undefined),
+  getGatewayUrl: vi.fn().mockResolvedValue('ws://127.0.0.1:18789'),
+  setGatewayUrl: vi.fn().mockResolvedValue(undefined),
+  sessionStart: vi.fn().mockResolvedValue(undefined),
   // App version & update
   getAppVersion: vi.fn().mockResolvedValue('1.0.5'),
   checkForUpdate: vi.fn().mockResolvedValue({
@@ -121,6 +128,8 @@ beforeEach(() => {
     arc: vi.fn(),
     stroke: vi.fn(),
     fill: vi.fn(),
+    scale: vi.fn(),
+    setTransform: vi.fn(),
     set strokeStyle(_v: string) {},
     set fillStyle(_v: string) {},
     set lineWidth(_v: number) {},
@@ -327,7 +336,7 @@ describe('Voice state transitions', () => {
 
   describe('status dot color during transitions', () => {
     function getStatusDot(): HTMLElement | null {
-      const pill = document.querySelector('.bg-\\[\\#292524\\]')
+      const pill = document.querySelector('.bg-border')
       return pill?.querySelector('.h-2.w-2') as HTMLElement | null
     }
 
@@ -337,28 +346,28 @@ describe('Voice state transitions', () => {
       const dot = getStatusDot()
       expect(dot).not.toBeNull()
 
-      // idle: #44403c
-      expect(dot?.style.backgroundColor).toBe('rgb(68, 64, 60)')
+      // idle: --color-muted
+      expect(dot?.style.backgroundColor).toBe('var(--color-muted)')
 
-      // listening: #00bc7d
+      // listening: --color-accent
       transitionTo('listening')
-      expect(dot?.style.backgroundColor).toBe('rgb(0, 188, 125)')
+      expect(dot?.style.backgroundColor).toBe('var(--color-accent)')
 
-      // processing: #f59e0b
+      // processing: --color-warning
       transitionTo('processing')
-      expect(dot?.style.backgroundColor).toBe('rgb(245, 158, 11)')
+      expect(dot?.style.backgroundColor).toBe('var(--color-warning)')
 
-      // thinking: #60a5fa
+      // thinking: --color-info
       transitionTo('thinking')
-      expect(dot?.style.backgroundColor).toBe('rgb(96, 165, 250)')
+      expect(dot?.style.backgroundColor).toBe('var(--color-info)')
 
-      // speaking: #a78bfa
+      // speaking: --color-speaking
       transitionTo('speaking')
-      expect(dot?.style.backgroundColor).toBe('rgb(167, 139, 250)')
+      expect(dot?.style.backgroundColor).toBe('var(--color-speaking)')
 
-      // back to idle: #44403c
+      // back to idle: --color-muted
       transitionTo('idle')
-      expect(dot?.style.backgroundColor).toBe('rgb(68, 64, 60)')
+      expect(dot?.style.backgroundColor).toBe('var(--color-muted)')
     })
   })
 

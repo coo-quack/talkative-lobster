@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { AizuchiManager } from '../aizuchi'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { IPC } from '../../shared/ipc-channels'
+import { AizuchiManager } from '../aizuchi'
 
 vi.mock('node:fs', () => ({
   readFileSync: vi.fn().mockReturnValue(Buffer.from([0xff, 0xfb, 0x90, 0x00])) // fake MP3 header

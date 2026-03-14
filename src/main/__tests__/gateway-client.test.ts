@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import type { IGatewayClient, GatewayClientEvents } from '../gateway-client'
+import { describe, expect, it } from 'vitest'
+import type { GatewayClientEvents, IGatewayClient } from '../gateway-client'
 import { OpenClawClient } from '../openclaw-client'
 
 describe('IGatewayClient', () => {

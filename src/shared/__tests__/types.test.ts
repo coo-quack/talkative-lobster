@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import type { VoiceState, ChatMessage } from '../types'
+import { describe, expect, it } from 'vitest'
 import { IPC } from '../ipc-channels'
+import type { ChatMessage, VoiceState } from '../types'
 
 describe('shared types', () => {
   it('VoiceState has all expected values', () => {

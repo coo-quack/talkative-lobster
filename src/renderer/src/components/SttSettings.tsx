@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { KeyInput } from './KeyInput'
+import { type KeyInfo, STT_PROVIDERS, type SttProvider } from '../../../shared/types'
 import { ConnectivityCheck } from './ConnectivityCheck'
-import { STT_PROVIDERS, type SttProvider, type KeyInfo } from '../../../shared/types'
+import { KeyInput } from './KeyInput'
 
 interface Props {
   keys: KeyInfo[]

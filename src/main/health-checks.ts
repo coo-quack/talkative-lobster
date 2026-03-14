@@ -1,6 +1,6 @@
-import { existsSync, accessSync, constants as fsConstants } from 'node:fs'
-import { join } from 'node:path'
+import { accessSync, existsSync, constants as fsConstants } from 'node:fs'
 import { homedir } from 'node:os'
+import { join } from 'node:path'
 import type { KeyManager } from './keys'
 import type { SettingsStore } from './settings-store'
 import { WHISPER_MODEL_SUBPATH } from './stt-engine'

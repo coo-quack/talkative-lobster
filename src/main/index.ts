@@ -1,6 +1,6 @@
-import { app, shell, BrowserWindow, desktopCapturer } from 'electron'
 import { join } from 'node:path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { electronApp, is, optimizer } from '@electron-toolkit/utils'
+import { app, BrowserWindow, desktopCapturer, shell } from 'electron'
 import icon from '../../resources/icon.png?asset'
 import { Orchestrator } from './orchestrator'
 

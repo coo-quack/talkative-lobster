@@ -4,11 +4,21 @@
   --color-bg: #0c0a09;
   --color-bg-secondary: #0c0a09;
   --color-text: #d6d3d1;
+  --color-text-bright: #f5f5f4;
+  --color-text-dim: #a8a29e;
+  --color-text-muted: #78716c;
   --color-accent: #00bc7d;
   --color-accent-hover: #00d48e;
   --color-border: #292524;
+  --color-muted: #44403c;
+  --color-error: #f44336;
+  --color-error-light: #ef5350;
+  --color-warning: #f59e0b;
+  --color-info: #60a5fa;
+  --color-speaking: #a78bfa;
   --color-msg-user: #1e3a5f;
   --color-msg-assistant: #2a2a4a;
+  --color-label: #ccc;
 }
 
 @layer base {
@@ -75,7 +85,7 @@
 }
 
 .key-field label {
-  @apply text-[13px] font-semibold text-[#ccc];
+  @apply text-[13px] font-semibold text-label;
 }
 
 .key-field input,
@@ -130,7 +140,7 @@
 }
 
 .check-result.fail {
-  @apply text-[#ef5350];
+  @apply text-error-light;
 }
 
 /* Setup modal - preserved for E2E */

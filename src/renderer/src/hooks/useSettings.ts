@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
-  DEFAULT_TTS_VOICE_ID,
-  DEFAULT_TTS_MODEL_ID,
-  DEFAULT_STT_PROVIDER,
-  DEFAULT_TTS_PROVIDER,
   DEFAULT_KOKORO_VOICE,
+  DEFAULT_STT_PROVIDER,
+  DEFAULT_TTS_MODEL_ID,
+  DEFAULT_TTS_PROVIDER,
+  DEFAULT_TTS_VOICE_ID,
   type SttProvider,
   type TtsProviderType
 } from '../../../shared/types'
@@ -59,7 +59,7 @@ export function useSettings(): SettingsState & SettingsActions {
   const [settingsLoaded, setSettingsLoaded] = useState(false)
 
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       window.lobster.getTtsVoice().then(setSelectedVoice),
       window.lobster.getTtsModel().then(setSelectedModel),
       window.lobster.getSttProvider().then(setSttProvider),
@@ -71,9 +71,16 @@ export function useSettings(): SettingsState & SettingsActions {
       window.lobster.getPiperModelPath().then(setPiperModelPath),
       window.lobster.getVoicevoxSpeaker().then(setVoicevoxSpeakerId),
       window.lobster.getKokoroVoice().then(setKokoroVoice),
-      window.lobster.getVadSensitivity?.()?.then(setVadSensitivity) ?? Promise.resolve(),
-      window.lobster.getGatewayUrl?.()?.then(setGatewayUrl) ?? Promise.resolve()
-    ]).then(() => setSettingsLoaded(true))
+      window.lobster.getVadSensitivity().then(setVadSensitivity),
+      window.lobster.getGatewayUrl().then(setGatewayUrl)
+    ]).then((results) => {
+      for (const r of results) {
+        if (r.status === 'rejected') {
+          console.warn('[settings] Failed to load a setting:', r.reason)
+        }
+      }
+      setSettingsLoaded(true)
+    })
   }, [])
 
   return {

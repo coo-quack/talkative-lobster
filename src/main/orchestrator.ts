@@ -1,24 +1,24 @@
-import { type BrowserWindow, ipcMain } from 'electron'
 import crypto from 'node:crypto'
+import { type BrowserWindow, ipcMain } from 'electron'
 
 import { IPC } from '../shared/ipc-channels'
 import type { ChatMessage } from '../shared/types'
-import { KeyManager } from './keys'
-import { SettingsStore } from './settings-store'
-import { VoiceStateController } from './voice-state-controller'
-import type { IGatewayClient } from './gateway-client'
-import { OpenClawClient } from './openclaw-client'
-import { SttEngine } from './stt-engine'
-import type { ITtsProvider } from './tts/tts-provider'
-import { splitTextForTts } from './tts/text-splitter'
 import { AizuchiManager } from './aizuchi'
-import { isNonSpeech } from './speech-filter'
-import { ElevenLabsTts } from './tts/elevenlabs-tts'
-import { VoicevoxTts } from './tts/voicevox-tts'
-import { KokoroTts } from './tts/kokoro-tts'
-import { PiperTts } from './tts/piper-tts'
+import type { IGatewayClient } from './gateway-client'
 import { checkGateway, checkSttProvider, checkTtsProvider } from './health-checks'
 import { registerSettingsHandlers } from './ipc-settings-handlers'
+import { KeyManager } from './keys'
+import { OpenClawClient } from './openclaw-client'
+import { SettingsStore } from './settings-store'
+import { isNonSpeech } from './speech-filter'
+import { SttEngine } from './stt-engine'
+import { ElevenLabsTts } from './tts/elevenlabs-tts'
+import { KokoroTts } from './tts/kokoro-tts'
+import { PiperTts } from './tts/piper-tts'
+import { splitTextForTts } from './tts/text-splitter'
+import type { ITtsProvider } from './tts/tts-provider'
+import { VoicevoxTts } from './tts/voicevox-tts'
+import { VoiceStateController } from './voice-state-controller'
 
 function errMsg(err: unknown): string {
   if (err instanceof Error) return err.message
@@ -524,13 +524,13 @@ export class Orchestrator {
       console.log('[orchestrator] Session start — reinitializing engines and gateway')
       this.isFirstMessage = true
       this.initEngines()
-      // Reconnect gateway if not already connected
-      if (!this.wsClient) {
-        try {
-          await this.connectGateway()
-        } catch {
-          // connectGateway handles errors internally
-        }
+      // Always reconnect gateway (URL or token may have changed)
+      this.wsClient?.disconnect()
+      this.wsClient = null
+      try {
+        await this.connectGateway()
+      } catch {
+        // connectGateway handles errors internally
       }
     })
   }

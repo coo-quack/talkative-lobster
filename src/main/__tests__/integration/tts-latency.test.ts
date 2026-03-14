@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
+import { TTS_MODELS } from '../../../shared/types'
 import { ElevenLabsTts } from '../../tts/elevenlabs-tts'
 import { requireApiKey } from './helpers'
-import { TTS_MODELS } from '../../../shared/types'
 
 const TEST_TEXT = 'こんにちは、今日はいい天気ですね。何かお手伝いできることはありますか？'
 const VOICE_ID = 'pFZP5JQG7iQjIQuC4Bku' // Lily

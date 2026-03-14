@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { VoiceStateController, type TransitionLog } from '../voice-state-controller'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { VoiceState } from '../../shared/types'
+import { type TransitionLog, VoiceStateController } from '../voice-state-controller'
 
 describe('VoiceStateController', () => {
   let controller: VoiceStateController

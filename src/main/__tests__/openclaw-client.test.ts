@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { OpenClawClient } from '../openclaw-client'
 
 // Mock crypto for deterministic device identity
@@ -560,6 +560,42 @@ describe('OpenClawClient', () => {
     )
 
     await expect(requestPromise).rejects.toThrow('Not authorized')
+  })
+
+  it('disconnect prevents auto-reconnect on subsequent close event', async () => {
+    const ws = await connectClient(client)
+
+    // Intentionally disconnect
+    client.disconnect()
+
+    // Simulate the WebSocket close event arriving asynchronously after disconnect()
+    ws.emit('close', 1000, Buffer.from(''))
+
+    // Wait to ensure no reconnect timer fires
+    await new Promise((r) => setTimeout(r, 50))
+
+    // The client should NOT have attempted to create a new WebSocket
+    // biome-ignore lint/complexity/useLiteralKeys: accessing private member for testing
+    expect(client['ws']).toBeNull()
+    // biome-ignore lint/complexity/useLiteralKeys: accessing private member for testing
+    expect(client['reconnectTimer']).toBeNull()
+  })
+
+  it('cancelActiveRuns caps ignoredRunIds to prevent unbounded growth', async () => {
+    const ws = await connectClient(client)
+
+    // Create and cancel many runs to accumulate ignoredRunIds
+    for (let i = 0; i < 120; i++) {
+      client.sendMessage(`msg-${i}`)
+      await new Promise((r) => setTimeout(r, 1))
+      ws.resolveChatSend(`run-${i}`)
+      await new Promise((r) => setTimeout(r, 1))
+      client.cancelActiveRuns()
+    }
+
+    // biome-ignore lint/complexity/useLiteralKeys: accessing private member for testing
+    const ignoredSize = client['ignoredRunIds'].size
+    expect(ignoredSize).toBeLessThanOrEqual(100)
   })
 
   it('rejects request when not connected', async () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { UpdateInfo } from '../../../shared/types'
 
 export function VersionInfo() {
@@ -20,7 +20,7 @@ export function VersionInfo() {
   if (!version) return null
 
   return (
-    <div className="mt-4 border-border border-t pt-3 text-center text-xs text-neutral-500">
+    <div className="mt-4 border-border border-t pt-3 text-center text-neutral-500 text-xs">
       <span>v{version}</span>
       {update?.updateAvailable && update.releaseUrl && update.latestVersion && (
         <span className="ml-2">

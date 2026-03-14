@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Mic, MicOff, Square, Settings } from 'lucide-react'
-import { Waveform } from './Waveform'
-import { useVAD } from '../hooks/useVAD'
-import { useSpeakerMonitor } from '../hooks/useSpeakerMonitor'
-import {
-  calibrateNoise,
-  mapRmsToThreshold,
-  type CalibrationResult
-} from '../hooks/useNoiseCalibration'
+import { Mic, MicOff, Settings, Square } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import type { VoiceState } from '../../../shared/types'
+import {
+  type CalibrationResult,
+  calibrateNoise,
+  mapRmsToThreshold
+} from '../hooks/useNoiseCalibration'
+import { useSpeakerMonitor } from '../hooks/useSpeakerMonitor'
+import { useVAD } from '../hooks/useVAD'
+import { Waveform } from './Waveform'
 
 interface Props {
   state: VoiceState
@@ -18,12 +18,20 @@ interface Props {
   stopPlayback: () => void
 }
 
-const STATUS_LABELS: Record<string, string> = {
+const STATUS_LABELS: Record<VoiceState, string> = {
   idle: 'Ready',
   listening: 'Listening...',
   processing: 'Recognizing...',
   thinking: 'Thinking...',
   speaking: 'Speaking...'
+}
+
+const STATE_DOT_COLORS: Record<VoiceState, string> = {
+  idle: 'var(--color-muted)',
+  listening: 'var(--color-accent)',
+  processing: 'var(--color-warning)',
+  thinking: 'var(--color-info)',
+  speaking: 'var(--color-speaking)'
 }
 
 export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayback }: Props) {
@@ -91,52 +99,41 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
   }, [micOn, vadSensitivity])
 
   const { speakerActive } = useSpeakerMonitor(micOn)
-  const speakerActiveRef = useRef(speakerActive)
-  speakerActiveRef.current = speakerActive
-  const stateRef = useRef(state)
-  stateRef.current = state
-  const micOnRef = useRef(micOn)
-  micOnRef.current = micOn
 
   // Keep VAD running at all times when mic is on to avoid
   // repeated destroy/re-init cycles that exhaust mic resources.
   // State filtering happens in the callbacks and orchestrator.
   const vadEnabled = micOn && !calibrating
 
-  const stopPlaybackRef = useRef(stopPlayback)
-  stopPlaybackRef.current = stopPlayback
-
-  const handleSpeechStart = useCallback(() => {
-    if (!mountedRef.current || !micOnRef.current) {
+  const handleSpeechStart = () => {
+    if (!mountedRef.current || !micOn) {
       console.log('[voice] Ignoring speech start — mic off or unmounted')
       return
     }
-    const s = stateRef.current
-    if (speakerActiveRef.current) {
+    if (speakerActive) {
       console.log('[voice] Ignoring speech start — speaker active')
       return
     }
-    if (s === 'speaking') {
-      stopPlaybackRef.current()
+    if (state === 'speaking') {
+      stopPlayback()
     }
     window.lobster.voiceStart()
-  }, [])
+  }
 
-  const handleSpeechEnd = useCallback((audio: Float32Array) => {
-    if (!mountedRef.current || !micOnRef.current) {
+  const handleSpeechEnd = (audio: Float32Array) => {
+    if (!mountedRef.current || !micOn) {
       console.log('[voice] Discarding speech — mic off or unmounted')
       return
     }
-    if (speakerActiveRef.current) {
+    if (speakerActive) {
       console.log('[voice] Discarding speech — speaker active')
       window.lobster.voiceStop()
       return
     }
     // During processing/thinking, the user speaking is an interruption.
     // voiceStart already handled the interrupt — just discard the audio.
-    const s = stateRef.current
-    if (s === 'processing' || s === 'thinking') {
-      console.log(`[voice] Discarding audio in ${s} state`)
+    if (state === 'processing' || state === 'thinking') {
+      console.log(`[voice] Discarding audio in ${state} state`)
       return
     }
     if (audio.length < 16000 * 0.3) {
@@ -144,8 +141,11 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
       return
     }
     window.lobster.sendAudioChunk(audio)
-  }, [])
+  }
 
+  // These callbacks capture props/state and change identity each render.
+  // useVAD handles this via the "ref for latest callback" pattern because
+  // MicVAD stores callbacks at init time (see CLAUDE.md Exception).
   const { listening: vadListening } = useVAD({
     enabled: vadEnabled,
     thresholds: calibratedThresholds ?? undefined,
@@ -176,42 +176,36 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
           ? 'Listening...'
           : STATUS_LABELS[state]
 
-  const STATE_DOT_COLORS: Record<string, string> = {
-    idle: '#44403c',
-    listening: '#00bc7d',
-    processing: '#f59e0b',
-    thinking: '#60a5fa',
-    speaking: '#a78bfa'
-  }
-
   const isOffline = !micOn && (state === 'idle' || state === 'listening')
   const waveformState = isOffline ? 'idle' : state
-  const dotColor = isOffline ? '#44403c' : STATE_DOT_COLORS[effectiveState] || '#44403c'
+  const dotColor = isOffline
+    ? 'var(--color-muted)'
+    : STATE_DOT_COLORS[effectiveState] || 'var(--color-muted)'
 
   return (
     <div className="flex flex-1 flex-col">
       {/* Main area - waveform + status */}
       <div className="flex flex-1 flex-col items-center justify-center gap-6">
         <Waveform state={waveformState} offline={isOffline} />
-        <div className="flex items-center gap-2.5 rounded-full bg-[#292524] px-6 py-3">
+        <div className="flex items-center gap-2.5 rounded-full bg-border px-6 py-3">
           <span
             className="h-2 w-2 rounded-full"
             style={{ backgroundColor: dotColor, boxShadow: `0 0 6px ${dotColor}` }}
           />
-          <span className="text-[#d6d3d1] text-sm">{statusLabel}</span>
+          <span className="text-sm text-text">{statusLabel}</span>
         </div>
       </div>
 
       {/* Footer - mic button + stop button left, settings button right */}
-      <div className="flex shrink-0 items-center justify-between border-[#292524] border-t px-6 py-4">
+      <div className="flex shrink-0 items-center justify-between border-border border-t px-6 py-4">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={toggleMic}
             className={
               micOn
-                ? 'flex h-10 items-center gap-2 rounded-full border-none bg-[#00bc7d] px-4 text-white shadow-[0_0_20px_rgba(0,188,125,0.3)] transition-all hover:bg-[#00d48e]'
-                : 'flex h-10 items-center gap-2 rounded-full border border-[#44403b] bg-transparent px-4 text-[#d6d3d1] transition-all hover:border-[#57534e]'
+                ? 'flex h-10 items-center gap-2 rounded-full border-none bg-accent px-4 text-white shadow-[0_0_20px_rgba(0,188,125,0.3)] transition-all hover:bg-accent-hover'
+                : 'flex h-10 items-center gap-2 rounded-full border border-muted bg-transparent px-4 text-text transition-all hover:border-[#57534e]'
             }
           >
             {micOn ? <Mic size={16} /> : <MicOff size={16} />}
@@ -221,7 +215,7 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
             type="button"
             onClick={handleStop}
             disabled={state === 'idle'}
-            className="flex h-10 items-center gap-2 rounded-full border border-[#44403b] bg-transparent px-4 text-[#d6d3d1] transition-all hover:border-[#57534e] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-[#44403b]"
+            className="flex h-10 items-center gap-2 rounded-full border border-muted bg-transparent px-4 text-text transition-all hover:border-[#57534e] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-muted"
           >
             <Square size={14} fill="currentColor" />
             <span className="font-medium text-sm">STOP</span>
@@ -230,9 +224,9 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
         <button
           type="button"
           onClick={onOpenSettings}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-[#44403b] bg-transparent p-0 transition-all hover:border-[#57534e]"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-muted bg-transparent p-0 transition-all hover:border-[#57534e]"
         >
-          <Settings size={18} className="text-[#d6d3d1]" />
+          <Settings size={18} className="text-text" />
         </button>
       </div>
     </div>
