@@ -132,7 +132,7 @@ export class SttEngine {
       }
       return output.trim()
     } finally {
-      await rm(dir, { recursive: true, force: true })
+      await rm(dir, { recursive: true, force: true }).catch(() => {})
     }
   }
 

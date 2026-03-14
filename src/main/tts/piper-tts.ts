@@ -41,7 +41,7 @@ export class PiperTts implements ITtsProvider {
         yield wav
       }
     } finally {
-      await rm(dir, { recursive: true, force: true })
+      await rm(dir, { recursive: true, force: true }).catch(() => {})
     }
   }
 

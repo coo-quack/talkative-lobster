@@ -73,7 +73,14 @@ export function useSettings(): SettingsState & SettingsActions {
       window.lobster.getKokoroVoice().then(setKokoroVoice),
       window.lobster.getVadSensitivity().then(setVadSensitivity),
       window.lobster.getGatewayUrl().then(setGatewayUrl)
-    ]).then(() => setSettingsLoaded(true))
+    ]).then((results) => {
+      for (const r of results) {
+        if (r.status === 'rejected') {
+          console.warn('[settings] Failed to load a setting:', r.reason)
+        }
+      }
+      setSettingsLoaded(true)
+    })
   }, [])
 
   return {

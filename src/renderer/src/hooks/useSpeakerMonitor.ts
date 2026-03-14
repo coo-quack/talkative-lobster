@@ -33,7 +33,7 @@ export function useSpeakerMonitor(enabled: boolean) {
       streamRef.current = null
     }
     if (ctxRef.current && ctxRef.current.state !== 'closed') {
-      ctxRef.current.close()
+      ctxRef.current.close().catch(() => {})
       ctxRef.current = null
     }
     analyserRef.current = null
