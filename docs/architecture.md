@@ -1,6 +1,6 @@
 # Architecture
 
-Talkative Lobster is an Electron app with a React renderer. The main process handles voice processing, and the renderer displays the UI.
+Talkative Lobster is an Electron desktop app. The main process handles voice processing and gateway communication, while the renderer process displays the UI and captures microphone input.
 
 ## Process Overview
 
@@ -8,103 +8,79 @@ Talkative Lobster is an Electron app with a React renderer. The main process han
 ┌─────────────────────────────────────────────────┐
 │ Main Process                                    │
 │                                                 │
-│  orchestrator.ts ── coordinates all engines      │
+│  Orchestrator ── coordinates all engines         │
 │       │                                         │
-│       ├── voice-machine.ts (xstate)             │
+│       ├── Voice State Machine                   │
 │       │     idle → listening → processing       │
 │       │     → thinking → speaking               │
 │       │                                         │
-│       ├── stt-engine.ts                         │
+│       ├── STT (Speech-to-Text)                  │
 │       │     ElevenLabs / Whisper / whisper.cpp   │
 │       │                                         │
-│       ├── tts/ (provider implementations)       │
+│       ├── TTS (Text-to-Speech)                  │
 │       │     ElevenLabs / VOICEVOX               │
 │       │     / Kokoro / Piper                    │
 │       │                                         │
-│       └── openclaw-client.ts                    │
-│             WebSocket → OpenClaw gateway         │
+│       └── Gateway Client                        │
+│             WebSocket → OpenClaw LLM gateway     │
 │                                                 │
 └────────────── IPC (contextBridge) ──────────────┘
                         │
 ┌───────────────────────┴─────────────────────────┐
-│ Renderer Process (React 19 + React Compiler)     │
+│ Renderer Process                                │
 │                                                 │
-│  App.tsx                                        │
-│    ├── VoiceView ── main conversation UI        │
-│    │     └── Waveform ── audio visualization    │
-│    └── SetupModal ── first-run configuration    │
+│  Voice View ── main conversation UI             │
+│    └── Waveform ── audio visualization          │
+│  Setup Modal ── settings & connectivity checks  │
 │                                                 │
-│  hooks/                                         │
-│    ├── useVoiceState ── voice machine state      │
-│    ├── useTtsPlayback ── audio playback          │
-│    ├── useAizuchiPlayback ── aizuchi audio       │
-│    ├── useVAD ── Silero voice activity detection  │
-│    ├── useSpeakerMonitor ── system audio gating   │
-│    ├── useNoiseCalibration ── auto VAD threshold  │
-│    ├── useSettings ── settings state management   │
-│    └── useKeys ── encrypted key management      │
+│  VAD (Voice Activity Detection)                 │
+│    └── Silero neural network model              │
+│  Speaker Monitor ── filters out system audio    │
+│  Audio Playback ── TTS + aizuchi audio          │
 │                                                 │
 └─────────────────────────────────────────────────┘
 ```
 
 ## Data Flow
 
-1. **Renderer** captures microphone audio via `@ricky0123/vad-web` (Silero VAD)
-2. **VAD** detects speech start/end and sends audio chunks to main process via IPC
-3. **STT engine** converts audio to text using the configured provider
-4. **Orchestrator** sends transcribed text to OpenClaw gateway via WebSocket
-5. **OpenClaw** streams LLM response tokens back
-6. **Speech filter** processes the response text for TTS
-7. **TTS engine** synthesizes audio from the filtered text
-8. **Renderer** plays synthesized audio via `useTtsPlayback`
+1. **Microphone** → VAD detects speech start/end
+2. **Audio chunks** → sent to main process via IPC
+3. **STT** → converts audio to text
+4. **Orchestrator** → sends text to OpenClaw gateway via WebSocket
+5. **LLM** → streams response tokens back
+6. **TTS** → synthesizes audio from response text
+7. **Renderer** → plays audio through speakers
 
 ## Voice State Machine
 
-The voice state machine (`voice-machine.ts`) is built with [xstate](https://xstate.js.org/) v5 and manages the conversation lifecycle:
+The conversation lifecycle is managed by a state machine:
 
 | State | Description |
 |-------|-------------|
 | `idle` | Waiting for user to speak |
-| `listening` | VAD detected speech, recording audio |
-| `processing` | STT converting speech to text |
-| `thinking` | Waiting for LLM response from OpenClaw |
-| `speaking` | TTS playing the AI response |
+| `listening` | Speech detected, recording audio |
+| `processing` | Converting speech to text |
+| `thinking` | Waiting for LLM response |
+| `speaking` | Playing AI response audio |
 
 Transitions happen automatically. The user can interrupt during `speaking` by starting to talk, which transitions back to `listening`.
-
-## Key Modules
-
-| Module | Path | Responsibility |
-|--------|------|----------------|
-| Orchestrator | `src/main/orchestrator.ts` | Central IPC + engine coordination |
-| Voice Machine | `src/main/voice-machine.ts` | xstate state machine for conversation flow |
-| OpenClaw Client | `src/main/openclaw-client.ts` | WebSocket client for LLM gateway |
-| STT Engine | `src/main/stt-engine.ts` | Multi-provider speech-to-text |
-| Speech Filter | `src/main/speech-filter.ts` | Text processing before TTS |
-| Keys | `src/main/keys.ts` | API key encryption (AES-256-CBC) |
-| Settings Store | `src/main/settings-store.ts` | Settings persistence (JSON) |
-| ElevenLabs TTS | `src/main/tts/elevenlabs-tts.ts` | Cloud TTS via ElevenLabs |
-| VOICEVOX TTS | `src/main/tts/voicevox-tts.ts` | Japanese TTS via VOICEVOX |
-| Kokoro TTS | `src/main/tts/kokoro-tts.ts` | Local TTS via Kokoro |
-| Piper TTS | `src/main/tts/piper-tts.ts` | Local TTS via Piper |
 
 ## Directory Structure
 
 ```
 src/
   main/              # Electron main process
-    orchestrator.ts   #   Central IPC + engine coordination
-    voice-machine.ts  #   xstate state machine
-    openclaw-client.ts#   WebSocket client for OpenClaw gateway
-    stt-engine.ts     #   Multi-provider speech-to-text
-    speech-filter.ts  #   Text processing before TTS
-    keys.ts           #   API key encryption (AES-256-CBC)
-    settings-store.ts #   Settings persistence (JSON)
+    orchestrator.ts   #   Central coordination
+    voice-machine.ts  #   State machine
+    openclaw-client.ts#   Gateway WebSocket client
+    stt-engine.ts     #   Speech-to-text
     tts/              #   TTS provider implementations
+    keys.ts           #   Encrypted key storage
+    settings-store.ts #   Settings persistence
     __tests__/        #   Unit tests
-  preload/            # contextBridge (window.lobster API)
-  renderer/           # React 19 UI
-    hooks/            #   useVoiceState, useVAD, useTtsPlayback, useSettings, etc.
+  preload/            # IPC bridge (contextBridge)
+  renderer/           # React UI
     components/       #   VoiceView, SetupModal, Waveform
+    hooks/            #   State, audio, VAD, settings
   shared/             # Types and IPC channel definitions
 ```
