@@ -14,6 +14,7 @@ export default defineConfig({
       { text: "Download", link: "/download" },
       { text: "Getting Started", link: "/getting-started" },
       { text: "Providers", link: "/providers" },
+      { text: "Changelog", link: "/changelog" },
       { text: "GitHub", link: "https://github.com/coo-quack/talkative-lobster" },
     ],
 
@@ -34,6 +35,7 @@ export default defineConfig({
           { text: "Architecture", link: "/architecture" },
           { text: "Troubleshooting", link: "/troubleshooting" },
           { text: "Contributing", link: "/contributing" },
+          { text: "Changelog", link: "/changelog" },
         ],
       },
     ],
