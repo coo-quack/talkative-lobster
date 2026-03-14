@@ -18,7 +18,7 @@ interface Props {
   stopPlayback: () => void
 }
 
-const STATUS_LABELS: Record<string, string> = {
+const STATUS_LABELS: Record<VoiceState, string> = {
   idle: 'Ready',
   listening: 'Listening...',
   processing: 'Recognizing...',
@@ -26,7 +26,7 @@ const STATUS_LABELS: Record<string, string> = {
   speaking: 'Speaking...'
 }
 
-const STATE_DOT_COLORS: Record<string, string> = {
+const STATE_DOT_COLORS: Record<VoiceState, string> = {
   idle: 'var(--color-muted)',
   listening: 'var(--color-accent)',
   processing: 'var(--color-warning)',
