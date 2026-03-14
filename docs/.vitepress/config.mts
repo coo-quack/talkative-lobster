@@ -13,18 +13,18 @@ export default defineConfig({
       { text: "Home", link: "/" },
       { text: "Download", link: "/download" },
       { text: "Getting Started", link: "/getting-started" },
+      { text: "Install", link: "/install" },
       { text: "Providers", link: "/providers" },
       { text: "Changelog", link: "/changelog" },
-      { text: "GitHub", link: "https://github.com/coo-quack/talkative-lobster" },
     ],
 
     sidebar: [
       {
         text: "Guide",
         items: [
-          { text: "Overview", link: "/" },
-          { text: "Download", link: "/download" },
           { text: "Getting Started", link: "/getting-started" },
+          { text: "Download", link: "/download" },
+          { text: "Installation", link: "/install" },
         ],
       },
       {
@@ -33,6 +33,11 @@ export default defineConfig({
           { text: "Providers", link: "/providers" },
           { text: "Configuration", link: "/configuration" },
           { text: "Architecture", link: "/architecture" },
+        ],
+      },
+      {
+        text: "Support",
+        items: [
           { text: "Troubleshooting", link: "/troubleshooting" },
           { text: "Contributing", link: "/contributing" },
           { text: "Changelog", link: "/changelog" },

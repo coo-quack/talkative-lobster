@@ -10,11 +10,11 @@ hero:
     alt: Talkative Lobster
   actions:
     - theme: brand
-      text: Download
-      link: /download
-    - theme: alt
       text: Get Started
       link: /getting-started
+    - theme: alt
+      text: Download
+      link: /download
     - theme: alt
       text: GitHub
       link: https://github.com/coo-quack/talkative-lobster
