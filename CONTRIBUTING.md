@@ -66,13 +66,13 @@ pnpm biome format --write .  # Fix formatting
 ```
 src/
   main/              # Electron main process
-    orchestrator.ts   #   Central IPC + engine coordination
-    voice-machine.ts  #   xstate v5 state machine
-    openclaw-client.ts #  WebSocket client for OpenClaw gateway
-    stt-engine.ts     #   Multi-provider speech-to-text
-    tts/              #   TTS provider implementations
-    keys.ts           #   API key encryption (AES-256-CBC)
-    settings-store.ts #   Settings persistence (JSON)
+    orchestrator.ts    # Central IPC + engine coordination
+    voice-machine.ts   # xstate v5 state machine
+    openclaw-client.ts # WebSocket client for OpenClaw gateway
+    stt-engine.ts      # Multi-provider speech-to-text
+    tts/               # TTS provider implementations
+    keys.ts            # API key encryption (AES-256-CBC)
+    settings-store.ts  # Settings persistence (JSON)
   preload/            # contextBridge (window.lobster API)
   renderer/           # React 19 UI
     hooks/            #   useVoiceState, useTtsPlayback, useVAD, etc.
