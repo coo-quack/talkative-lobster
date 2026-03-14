@@ -63,7 +63,7 @@ High-quality cloud TTS with natural-sounding voices and real-time streaming.
 
 | Voice | ID |
 |-------|-----|
-| Morioki | `KnMBELSmBGHPqfZxMRw6` |
+| Morioki | `8EkOjt4xTPGMclNlh1pk` |
 | Lily (default) | `pFZP5JQG7iQjIQuC4Bku` |
 | Alice | `Xb7hH8MSUJpSbSDYk0k2` |
 | Matilda | `XrExE9yKIg1WjnnlVkGX` |

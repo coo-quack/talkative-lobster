@@ -27,7 +27,7 @@ Talkative Lobster is an Electron app with a React renderer. The main process han
 └────────────── IPC (contextBridge) ──────────────┘
                         │
 ┌───────────────────────┴─────────────────────────┐
-│ Renderer Process (React 19)                     │
+│ Renderer Process (React 19 + React Compiler)     │
 │                                                 │
 │  App.tsx                                        │
 │    ├── VoiceView ── main conversation UI        │
@@ -37,6 +37,11 @@ Talkative Lobster is an Electron app with a React renderer. The main process han
 │  hooks/                                         │
 │    ├── useVoiceState ── voice machine state      │
 │    ├── useTtsPlayback ── audio playback          │
+│    ├── useAizuchiPlayback ── aizuchi audio       │
+│    ├── useVAD ── Silero voice activity detection  │
+│    ├── useSpeakerMonitor ── system audio gating   │
+│    ├── useNoiseCalibration ── auto VAD threshold  │
+│    ├── useSettings ── settings state management   │
 │    └── useKeys ── encrypted key management      │
 │                                                 │
 └─────────────────────────────────────────────────┘
@@ -99,7 +104,7 @@ src/
     __tests__/        #   Unit tests
   preload/            # contextBridge (window.lobster API)
   renderer/           # React 19 UI
-    hooks/            #   useVoiceState, useTtsPlayback, etc.
+    hooks/            #   useVoiceState, useVAD, useTtsPlayback, useSettings, etc.
     components/       #   VoiceView, SetupModal, Waveform
   shared/             # Types and IPC channel definitions
 ```

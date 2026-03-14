@@ -59,6 +59,7 @@ pnpm biome format --write .  # Fix formatting
 - **Formatter**: [Biome](https://biomejs.dev/) — run `pnpm biome format --write .` before committing
 - **Linter**: Biome
 - **Tests**: [Vitest](https://vitest.dev/) for unit tests, [Playwright](https://playwright.dev/) for E2E
+- **React Compiler**: The renderer uses `babel-plugin-react-compiler` for automatic memoization. Do **not** use `useCallback`, `useMemo`, or `React.memo` for performance. See `CLAUDE.md` for detailed rules.
 - **Commit messages**: Use [Conventional Commits](https://www.conventionalcommits.org/) format (`feat:`, `fix:`, `chore:`, `docs:`, etc.)
 
 ## Project Structure
