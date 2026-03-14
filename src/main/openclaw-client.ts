@@ -25,6 +25,7 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private reconnectDelay = 1000
   private connectSent = false
+  private disposed = false
   private identity: DeviceIdentity
   private activeRunIds = new Set<string>()
   private lastAgentText = new Map<string, string>()
@@ -42,6 +43,7 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.connectSent = false
+      this.disposed = false
       this.ignoredRunIds.clear()
       this.activeRunIds.clear()
       this.ws = new WebSocket(this.url)
@@ -76,7 +78,9 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
   }
 
   disconnect(): void {
+    this.disposed = true
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
+    this.reconnectTimer = null
     this.rejectAllPending()
     this.ws?.close()
     this.ws = null
@@ -444,6 +448,7 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
   }
 
   private scheduleReconnect(): void {
+    if (this.disposed) return
     this.reconnectTimer = setTimeout(() => {
       this.connect().catch(() => {})
     }, this.reconnectDelay)
