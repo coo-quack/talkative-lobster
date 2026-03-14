@@ -64,23 +64,3 @@ The conversation lifecycle is managed by a state machine:
 | `speaking` | Playing AI response audio |
 
 Transitions happen automatically. The user can interrupt during `speaking` by starting to talk, which transitions back to `listening`.
-
-## Directory Structure
-
-```
-src/
-  main/              # Electron main process
-    orchestrator.ts   #   Central coordination
-    voice-machine.ts  #   State machine
-    openclaw-client.ts#   Gateway WebSocket client
-    stt-engine.ts     #   Speech-to-text
-    tts/              #   TTS provider implementations
-    keys.ts           #   Encrypted key storage
-    settings-store.ts #   Settings persistence
-    __tests__/        #   Unit tests
-  preload/            # IPC bridge (contextBridge)
-  renderer/           # React UI
-    components/       #   VoiceView, SetupModal, Waveform
-    hooks/            #   State, audio, VAD, settings
-  shared/             # Types and IPC channel definitions
-```
