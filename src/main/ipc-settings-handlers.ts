@@ -8,6 +8,13 @@ import type { ITtsProvider } from './tts/tts-provider'
 import type { VoicevoxTts } from './tts/voicevox-tts'
 import { checkForUpdate, getAppVersion } from './update-checker'
 
+const VALID_KEY_SOURCES: ReadonlySet<KeyInfo['source']> = new Set([
+  'keychain',
+  'openclaw',
+  'env',
+  'manual'
+])
+
 // biome-ignore lint/suspicious/noExplicitAny: IPC handlers have dynamic signatures
 type IpcHandler = (...args: any[]) => any
 
@@ -27,9 +34,11 @@ export function registerSettingsHandlers(deps: {
   })
 
   handleIpc(IPC.KEYS_SET, (_event: unknown, name: string, value: string, source?: string) => {
-    const validSources = new Set(['keychain', 'openclaw', 'env', 'manual'])
-    const resolvedSource = source && validSources.has(source) ? source : 'manual'
-    keyManager.set(name, value, resolvedSource as KeyInfo['source'])
+    const resolvedSource =
+      source && VALID_KEY_SOURCES.has(source as KeyInfo['source'])
+        ? (source as KeyInfo['source'])
+        : 'manual'
+    keyManager.set(name, value, resolvedSource)
   })
 
   handleIpc(IPC.KEYS_READ_OPENCLAW, (_event: unknown, name: string) => {

@@ -41,7 +41,6 @@ export function Waveform({ state, compact, offline }: Props) {
     canvas.height = cssH * dpr
     canvas.style.width = `${cssW}px`
     canvas.style.height = `${cssH}px`
-    ctx.scale(dpr, dpr)
 
     const cx = cssW / 2
     const cy = cssH / 2

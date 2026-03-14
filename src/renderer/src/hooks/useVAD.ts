@@ -123,13 +123,19 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
           if (cancelled) return
           return startVAD()
         })
-        .catch(() => {})
+        .catch((err) => {
+          console.error('[vad] Failed during cleanup/start cycle:', err)
+        })
     } else {
-      cleanup().catch(() => {})
+      cleanup().catch((err) => {
+        console.error('[vad] Failed during cleanup:', err)
+      })
     }
     return () => {
       cancelled = true
-      cleanup().catch(() => {})
+      cleanup().catch((err) => {
+        console.error('[vad] Failed during effect cleanup:', err)
+      })
     }
   }, [enabled, thresholds?.positiveSpeechThreshold, thresholds?.negativeSpeechThreshold])
 
