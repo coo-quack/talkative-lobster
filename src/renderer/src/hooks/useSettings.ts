@@ -59,7 +59,7 @@ export function useSettings(): SettingsState & SettingsActions {
   const [settingsLoaded, setSettingsLoaded] = useState(false)
 
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       window.lobster.getTtsVoice().then(setSelectedVoice),
       window.lobster.getTtsModel().then(setSelectedModel),
       window.lobster.getSttProvider().then(setSttProvider),

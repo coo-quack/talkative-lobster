@@ -116,7 +116,8 @@ export function useSpeakerMonitor(enabled: boolean) {
         '[speaker-monitor] System audio capture not available:',
         err instanceof Error ? err.message : err
       )
-      // Not critical — if capture fails, VAD runs without speaker gating
+      // Roll back partial initialization so future start() calls don't early-return
+      cleanup()
     }
   }
 
