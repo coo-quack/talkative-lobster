@@ -115,10 +115,16 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: startVAD/cleanup only reference stable refs; thresholds trigger VAD re-init
   useEffect(() => {
+    // Capture version so the async chain can detect stale effect runs
+    const effectVersion = versionRef.current
     if (enabled) {
       // Destroy existing VAD first so startVAD() re-creates it with current thresholds
       cleanup()
-        .then(() => startVAD())
+        .then(() => {
+          // Guard: skip if a newer effect run (or cleanup) has incremented the version
+          if (versionRef.current !== effectVersion) return
+          return startVAD()
+        })
         .catch(() => {})
     } else {
       cleanup().catch(() => {})
