@@ -116,12 +116,12 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
   // biome-ignore lint/correctness/useExhaustiveDependencies: startVAD/cleanup only reference stable refs; thresholds trigger VAD re-init
   useEffect(() => {
     if (enabled) {
-      startVAD()
+      startVAD().catch(() => {})
     } else {
-      cleanup()
+      cleanup().catch(() => {})
     }
     return () => {
-      cleanup()
+      cleanup().catch(() => {})
     }
   }, [enabled, thresholds?.positiveSpeechThreshold, thresholds?.negativeSpeechThreshold])
 

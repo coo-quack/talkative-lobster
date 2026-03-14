@@ -169,7 +169,7 @@ export function useTtsPlayback() {
       unsubAudio()
       unsubStop()
       unsubCancel()
-      ctxRef.current?.close()
+      ctxRef.current?.close().catch(() => {})
     }
   }, [])
 
