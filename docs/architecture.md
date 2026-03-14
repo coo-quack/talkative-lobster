@@ -78,8 +78,10 @@ Transitions happen automatically. The user can interrupt during `speaking` by st
 | Speech Filter | `src/main/speech-filter.ts` | Text processing before TTS |
 | Keys | `src/main/keys.ts` | API key encryption (AES-256-CBC) |
 | Settings Store | `src/main/settings-store.ts` | Settings persistence (JSON) |
-| Piper TTS | `src/main/tts/piper-tts.ts` | Local TTS via Piper |
+| ElevenLabs TTS | `src/main/tts/elevenlabs-tts.ts` | Cloud TTS via ElevenLabs |
 | VOICEVOX TTS | `src/main/tts/voicevox-tts.ts` | Japanese TTS via VOICEVOX |
+| Kokoro TTS | `src/main/tts/kokoro-tts.ts` | Local TTS via Kokoro |
+| Piper TTS | `src/main/tts/piper-tts.ts` | Local TTS via Piper |
 
 ## Directory Structure
 
