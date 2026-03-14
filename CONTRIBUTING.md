@@ -68,7 +68,7 @@ src/
   main/              # Electron main process
     orchestrator.ts   #   Central IPC + engine coordination
     voice-machine.ts  #   xstate v5 state machine
-    openclaw-client.ts#   WebSocket client for OpenClaw gateway
+    openclaw-client.ts #  WebSocket client for OpenClaw gateway
     stt-engine.ts     #   Multi-provider speech-to-text
     tts/              #   TTS provider implementations
     keys.ts           #   API key encryption (AES-256-CBC)
