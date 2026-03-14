@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.1.1 (2026-03-14)
+
+### Docs
+
+- Add changelog page to VitePress documentation
+
+---
+
 ## v1.1.0 (2026-03-14)
 
 ### Features
