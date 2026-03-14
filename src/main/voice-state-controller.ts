@@ -1,15 +1,8 @@
-import { createActor, type AnyActorRef } from 'xstate'
-import { voiceMachine } from './voice-machine'
+import { type AnyActorRef, createActor } from 'xstate'
 import type { VoiceState } from '../shared/types'
+import { type VoiceEvent, voiceMachine } from './voice-machine'
 
-type VoiceEvent =
-  | { type: 'SPEECH_START' }
-  | { type: 'SPEECH_END' }
-  | { type: 'STT_DONE'; text: string }
-  | { type: 'STT_FAIL' }
-  | { type: 'TTS_PLAYING' }
-  | { type: 'TTS_DONE' }
-  | { type: 'CANCEL' }
+export type { VoiceEvent }
 
 export interface TransitionLog {
   from: VoiceState
@@ -26,14 +19,16 @@ const DEFAULT_STUCK_TIMEOUTS: Record<VoiceState, number> = {
   speaking: 120_000
 }
 
-// Events accepted by each state (derived from the voice machine definition)
-const ACCEPTED_EVENTS: Record<VoiceState, ReadonlySet<string>> = {
-  idle: new Set(['SPEECH_START']),
-  listening: new Set(['SPEECH_END', 'CANCEL']),
-  processing: new Set(['STT_DONE', 'STT_FAIL', 'SPEECH_START', 'CANCEL']),
-  thinking: new Set(['TTS_PLAYING', 'TTS_DONE', 'SPEECH_START', 'CANCEL']),
-  speaking: new Set(['TTS_DONE', 'SPEECH_START', 'CANCEL'])
-}
+// Derive accepted events from the machine definition to stay in sync automatically
+const ACCEPTED_EVENTS: Record<VoiceState, ReadonlySet<string>> = (() => {
+  const states = voiceMachine.config.states ?? {}
+  const result = {} as Record<VoiceState, ReadonlySet<string>>
+  for (const [stateName, stateConfig] of Object.entries(states)) {
+    const on = (stateConfig as Record<string, unknown>).on as Record<string, unknown> | undefined
+    result[stateName as VoiceState] = new Set(Object.keys(on ?? {}))
+  }
+  return result
+})()
 
 export interface VoiceStateControllerOptions {
   stuckTimeouts?: Partial<Record<VoiceState, number>>

@@ -1,10 +1,11 @@
 import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
-import { writeFileSync, readFileSync, rmSync, mkdtempSync } from 'node:fs'
-import { join } from 'node:path'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { promisify } from 'node:util'
 
 const execFileAsync = promisify(execFile)
+
 import type { ITtsProvider, TtsAudioFormat } from './tts-provider'
 
 export class PiperTts implements ITtsProvider {
@@ -22,12 +23,12 @@ export class PiperTts implements ITtsProvider {
   async *stream(text: string): AsyncGenerator<Buffer> {
     const gen = ++this.generation
 
-    const dir = mkdtempSync(join(tmpdir(), 'lobster-piper-'))
+    const dir = await mkdtemp(join(tmpdir(), 'lobster-piper-'))
     const inputPath = join(dir, 'input.txt')
     const outputPath = join(dir, 'output.wav')
 
     try {
-      writeFileSync(inputPath, text)
+      await writeFile(inputPath, text)
 
       await execFileAsync(
         this.binaryPath,
@@ -36,11 +37,11 @@ export class PiperTts implements ITtsProvider {
       )
 
       if (gen === this.generation) {
-        const wav = readFileSync(outputPath)
+        const wav = await readFile(outputPath)
         yield wav
       }
     } finally {
-      rmSync(dir, { recursive: true, force: true })
+      await rm(dir, { recursive: true, force: true })
     }
   }
 

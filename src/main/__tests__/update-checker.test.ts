@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({
   app: { getVersion: () => '1.0.5' }
 }))
 
-import { getAppVersion, checkForUpdate, compareVersions, resetUpdateCache } from '../update-checker'
+import { checkForUpdate, compareVersions, getAppVersion, resetUpdateCache } from '../update-checker'
 
 describe('update-checker', () => {
   const originalFetch = globalThis.fetch

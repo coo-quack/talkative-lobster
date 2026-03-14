@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { VoiceState } from '../../../shared/types'
 
 export function useVoiceState() {

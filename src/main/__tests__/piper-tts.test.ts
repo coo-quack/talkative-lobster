@@ -1,27 +1,26 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockExecFile, mockWriteFileSync, mockReadFileSync, mockRmSync, mockMkdtempSync } =
-  vi.hoisted(() => ({
-    mockExecFile: vi.fn(
-      (
-        _cmd: string,
-        _args: string[],
-        _opts: unknown,
-        cb: (err: Error | null, stdout?: string, stderr?: string) => void
-      ) => cb(null, '', '')
-    ),
-    mockWriteFileSync: vi.fn(),
-    mockReadFileSync: vi.fn(),
-    mockRmSync: vi.fn(),
-    mockMkdtempSync: vi.fn()
-  }))
+const { mockExecFile, mockWriteFile, mockReadFile, mockRm, mockMkdtemp } = vi.hoisted(() => ({
+  mockExecFile: vi.fn(
+    (
+      _cmd: string,
+      _args: string[],
+      _opts: unknown,
+      cb: (err: Error | null, stdout?: string, stderr?: string) => void
+    ) => cb(null, '', '')
+  ),
+  mockWriteFile: vi.fn().mockResolvedValue(undefined),
+  mockReadFile: vi.fn(),
+  mockRm: vi.fn().mockResolvedValue(undefined),
+  mockMkdtemp: vi.fn()
+}))
 
 vi.mock('node:child_process', () => ({ execFile: mockExecFile }))
-vi.mock('node:fs', () => ({
-  writeFileSync: mockWriteFileSync,
-  readFileSync: mockReadFileSync,
-  rmSync: mockRmSync,
-  mkdtempSync: mockMkdtempSync
+vi.mock('node:fs/promises', () => ({
+  writeFile: mockWriteFile,
+  readFile: mockReadFile,
+  rm: mockRm,
+  mkdtemp: mockMkdtemp
 }))
 
 import { PiperTts } from '../tts/piper-tts'
@@ -29,8 +28,10 @@ import { PiperTts } from '../tts/piper-tts'
 describe('PiperTts', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    mockMkdtempSync.mockReturnValue('/tmp/lobster-piper-xyz')
-    mockReadFileSync.mockReturnValue(Buffer.from('RIFF-wav-data'))
+    mockMkdtemp.mockResolvedValue('/tmp/lobster-piper-xyz')
+    mockWriteFile.mockResolvedValue(undefined)
+    mockRm.mockResolvedValue(undefined)
+    mockReadFile.mockResolvedValue(Buffer.from('RIFF-wav-data'))
   })
 
   describe('constructor', () => {
@@ -47,7 +48,7 @@ describe('PiperTts', () => {
         /* drain */
       }
 
-      expect(mockWriteFileSync).toHaveBeenCalledWith('/tmp/lobster-piper-xyz/input.txt', 'hello')
+      expect(mockWriteFile).toHaveBeenCalledWith('/tmp/lobster-piper-xyz/input.txt', 'hello')
       expect(mockExecFile).toHaveBeenCalledWith(
         '/usr/local/bin/piper',
         [
@@ -65,7 +66,7 @@ describe('PiperTts', () => {
 
     it('yields the WAV file as a single buffer', async () => {
       const wavData = Buffer.from('RIFF-test-wav')
-      mockReadFileSync.mockReturnValue(wavData)
+      mockReadFile.mockResolvedValue(wavData)
 
       const tts = new PiperTts('/bin/piper', '/model.onnx')
       const received: Buffer[] = []
@@ -83,7 +84,7 @@ describe('PiperTts', () => {
         /* drain */
       }
 
-      expect(mockRmSync).toHaveBeenCalledWith('/tmp/lobster-piper-xyz', {
+      expect(mockRm).toHaveBeenCalledWith('/tmp/lobster-piper-xyz', {
         recursive: true,
         force: true
       })
@@ -106,7 +107,7 @@ describe('PiperTts', () => {
         }
       }).rejects.toThrow('piper failed')
 
-      expect(mockRmSync).toHaveBeenCalledWith('/tmp/lobster-piper-xyz', {
+      expect(mockRm).toHaveBeenCalledWith('/tmp/lobster-piper-xyz', {
         recursive: true,
         force: true
       })

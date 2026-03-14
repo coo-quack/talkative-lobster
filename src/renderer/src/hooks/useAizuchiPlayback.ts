@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface PcmFormat {
   type: 'pcm'
@@ -18,14 +18,15 @@ export function useAizuchiPlayback() {
   const ctxRef = useRef<AudioContext | null>(null)
   const formatRef = useRef<AudioFormat>({ type: 'encoded' })
 
-  const resetState = useCallback(() => {
+  const resetState = () => {
     const ctx = ctxRef.current
     if (ctx) {
       ctx.close().catch(() => {})
       ctxRef.current = new AudioContext()
     }
-  }, [])
+  }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only effect — resetState only references stable refs
   useEffect(() => {
     ctxRef.current = new AudioContext()
 
@@ -83,7 +84,7 @@ export function useAizuchiPlayback() {
       unsubCancel()
       ctxRef.current?.close()
     }
-  }, [resetState])
+  }, [])
 
   return { stopAizuchi: resetState }
 }

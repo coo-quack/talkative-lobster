@@ -1,12 +1,12 @@
 import { IPC } from '../shared/ipc-channels'
-import type { SttProvider, TtsProviderType } from '../shared/types'
+import type { KeyInfo, SttProvider, TtsProviderType } from '../shared/types'
 import type { KeyManager } from './keys'
 import type { SettingsStore } from './settings-store'
-import type { ITtsProvider } from './tts/tts-provider'
 import type { ElevenLabsTts } from './tts/elevenlabs-tts'
-import type { VoicevoxTts } from './tts/voicevox-tts'
 import type { KokoroTts } from './tts/kokoro-tts'
-import { getAppVersion, checkForUpdate } from './update-checker'
+import type { ITtsProvider } from './tts/tts-provider'
+import type { VoicevoxTts } from './tts/voicevox-tts'
+import { checkForUpdate, getAppVersion } from './update-checker'
 
 // biome-ignore lint/suspicious/noExplicitAny: IPC handlers have dynamic signatures
 type IpcHandler = (...args: any[]) => any
@@ -27,7 +27,9 @@ export function registerSettingsHandlers(deps: {
   })
 
   handleIpc(IPC.KEYS_SET, (_event: unknown, name: string, value: string, source?: string) => {
-    keyManager.set(name, value, (source ?? 'manual') as 'manual')
+    const validSources = new Set(['keychain', 'openclaw', 'env', 'manual'])
+    const resolvedSource = source && validSources.has(source) ? source : 'manual'
+    keyManager.set(name, value, resolvedSource as KeyInfo['source'])
   })
 
   handleIpc(IPC.KEYS_READ_OPENCLAW, (_event: unknown, name: string) => {

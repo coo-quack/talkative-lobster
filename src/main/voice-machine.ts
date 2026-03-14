@@ -1,15 +1,17 @@
 import { setup } from 'xstate'
 
+export type VoiceEvent =
+  | { type: 'SPEECH_START' }
+  | { type: 'SPEECH_END' }
+  | { type: 'STT_DONE'; text: string }
+  | { type: 'STT_FAIL' }
+  | { type: 'TTS_PLAYING' }
+  | { type: 'TTS_DONE' }
+  | { type: 'CANCEL' }
+
 export const voiceMachine = setup({
   types: {
-    events: {} as
-      | { type: 'SPEECH_START' }
-      | { type: 'SPEECH_END' }
-      | { type: 'STT_DONE'; text: string }
-      | { type: 'STT_FAIL' }
-      | { type: 'TTS_PLAYING' }
-      | { type: 'TTS_DONE' }
-      | { type: 'CANCEL' }
+    events: {} as VoiceEvent
   }
 }).createMachine({
   id: 'voice',

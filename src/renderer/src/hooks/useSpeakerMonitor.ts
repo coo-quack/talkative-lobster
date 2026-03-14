@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
+
+const COOLDOWN_MS = 800
+const RMS_THRESHOLD = 0.01
 
 /**
  * Monitors system audio output via Electron's desktopCapturer.
@@ -17,10 +20,8 @@ export function useSpeakerMonitor(enabled: boolean) {
   // Debounce: keep speakerActive true for a short period after audio stops
   // to avoid rapid toggling
   const cooldownRef = useRef(0)
-  const COOLDOWN_MS = 800
-  const RMS_THRESHOLD = 0.01
 
-  const cleanup = useCallback(() => {
+  const cleanup = () => {
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current)
       rafRef.current = 0
@@ -38,9 +39,9 @@ export function useSpeakerMonitor(enabled: boolean) {
     analyserRef.current = null
     activeRef.current = false
     setSpeakerActive(false)
-  }, [])
+  }
 
-  const start = useCallback(async () => {
+  const start = async () => {
     if (ctxRef.current) return
 
     try {
@@ -117,8 +118,9 @@ export function useSpeakerMonitor(enabled: boolean) {
       )
       // Not critical — if capture fails, VAD runs without speaker gating
     }
-  }, [])
+  }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: start/cleanup only reference stable refs
   useEffect(() => {
     if (enabled) {
       start()
@@ -126,7 +128,7 @@ export function useSpeakerMonitor(enabled: boolean) {
       cleanup()
     }
     return cleanup
-  }, [enabled, start, cleanup])
+  }, [enabled])
 
   return { speakerActive }
 }

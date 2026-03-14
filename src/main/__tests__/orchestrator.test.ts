@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ITtsProvider } from '../tts/tts-provider'
 
 // ── Electron mocks ──────────────────────────────────────────────────
@@ -97,8 +97,8 @@ vi.mock('../tts/piper-tts', () => ({
 
 // ── Import after mocks ─────────────────────────────────────────────
 
-import { Orchestrator } from '../orchestrator'
 import { IPC } from '../../shared/ipc-channels'
+import { Orchestrator } from '../orchestrator'
 
 // ── Type alias for accessing Orchestrator private members in tests ──
 

@@ -1,13 +1,13 @@
-import WebSocket from 'ws'
-import { EventEmitter } from 'node:events'
 import crypto from 'node:crypto'
+import { EventEmitter } from 'node:events'
+import WebSocket from 'ws'
 import {
-  type DeviceIdentity,
   base64UrlEncode,
+  buildDeviceAuthPayload,
+  type DeviceIdentity,
   derivePublicKeyRaw,
   loadOrCreateDeviceIdentity,
-  signDevicePayload,
-  buildDeviceAuthPayload
+  signDevicePayload
 } from './device-identity'
 import type { IGatewayClient } from './gateway-client'
 
@@ -95,6 +95,15 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
       this.ignoredRunIds.add(id)
     }
     this.activeRunIds.clear()
+
+    // Prevent unbounded growth if server never sends final/error for some runs
+    if (this.ignoredRunIds.size > 100) {
+      const excess = this.ignoredRunIds.size - 50
+      const iter = this.ignoredRunIds.values()
+      for (let i = 0; i < excess; i++) {
+        this.ignoredRunIds.delete(iter.next().value as string)
+      }
+    }
   }
 
   sendMessage(text: string): void {

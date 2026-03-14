@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
-  DEFAULT_TTS_VOICE_ID,
-  DEFAULT_TTS_MODEL_ID,
-  DEFAULT_STT_PROVIDER,
-  DEFAULT_TTS_PROVIDER,
   DEFAULT_KOKORO_VOICE,
+  DEFAULT_STT_PROVIDER,
+  DEFAULT_TTS_MODEL_ID,
+  DEFAULT_TTS_PROVIDER,
+  DEFAULT_TTS_VOICE_ID,
   type SttProvider,
   type TtsProviderType
 } from '../../../shared/types'
@@ -71,8 +71,8 @@ export function useSettings(): SettingsState & SettingsActions {
       window.lobster.getPiperModelPath().then(setPiperModelPath),
       window.lobster.getVoicevoxSpeaker().then(setVoicevoxSpeakerId),
       window.lobster.getKokoroVoice().then(setKokoroVoice),
-      window.lobster.getVadSensitivity?.()?.then(setVadSensitivity) ?? Promise.resolve(),
-      window.lobster.getGatewayUrl?.()?.then(setGatewayUrl) ?? Promise.resolve()
+      window.lobster.getVadSensitivity().then(setVadSensitivity),
+      window.lobster.getGatewayUrl().then(setGatewayUrl)
     ]).then(() => setSettingsLoaded(true))
   }, [])
 

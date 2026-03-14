@@ -1,11 +1,13 @@
-import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js'
 import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
-import { writeFileSync, mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync } from 'node:fs'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { promisify } from 'node:util'
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js'
 
 const execFileAsync = promisify(execFile)
+
 import type { SttProviderConfig } from '../shared/types'
 
 const API_TIMEOUT_MS = 5_000
@@ -21,9 +23,13 @@ export interface SttEngineConfig {
 
 export class SttEngine {
   private config: SttEngineConfig
+  private elevenlabsClient: InstanceType<typeof ElevenLabsClient> | null = null
 
   constructor(config: SttEngineConfig) {
     this.config = config
+    if (config.elevenlabsApiKey) {
+      this.elevenlabsClient = new ElevenLabsClient({ apiKey: config.elevenlabsApiKey })
+    }
   }
 
   async transcribe(audio: Float32Array, sampleRate: number): Promise<string | null> {
@@ -74,8 +80,8 @@ export class SttEngine {
   }
 
   private async transcribeElevenlabs(wav: Buffer): Promise<string> {
-    if (!this.config.elevenlabsApiKey) throw new Error('ElevenLabs API key is not set')
-    const client = new ElevenLabsClient({ apiKey: this.config.elevenlabsApiKey })
+    if (!this.elevenlabsClient) throw new Error('ElevenLabs API key is not set')
+    const client = this.elevenlabsClient
     const file = new Blob([new Uint8Array(wav)], { type: 'audio/wav' })
     const result = await client.speechToText.convert({
       file,
@@ -106,10 +112,10 @@ export class SttEngine {
   private async transcribeLocalWhisper(wav: Buffer): Promise<string> {
     if (!this.config.localWhisperPath) throw new Error('localWhisperPath not configured')
 
-    const dir = mkdtempSync(join(tmpdir(), 'lobster-stt-'))
+    const dir = await mkdtemp(join(tmpdir(), 'lobster-stt-'))
     const wavPath = join(dir, 'audio.wav')
     try {
-      writeFileSync(wavPath, wav)
+      await writeFile(wavPath, wav)
       const modelPath = join(homedir(), WHISPER_MODEL_SUBPATH)
       const { stdout: output } = await execFileAsync(
         this.config.localWhisperPath,
@@ -122,11 +128,11 @@ export class SttEngine {
       // --output-txt writes audio.wav.txt next to the input file
       const txtPath = `${wavPath}.txt`
       if (existsSync(txtPath)) {
-        return readFileSync(txtPath, 'utf-8').trim()
+        return (await readFile(txtPath, 'utf-8')).trim()
       }
       return output.trim()
     } finally {
-      rmSync(dir, { recursive: true, force: true })
+      await rm(dir, { recursive: true, force: true })
     }
   }
 

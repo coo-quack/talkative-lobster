@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import crypto from 'node:crypto'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // ── FS mock ──────────────────────────────────────────────────────
 const mockExistsSync = vi.fn()
@@ -16,11 +16,11 @@ vi.mock('node:fs', () => ({
 
 import {
   base64UrlEncode,
+  buildDeviceAuthPayload,
   derivePublicKeyRaw,
   fingerprintPublicKey,
   loadOrCreateDeviceIdentity,
-  signDevicePayload,
-  buildDeviceAuthPayload
+  signDevicePayload
 } from '../device-identity'
 
 describe('device-identity', () => {

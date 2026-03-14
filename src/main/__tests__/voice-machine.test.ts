@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createActor, type EventFromLogic } from 'xstate'
 import { voiceMachine } from '../voice-machine'
 

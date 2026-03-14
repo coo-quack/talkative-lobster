@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { KeyInput } from './KeyInput'
-import { ConnectivityCheck } from './ConnectivityCheck'
 import type { KeyInfo } from '../../../shared/types'
+import { ConnectivityCheck } from './ConnectivityCheck'
+import { KeyInput } from './KeyInput'
 
 interface Props {
   keys: KeyInfo[]
@@ -45,7 +45,7 @@ export function GatewaySettings({
     setChecking(true)
     setCheckStatus(null)
     try {
-      await window.lobster.setGatewayUrl?.(gatewayUrl)
+      await window.lobster.setGatewayUrl(gatewayUrl)
       if (inputs.GATEWAY_TOKEN) {
         await window.lobster.setKey('GATEWAY_TOKEN', inputs.GATEWAY_TOKEN)
       }
@@ -64,7 +64,7 @@ export function GatewaySettings({
       <h3 className="mt-5 mb-1 w-full max-w-[400px] border-border border-t pt-4 text-left font-bold text-base text-text tracking-wide">
         Gateway Settings
       </h3>
-      <label className="mt-2 block w-full max-w-[400px] text-left text-xs text-dim">
+      <label className="mt-2 block w-full max-w-[400px] text-left text-dim text-xs">
         Gateway URL
         <input
           type="text"

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useKeys } from '../hooks/useKeys'
 import { useSettings } from '../hooks/useSettings'
 import { GatewaySettings } from './GatewaySettings'
@@ -119,9 +119,9 @@ export function SetupModal({ onComplete }: Props) {
       await window.lobster.setKokoroVoice(settings.kokoroVoice)
       await window.lobster.setPiperPath(settings.piperPath)
       await window.lobster.setPiperModelPath(settings.piperModelPath)
-      await window.lobster.setVadSensitivity?.(settings.vadSensitivity)
-      await window.lobster.setGatewayUrl?.(settings.gatewayUrl)
-      await window.lobster.sessionStart?.()
+      await window.lobster.setVadSensitivity(settings.vadSensitivity)
+      await window.lobster.setGatewayUrl(settings.gatewayUrl)
+      await window.lobster.sessionStart()
       await refresh()
       onComplete()
     } catch (err) {
@@ -168,24 +168,7 @@ export function SetupModal({ onComplete }: Props) {
         inputs={inputs}
         setInputs={setInputs}
         refresh={refresh}
-        ttsProvider={settings.ttsProvider}
-        setTtsProvider={settings.setTtsProvider}
-        selectedVoice={settings.selectedVoice}
-        setSelectedVoice={settings.setSelectedVoice}
-        selectedModel={settings.selectedModel}
-        setSelectedModel={settings.setSelectedModel}
-        voicevoxUrl={settings.voicevoxUrl}
-        setVoicevoxUrl={settings.setVoicevoxUrl}
-        voicevoxSpeakerId={settings.voicevoxSpeakerId}
-        setVoicevoxSpeakerId={settings.setVoicevoxSpeakerId}
-        kokoroUrl={settings.kokoroUrl}
-        setKokoroUrl={settings.setKokoroUrl}
-        kokoroVoice={settings.kokoroVoice}
-        setKokoroVoice={settings.setKokoroVoice}
-        piperPath={settings.piperPath}
-        setPiperPath={settings.setPiperPath}
-        piperModelPath={settings.piperModelPath}
-        setPiperModelPath={settings.setPiperModelPath}
+        settings={settings}
         checkStatus={ttsCheckStatus}
         setCheckStatus={setTtsCheckStatus}
       />

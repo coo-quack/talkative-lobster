@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface PcmFormat {
   type: 'pcm'
@@ -38,7 +38,7 @@ export function useTtsPlayback() {
   const formatRef = useRef<AudioFormat>({ type: 'encoded' })
   const pcmRemainderRef = useRef<Uint8Array | null>(null)
 
-  const checkPlaybackComplete = useCallback(() => {
+  const checkPlaybackComplete = () => {
     if (
       streamDoneRef.current &&
       pendingDecodesRef.current === 0 &&
@@ -50,9 +50,9 @@ export function useTtsPlayback() {
       console.log('[tts] Playback fully complete')
       window.lobster.ttsPlaybackDone()
     }
-  }, [])
+  }
 
-  const resetState = useCallback(() => {
+  const resetState = () => {
     const ctx = ctxRef.current
     streamDoneRef.current = false
     playbackStartedRef.current = false
@@ -66,39 +66,37 @@ export function useTtsPlayback() {
       ctx.close().catch(() => {})
       ctxRef.current = new AudioContext()
     }
-  }, [])
+  }
 
-  const scheduleBuffer = useCallback(
-    (ctx: AudioContext, buffer: AudioBuffer) => {
-      if (!playbackStartedRef.current) {
-        playbackStartedRef.current = true
-        console.log('[tts] Playback started — notifying main process')
-        window.lobster.ttsPlaybackStarted()
-      }
+  const scheduleBuffer = (ctx: AudioContext, buffer: AudioBuffer) => {
+    if (!playbackStartedRef.current) {
+      playbackStartedRef.current = true
+      console.log('[tts] Playback started — notifying main process')
+      window.lobster.ttsPlaybackStarted()
+    }
 
-      const now = ctx.currentTime
-      const startAt = Math.max(nextStartTimeRef.current, now)
+    const now = ctx.currentTime
+    const startAt = Math.max(nextStartTimeRef.current, now)
 
-      const source = ctx.createBufferSource()
-      source.buffer = buffer
-      source.connect(ctx.destination)
+    const source = ctx.createBufferSource()
+    source.buffer = buffer
+    source.connect(ctx.destination)
 
-      scheduledCountRef.current++
-      source.onended = () => {
-        finishedCountRef.current++
-        checkPlaybackComplete()
-      }
+    scheduledCountRef.current++
+    source.onended = () => {
+      finishedCountRef.current++
+      checkPlaybackComplete()
+    }
 
-      source.start(startAt)
-      nextStartTimeRef.current = startAt + buffer.duration
-    },
-    [checkPlaybackComplete]
-  )
+    source.start(startAt)
+    nextStartTimeRef.current = startAt + buffer.duration
+  }
 
-  const stopPlayback = useCallback(() => {
+  const stopPlayback = () => {
     resetState()
-  }, [resetState])
+  }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only effect — functions only reference stable refs
   useEffect(() => {
     ctxRef.current = new AudioContext()
 
@@ -173,7 +171,7 @@ export function useTtsPlayback() {
       unsubCancel()
       ctxRef.current?.close()
     }
-  }, [checkPlaybackComplete, resetState, scheduleBuffer])
+  }, [])
 
   return { stopPlayback }
 }

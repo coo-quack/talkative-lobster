@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import type { VoiceState } from '../../../shared/types'
 
 interface Props {
@@ -32,16 +32,26 @@ export function Waveform({ state, compact, offline }: Props) {
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    const w = canvas.width
-    const h = canvas.height
-    const cx = w / 2
-    const cy = h / 2
+
+    const dpr = window.devicePixelRatio || 1
+    const cssW = compact ? 120 : 320
+    const cssH = compact ? 120 : 192
+
+    canvas.width = cssW * dpr
+    canvas.height = cssH * dpr
+    canvas.style.width = `${cssW}px`
+    canvas.style.height = `${cssH}px`
+    ctx.scale(dpr, dpr)
+
+    const cx = cssW / 2
+    const cy = cssH / 2
     const ringCount = 3
     const margin = 10
     const maxRadius = Math.min(cx, cy) - margin
 
     const draw = () => {
-      ctx.clearRect(0, 0, w, h)
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.clearRect(0, 0, cssW, cssH)
       const config = offline ? OFFLINE_CONFIG : STATE_CONFIGS[state] || STATE_CONFIGS.idle
       const t = Date.now() / 1000
 
@@ -72,7 +82,7 @@ export function Waveform({ state, compact, offline }: Props) {
 
     draw()
     return () => cancelAnimationFrame(animRef.current)
-  }, [state, offline])
+  }, [state, compact, offline])
 
   const size = compact ? { width: 120, height: 120 } : { width: 320, height: 192 }
   return <canvas ref={canvasRef} {...size} className="flex items-center justify-center" />

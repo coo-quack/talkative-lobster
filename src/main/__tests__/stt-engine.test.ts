@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { http, HttpResponse } from 'msw'
-import { server } from './msw/server'
+import { HttpResponse, http } from 'msw'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { SttEngine } from '../stt-engine'
+import { server } from './msw/server'
 
 describe('SttEngine', () => {
   let engine: SttEngine

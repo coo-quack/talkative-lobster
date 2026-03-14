@@ -13,10 +13,10 @@ export function VadSettings({ vadSensitivity, setVadSensitivity }: Props) {
         VAD Settings
       </h3>
       <div className="flex w-full max-w-[400px] flex-col">
-        <label className="flex items-center text-[13px] font-semibold text-[#ccc]">
+        <label className="flex items-center font-semibold text-[13px] text-label">
           <span>Sensitivity</span>
           <span className="ml-auto flex items-center gap-1.5">
-            <span className="text-[#a8a29e]">Auto</span>
+            <span className="text-text-dim">Auto</span>
             <input
               type="checkbox"
               checked={isAuto}
@@ -26,7 +26,7 @@ export function VadSettings({ vadSensitivity, setVadSensitivity }: Props) {
         </label>
         {!isAuto && (
           <div className="mt-1 flex items-center gap-2">
-            <span className="text-[#a8a29e] text-[10px]">Quiet</span>
+            <span className="text-[10px] text-text-dim">Quiet</span>
             <input
               type="range"
               min={0.001}
@@ -36,11 +36,11 @@ export function VadSettings({ vadSensitivity, setVadSensitivity }: Props) {
               onChange={(e) => setVadSensitivity(Number.parseFloat(e.target.value))}
               className="flex-1"
             />
-            <span className="text-[#a8a29e] text-[10px]">Noisy</span>
+            <span className="text-[10px] text-text-dim">Noisy</span>
           </div>
         )}
         {isAuto && (
-          <span className="mt-1 block text-[#78716c] text-[10px]">
+          <span className="mt-1 block text-[10px] text-text-muted">
             Automatically calibrates when mic turns on.
           </span>
         )}

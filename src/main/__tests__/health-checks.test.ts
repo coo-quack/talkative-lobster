@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { http, HttpResponse } from 'msw'
+import { HttpResponse, http } from 'msw'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { server } from './msw/server'
 
 // ── FS mock ──────────────────────────────────────────────────────
@@ -16,8 +16,8 @@ vi.mock('node:fs', () => ({
 }))
 
 import {
-  checkGateway,
   checkElevenLabsApi,
+  checkGateway,
   checkSttProvider,
   checkTtsProvider
 } from '../health-checks'
