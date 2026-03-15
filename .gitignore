@@ -2,7 +2,10 @@ node_modules
 dist
 out
 .DS_Store
+.vscode
 *.log*
+*.tsbuildinfo
+.pnpm-store
 
 # Test artifacts
 test-results

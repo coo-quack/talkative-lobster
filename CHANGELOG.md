@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.2.2 (2026-03-15)
+
+### Docs
+
+- Update README badge to show Release workflow status
+- Add MIT license (LICENSE file, README, package.json)
+
+### Chores
+
+- Update biome.json schema version to match installed version (2.4.7)
+- Add .vscode, *.tsbuildinfo, and .pnpm-store to .gitignore
+- Enable Renovate dependency dashboard
+
+---
+
 ## v1.2.1 (2026-03-15)
 
 ### Security
