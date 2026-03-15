@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
-import { VoiceView } from './components/VoiceView'
-import { SetupModal } from './components/SetupModal'
-import { useTtsPlayback } from './hooks/useTtsPlayback'
-import { useAizuchiPlayback } from './hooks/useAizuchiPlayback'
-import { useVoiceState } from './hooks/useVoiceState'
+import { useEffect, useRef, useState } from 'react'
 import type { KeyInfo } from '../../shared/types'
+import { SetupModal } from './components/SetupModal'
+import { VoiceView } from './components/VoiceView'
+import { useAizuchiPlayback } from './hooks/useAizuchiPlayback'
+import { useTtsPlayback } from './hooks/useTtsPlayback'
+import { useVoiceState } from './hooks/useVoiceState'
 
 export default function App() {
   const { stopPlayback } = useTtsPlayback()
@@ -73,13 +73,15 @@ export default function App() {
   }
 
   const statusDotClass = hasError
-    ? 'bg-[#f44336] shadow-[0_0_6px_#f44336] cursor-pointer [-webkit-app-region:no-drag]'
+    ? 'bg-error shadow-[0_0_6px_var(--color-error)] cursor-pointer [-webkit-app-region:no-drag]'
     : 'bg-accent shadow-[0_0_6px_var(--color-accent)]'
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <div className="relative flex shrink-0 items-center justify-center border-border border-b bg-bg-secondary py-3 pr-20 pl-20 [-webkit-app-region:drag]">
-        <span className="font-normal text-[#f5f5f4] text-xl tracking-tight">Talkative Lobster</span>
+        <span className="font-normal text-text-bright text-xl tracking-tight">
+          Talkative Lobster
+        </span>
         <button
           type="button"
           className={`absolute right-4 h-2 w-2 rounded-full transition-colors duration-300 ${statusDotClass}`}
@@ -89,7 +91,7 @@ export default function App() {
         />
       </div>
       {errorMessage && (
-        <div className="shrink-0 border-[#f44336]/30 border-b bg-[#f44336]/20 px-4 py-2 text-[#ef5350] text-sm">
+        <div className="shrink-0 border-error/30 border-b bg-error/20 px-4 py-2 text-error-light text-sm">
           {errorMessage}
         </div>
       )}

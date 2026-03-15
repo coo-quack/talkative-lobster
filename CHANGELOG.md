@@ -1,5 +1,50 @@
 # Changelog
 
+## v1.2.0 (2026-03-15)
+
+### Features
+
+- Adopt React Compiler (`babel-plugin-react-compiler`) for automatic memoization
+- Add HiDPI (devicePixelRatio) support to Waveform canvas
+- Add CLAUDE.md with project guidelines and React Compiler rules
+
+### Fixes
+
+- Fix VAD not re-creating MicVAD when thresholds change
+- Fix stale cleanup→startVAD chain leaving mic active after disable/unmount
+- Fix gateway auto-reconnect after intentional disconnect (disposed flag)
+- Fix unhandled promise rejections in audio hook effect cleanups
+- Fix partial initialization leak in speaker monitor on capture failure
+- Fix settings loading blocking UI on single IPC failure (Promise.allSettled)
+- Fix temp directory cleanup masking successful TTS/STT results
+- Always reconnect gateway on SESSION_START (URL/token may have changed)
+
+### Refactors
+
+- Remove manual `useCallback`/`useMemo`/ref-for-latest-value patterns (React Compiler)
+- Unify VoiceEvent type in voice-machine.ts (single source of truth)
+- Derive ACCEPTED_EVENTS from XState machine config automatically
+- Cache ElevenLabsClient in SttEngine constructor
+- Reduce TtsSettings prop drilling via Pick-based settings object
+- Convert sync I/O to async in PiperTts and SttEngine
+- Consolidate hardcoded color values into CSS custom properties
+- Type STATUS_LABELS and STATE_DOT_COLORS with VoiceState for exhaustiveness
+- Hoist VALID_KEY_SOURCES to module-level typed constant
+- Delete unused tts-engine.ts re-export file
+
+### Docs
+
+- Unify documentation site structure
+- Add changelog page to VitePress documentation
+- Add install page with OS-specific instructions
+- Symlink contributing.md to root CONTRIBUTING.md
+
+### CI
+
+- Simplify backport workflow to direct main-to-develop merge
+
+---
+
 ## v1.1.0 (2026-03-14)
 
 ### Features

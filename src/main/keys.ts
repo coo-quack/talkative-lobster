@@ -1,9 +1,9 @@
-import { app } from 'electron'
-import { readFileSync, existsSync, mkdirSync } from 'node:fs'
-import { writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import { homedir } from 'node:os'
 import { createCipheriv, createDecipheriv, createHash } from 'node:crypto'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { writeFile } from 'node:fs/promises'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
+import { app } from 'electron'
 import type { KeyInfo } from '../shared/types'
 
 const MANAGED_KEYS = ['ELEVENLABS_API_KEY', 'GATEWAY_TOKEN', 'OPENAI_API_KEY'] as const
@@ -20,7 +20,13 @@ function deriveKey(): Buffer {
 function encrypt(plaintext: string): string {
   const key = deriveKey()
   const iv = Buffer.alloc(IV_LEN, 0)
-  // Use a deterministic IV derived from the key for simplicity
+  // NOTE: Intentionally uses a deterministic IV derived from the key.
+  // This is a deliberate tradeoff: same plaintext always produces the same
+  // ciphertext, which means an observer could detect re-use of the same API key.
+  // However, the threat model here is local-only storage protection — any process
+  // on the same machine can derive the same encryption key from homedir + platform,
+  // so randomising the IV would add complexity without meaningful security benefit.
+  // For stronger protection, consider OS-level keychains (macOS Keychain, Windows DPAPI).
   createHash('md5').update(key).digest().copy(iv)
   const cipher = createCipheriv(ALGO, key, iv)
   const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()])

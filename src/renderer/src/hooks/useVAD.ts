@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
 import { MicVAD } from '@ricky0123/vad-web'
+import { useEffect, useRef, useState } from 'react'
 
 interface UseVADOptions {
   enabled: boolean
@@ -30,12 +30,14 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
   const vadRef = useRef<MicVAD | null>(null)
   const versionRef = useRef(0)
 
+  // Refs for latest callbacks — MicVAD stores callbacks at init time,
+  // so we need refs to always invoke the latest version.
   const onSpeechStartRef = useRef(onSpeechStart)
   const onSpeechEndRef = useRef(onSpeechEnd)
   onSpeechStartRef.current = onSpeechStart
   onSpeechEndRef.current = onSpeechEnd
 
-  const cleanup = useCallback(async () => {
+  const cleanup = async () => {
     // Set null synchronously so startVAD() sees it immediately,
     // even though destroy() is async.
     const vad = vadRef.current
@@ -45,9 +47,9 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
       await vad.destroy()
     }
     setListening(false)
-  }, [])
+  }
 
-  const startVAD = useCallback(async () => {
+  const startVAD = async () => {
     if (vadRef.current) return
 
     const version = ++versionRef.current
@@ -109,18 +111,33 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
     } finally {
       setLoading(false)
     }
-  }, [cleanup, thresholds?.positiveSpeechThreshold, thresholds?.negativeSpeechThreshold])
+  }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: startVAD/cleanup only reference stable refs; thresholds trigger VAD re-init
   useEffect(() => {
+    let cancelled = false
     if (enabled) {
-      startVAD()
-    } else {
+      // Destroy existing VAD first so startVAD() re-creates it with current thresholds
       cleanup()
+        .then(() => {
+          if (cancelled) return
+          return startVAD()
+        })
+        .catch((err) => {
+          console.error('[vad] Failed during cleanup/start cycle:', err)
+        })
+    } else {
+      cleanup().catch((err) => {
+        console.error('[vad] Failed during cleanup:', err)
+      })
     }
     return () => {
-      cleanup()
+      cancelled = true
+      cleanup().catch((err) => {
+        console.error('[vad] Failed during effect cleanup:', err)
+      })
     }
-  }, [enabled, startVAD, cleanup])
+  }, [enabled, thresholds?.positiveSpeechThreshold, thresholds?.negativeSpeechThreshold])
 
   return { listening, loading }
 }

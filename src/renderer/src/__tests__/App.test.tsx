@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, act, cleanup } from '@testing-library/react'
+
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import App from '../App'
 
@@ -80,6 +81,12 @@ const mockLobster = {
     updateAvailable: false,
     releaseUrl: null
   }),
+  // VAD & Gateway
+  getVadSensitivity: vi.fn().mockResolvedValue('auto'),
+  setVadSensitivity: vi.fn().mockResolvedValue(undefined),
+  getGatewayUrl: vi.fn().mockResolvedValue('ws://127.0.0.1:18789'),
+  setGatewayUrl: vi.fn().mockResolvedValue(undefined),
+  sessionStart: vi.fn().mockResolvedValue(undefined),
   // Aizuchi audio
   onAizuchiFormat: vi.fn(noop),
   onAizuchiAudio: vi.fn(noop),
@@ -114,6 +121,8 @@ beforeEach(() => {
     arc: vi.fn(),
     stroke: vi.fn(),
     fill: vi.fn(),
+    scale: vi.fn(),
+    setTransform: vi.fn(),
     set strokeStyle(_v: string) {},
     set fillStyle(_v: string) {},
     set lineWidth(_v: number) {},
@@ -194,7 +203,7 @@ describe('App', () => {
       })
       const dot = screen.getByTitle('Connection error — open settings')
       expect(dot).toBeInTheDocument()
-      expect(dot.className).toContain('bg-[#f44336]')
+      expect(dot.className).toContain('bg-error')
     })
 
     it('turns red on error event', async () => {
@@ -204,7 +213,7 @@ describe('App', () => {
         errorCallback?.('LLM error: timeout')
       })
       const dot = screen.getByTitle('Connection error — open settings')
-      expect(dot.className).toContain('bg-[#f44336]')
+      expect(dot.className).toContain('bg-error')
       vi.useRealTimers()
     })
 
@@ -313,7 +322,7 @@ describe('App', () => {
 
     it('error banner is not shown when no error', async () => {
       await renderApp()
-      const banner = document.querySelector('.bg-\\[\\#f44336\\]\\/20')
+      const banner = document.querySelector('.bg-error\\/20')
       expect(banner).not.toBeInTheDocument()
     })
 

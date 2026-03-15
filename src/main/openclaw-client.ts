@@ -1,13 +1,13 @@
-import WebSocket from 'ws'
-import { EventEmitter } from 'node:events'
 import crypto from 'node:crypto'
+import { EventEmitter } from 'node:events'
+import WebSocket from 'ws'
 import {
-  type DeviceIdentity,
   base64UrlEncode,
+  buildDeviceAuthPayload,
+  type DeviceIdentity,
   derivePublicKeyRaw,
   loadOrCreateDeviceIdentity,
-  signDevicePayload,
-  buildDeviceAuthPayload
+  signDevicePayload
 } from './device-identity'
 import type { IGatewayClient } from './gateway-client'
 
@@ -25,6 +25,7 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private reconnectDelay = 1000
   private connectSent = false
+  private disposed = false
   private identity: DeviceIdentity
   private activeRunIds = new Set<string>()
   private lastAgentText = new Map<string, string>()
@@ -42,6 +43,7 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.connectSent = false
+      this.disposed = false
       this.ignoredRunIds.clear()
       this.activeRunIds.clear()
       this.ws = new WebSocket(this.url)
@@ -76,7 +78,9 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
   }
 
   disconnect(): void {
+    this.disposed = true
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
+    this.reconnectTimer = null
     this.rejectAllPending()
     this.ws?.close()
     this.ws = null
@@ -95,6 +99,15 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
       this.ignoredRunIds.add(id)
     }
     this.activeRunIds.clear()
+
+    // Prevent unbounded growth if server never sends final/error for some runs
+    if (this.ignoredRunIds.size > 100) {
+      const excess = this.ignoredRunIds.size - 50
+      const iter = this.ignoredRunIds.values()
+      for (let i = 0; i < excess; i++) {
+        this.ignoredRunIds.delete(iter.next().value as string)
+      }
+    }
   }
 
   sendMessage(text: string): void {
@@ -435,6 +448,7 @@ export class OpenClawClient extends EventEmitter implements IGatewayClient {
   }
 
   private scheduleReconnect(): void {
+    if (this.disposed) return
     this.reconnectTimer = setTimeout(() => {
       this.connect().catch(() => {})
     }, this.reconnectDelay)

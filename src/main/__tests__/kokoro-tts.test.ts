@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { KokoroTts } from '../tts/kokoro-tts'
 import type { ITtsProvider } from '../tts/tts-provider'
 

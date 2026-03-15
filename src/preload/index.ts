@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '../shared/ipc-channels'
-import type { VoiceState, KeyInfo, SttProvider, TtsProviderType, UpdateInfo } from '../shared/types'
+import type { KeyInfo, SttProvider, TtsProviderType, UpdateInfo, VoiceState } from '../shared/types'
 
 type UnsubscribeFn = () => void
 

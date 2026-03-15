@@ -2,20 +2,17 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
 | Version | Supported          |
 | ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| 1.2.x   | :white_check_mark: |
+| 1.1.x   | :white_check_mark: |
+| < 1.1   | :x:                |
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+If you discover a security vulnerability in Talkative Lobster, please report it responsibly:
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+1. **Do not** open a public issue.
+2. Email the maintainer or use [GitHub's private vulnerability reporting](https://github.com/coo-quack/talkative-lobster/security/advisories/new).
+3. Include a description of the vulnerability, steps to reproduce, and the potential impact.
+4. You can expect an initial response within 72 hours.

@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, cleanup } from '@testing-library/react'
+
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
-import { VoiceView } from '../components/VoiceView'
 import type { VoiceState } from '../../../shared/types'
+import { VoiceView } from '../components/VoiceView'
 
 // ── Mock hooks ───────────────────────────────────────────────────────
 
@@ -22,6 +23,7 @@ const mockLobster = {
   voiceStop: vi.fn(),
   voiceInterrupt: vi.fn(),
   sendAudioChunk: vi.fn(),
+  getVadSensitivity: vi.fn().mockResolvedValue('auto'),
   getAppVersion: vi.fn().mockResolvedValue('1.0.5'),
   checkForUpdate: vi.fn().mockResolvedValue({
     currentVersion: '1.0.5',
@@ -40,6 +42,8 @@ beforeEach(() => {
     arc: vi.fn(),
     stroke: vi.fn(),
     fill: vi.fn(),
+    scale: vi.fn(),
+    setTransform: vi.fn(),
     set strokeStyle(_v: string) {},
     set fillStyle(_v: string) {},
     set lineWidth(_v: number) {},
@@ -76,7 +80,7 @@ describe('VoiceView', () => {
   }
 
   function getStatusDot(container: HTMLElement) {
-    const pill = container.querySelector('.bg-\\[\\#292524\\]')
+    const pill = container.querySelector('.bg-border')
     return pill?.querySelector('.h-2.w-2') as HTMLElement
   }
 
@@ -150,64 +154,64 @@ describe('VoiceView', () => {
   // ── Status dot color ─────────────────────────────────────────────
 
   describe('status dot color matches state', () => {
-    it('uses idle color (#44403c) when idle', () => {
+    it('uses idle color (--color-muted) when idle', () => {
       const { container } = renderVoiceView()
       const dot = getStatusDot(container)
-      expect(dot.style.backgroundColor).toBe('rgb(68, 64, 60)')
+      expect(dot.style.backgroundColor).toBe('var(--color-muted)')
     })
 
-    it('uses listening color (#00bc7d) when listening', () => {
+    it('uses listening color (--color-accent) when listening', () => {
       const { container } = renderVoiceView({ state: 'listening' })
       const dot = getStatusDot(container)
-      expect(dot.style.backgroundColor).toBe('rgb(0, 188, 125)')
+      expect(dot.style.backgroundColor).toBe('var(--color-accent)')
     })
 
-    it('uses processing color (#f59e0b) when processing', () => {
+    it('uses processing color (--color-warning) when processing', () => {
       const { container } = renderVoiceView({ state: 'processing' })
       const dot = getStatusDot(container)
-      expect(dot.style.backgroundColor).toBe('rgb(245, 158, 11)')
+      expect(dot.style.backgroundColor).toBe('var(--color-warning)')
     })
 
-    it('uses thinking color (#60a5fa) when thinking', () => {
+    it('uses thinking color (--color-info) when thinking', () => {
       const { container } = renderVoiceView({ state: 'thinking' })
       const dot = getStatusDot(container)
-      expect(dot.style.backgroundColor).toBe('rgb(96, 165, 250)')
+      expect(dot.style.backgroundColor).toBe('var(--color-info)')
     })
 
-    it('uses speaking color (#a78bfa) when speaking', () => {
+    it('uses speaking color (--color-speaking) when speaking', () => {
       const { container } = renderVoiceView({ state: 'speaking' })
       const dot = getStatusDot(container)
-      expect(dot.style.backgroundColor).toBe('rgb(167, 139, 250)')
+      expect(dot.style.backgroundColor).toBe('var(--color-speaking)')
     })
 
-    it('uses offline color (#44403c) when mic off and idle', () => {
+    it('uses offline color (--color-muted) when mic off and idle', () => {
       const { container } = renderVoiceView({ micOn: false })
       const dot = getStatusDot(container)
-      expect(dot.style.backgroundColor).toBe('rgb(68, 64, 60)')
+      expect(dot.style.backgroundColor).toBe('var(--color-muted)')
     })
 
     it('keeps thinking color when mic off and thinking', () => {
       const { container } = renderVoiceView({ micOn: false, state: 'thinking' })
       const dot = getStatusDot(container)
-      expect(dot.style.backgroundColor).toBe('rgb(96, 165, 250)')
+      expect(dot.style.backgroundColor).toBe('var(--color-info)')
     })
 
     it('keeps speaking color when mic off and speaking', () => {
       const { container } = renderVoiceView({ micOn: false, state: 'speaking' })
       const dot = getStatusDot(container)
-      expect(dot.style.backgroundColor).toBe('rgb(167, 139, 250)')
+      expect(dot.style.backgroundColor).toBe('var(--color-speaking)')
     })
 
     it('keeps processing color when mic off and processing', () => {
       const { container } = renderVoiceView({ micOn: false, state: 'processing' })
       const dot = getStatusDot(container)
-      expect(dot.style.backgroundColor).toBe('rgb(245, 158, 11)')
+      expect(dot.style.backgroundColor).toBe('var(--color-warning)')
     })
 
     it('has glow box-shadow matching dot color', () => {
       const { container } = renderVoiceView({ state: 'thinking' })
       const dot = getStatusDot(container)
-      expect(dot.style.boxShadow).toBe('0 0 6px #60a5fa')
+      expect(dot.style.boxShadow).toBe('0 0 6px var(--color-info)')
     })
   })
 
@@ -285,7 +289,7 @@ describe('VoiceView', () => {
 
     it('has green background when mic is on', () => {
       const { container } = renderVoiceView()
-      expect(getMicButton(container).className).toContain('bg-[#00bc7d]')
+      expect(getMicButton(container).className).toContain('bg-accent')
     })
 
     it('has transparent background when mic is off', () => {

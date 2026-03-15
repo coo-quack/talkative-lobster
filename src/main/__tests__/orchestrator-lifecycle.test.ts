@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ITtsProvider } from '../tts/tts-provider'
 
 // ── Electron mocks ──────────────────────────────────────────────────
@@ -84,8 +84,8 @@ vi.mock('../tts/piper-tts', () => ({
   PiperTts: vi.fn().mockImplementation(() => createMockTtsProvider())
 }))
 
-import { Orchestrator } from '../orchestrator'
 import { IPC } from '../../shared/ipc-channels'
+import { Orchestrator } from '../orchestrator'
 
 type OrchestratorInternals = {
   actor: { getSnapshot: () => { value: string }; send: (e: Record<string, unknown>) => void }

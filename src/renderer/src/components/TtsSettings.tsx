@@ -1,38 +1,44 @@
 import { useState } from 'react'
-import { KeyInput } from './KeyInput'
-import { ConnectivityCheck } from './ConnectivityCheck'
 import {
-  TTS_PROVIDER_OPTIONS,
-  TTS_MODELS,
-  TTS_VOICES,
+  type KeyInfo,
   KOKORO_VOICES,
-  type TtsProviderType,
-  type KeyInfo
+  TTS_MODELS,
+  TTS_PROVIDER_OPTIONS,
+  TTS_VOICES,
+  type TtsProviderType
 } from '../../../shared/types'
+import type { SettingsActions, SettingsState } from '../hooks/useSettings'
+import { ConnectivityCheck } from './ConnectivityCheck'
+import { KeyInput } from './KeyInput'
+
+type TtsSettingsFields = Pick<
+  SettingsState & SettingsActions,
+  | 'ttsProvider'
+  | 'setTtsProvider'
+  | 'selectedVoice'
+  | 'setSelectedVoice'
+  | 'selectedModel'
+  | 'setSelectedModel'
+  | 'voicevoxUrl'
+  | 'setVoicevoxUrl'
+  | 'voicevoxSpeakerId'
+  | 'setVoicevoxSpeakerId'
+  | 'kokoroUrl'
+  | 'setKokoroUrl'
+  | 'kokoroVoice'
+  | 'setKokoroVoice'
+  | 'piperPath'
+  | 'setPiperPath'
+  | 'piperModelPath'
+  | 'setPiperModelPath'
+>
 
 interface Props {
   keys: KeyInfo[]
   inputs: Record<string, string>
   setInputs: React.Dispatch<React.SetStateAction<Record<string, string>>>
   refresh: () => Promise<void>
-  ttsProvider: TtsProviderType
-  setTtsProvider: (p: TtsProviderType) => void
-  selectedVoice: string
-  setSelectedVoice: (v: string) => void
-  selectedModel: string
-  setSelectedModel: (v: string) => void
-  voicevoxUrl: string
-  setVoicevoxUrl: (v: string) => void
-  voicevoxSpeakerId: number
-  setVoicevoxSpeakerId: (v: number) => void
-  kokoroUrl: string
-  setKokoroUrl: (v: string) => void
-  kokoroVoice: string
-  setKokoroVoice: (v: string) => void
-  piperPath: string
-  setPiperPath: (v: string) => void
-  piperModelPath: string
-  setPiperModelPath: (v: string) => void
+  settings: TtsSettingsFields
   checkStatus: { ok: boolean; message: string } | null
   setCheckStatus: (s: { ok: boolean; message: string } | null) => void
 }
@@ -42,28 +48,32 @@ export function TtsSettings({
   inputs,
   setInputs,
   refresh,
-  ttsProvider,
-  setTtsProvider,
-  selectedVoice,
-  setSelectedVoice,
-  selectedModel,
-  setSelectedModel,
-  voicevoxUrl,
-  setVoicevoxUrl,
-  voicevoxSpeakerId,
-  setVoicevoxSpeakerId,
-  kokoroUrl,
-  setKokoroUrl,
-  kokoroVoice,
-  setKokoroVoice,
-  piperPath,
-  setPiperPath,
-  piperModelPath,
-  setPiperModelPath,
+  settings,
   checkStatus,
   setCheckStatus
 }: Props) {
   const [checking, setChecking] = useState(false)
+
+  const {
+    ttsProvider,
+    setTtsProvider,
+    selectedVoice,
+    setSelectedVoice,
+    selectedModel,
+    setSelectedModel,
+    voicevoxUrl,
+    setVoicevoxUrl,
+    voicevoxSpeakerId,
+    setVoicevoxSpeakerId,
+    kokoroUrl,
+    setKokoroUrl,
+    kokoroVoice,
+    setKokoroVoice,
+    piperPath,
+    setPiperPath,
+    piperModelPath,
+    setPiperModelPath
+  } = settings
 
   const keyIsSet = (name: string) => {
     const k = keys.find((k) => k.name === name)

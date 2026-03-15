@@ -1,5 +1,5 @@
-import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
-import { launchApp, closeApp, passChecksAndStart } from './helpers/app-setup'
+import { type ElectronApplication, expect, type Page, test } from '@playwright/test'
+import { closeApp, launchApp, passChecksAndStart } from './helpers/app-setup'
 
 let app: ElectronApplication
 let window: Page
