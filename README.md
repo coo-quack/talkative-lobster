@@ -1,6 +1,7 @@
 # Talkative Lobster
 
 [![Release](https://github.com/coo-quack/talkative-lobster/actions/workflows/release.yml/badge.svg)](https://github.com/coo-quack/talkative-lobster/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Talk to your AI — literally.**
 
@@ -92,4 +93,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, branch strategy, a
 
 ## License
 
-Private — not open source.
+[MIT](LICENSE)
