@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.2.2 (2026-03-15)
+
+### Docs
+
+- Update README badge to show Release workflow status
+- Add MIT license (LICENSE file, README, package.json)
+
+### CI
+
+- Upgrade GitHub Actions to Node.js 24-compatible versions (checkout v6, setup-node v6, upload/download-artifact v7/v8, upload-pages-artifact v4)
+- Update CI node-version from 20 to 22 (LTS)
+
+### Chores
+
+- Update biome.json schema version to match installed version (2.4.7)
+- Add .vscode, *.tsbuildinfo, and .pnpm-store to .gitignore
+- Enable Renovate dependency dashboard
+
+---
+
 ## v1.2.1 (2026-03-15)
 
 ### Security
