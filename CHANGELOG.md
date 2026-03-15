@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.2.1 (2026-03-15)
+
+### Security
+
+- Fix vulnerable transitive dependencies (undici, yauzl) via pnpm overrides
+
+### Chores
+
+- Update production dependencies (react 19.2.4, elevenlabs-js 2.39.0, xstate/react 6.1.0, lucide-react 0.577.0, onnxruntime-web 1.24.3)
+- Update dev dependencies (electron 41.0.2, jsdom 29.0.0, vitest 4.1.0, biome 2.4.7, electron-builder 26.8.1)
+
+---
+
 ## v1.2.0 (2026-03-15)
 
 ### Features
