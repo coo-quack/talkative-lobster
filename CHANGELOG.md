@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.2.3 (2026-03-16)
+
+### CI
+
+- Upgrade GitHub Actions to Node.js 24-compatible versions (checkout v6, setup-node v6, upload/download-artifact v7/v8, upload-pages-artifact v4)
+- Update CI node-version from 20 to 22 (LTS)
+
+### Chores
+
+- Remove tracked .vscode files from repository (already gitignored)
+
+---
+
 ## v1.2.2 (2026-03-15)
 
 ### Docs
