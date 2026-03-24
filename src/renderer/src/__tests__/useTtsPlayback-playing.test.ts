@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { act, renderHook } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // ── Capture IPC callbacks ────────────────────────────────────────────
 
@@ -67,9 +67,15 @@ class MockAudioContext {
   }
 }
 
-vi.stubGlobal('AudioContext', MockAudioContext)
-
 // ── Setup ────────────────────────────────────────────────────────────
+
+beforeAll(() => {
+  vi.stubGlobal('AudioContext', MockAudioContext)
+})
+
+afterAll(() => {
+  vi.unstubAllGlobals()
+})
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -78,10 +84,6 @@ beforeEach(() => {
   onTtsStopCb = null
   onTtsCancelCb = null
   ;(window as unknown as { lobster: typeof mockLobster }).lobster = mockLobster
-})
-
-afterEach(() => {
-  vi.restoreAllMocks()
 })
 
 // ── Tests ────────────────────────────────────────────────────────────

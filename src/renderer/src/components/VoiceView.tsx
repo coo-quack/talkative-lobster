@@ -123,12 +123,10 @@ export function VoiceView({
       console.log('[voice] Ignoring speech start — mic off or unmounted')
       return
     }
-    if (speakerActive) {
-      console.log('[voice] Ignoring speech start — speaker active')
-      return
-    }
-    // During TTS playback, check mic RMS to distinguish real user
-    // speech from TTS echo leaking into the microphone.
+    // During TTS playback, use mic RMS to distinguish real user speech
+    // from TTS echo. This check runs before the speakerActive guard
+    // because speakerActive may also be true during TTS (loopback capture)
+    // and would otherwise block legitimate user interrupts.
     if (state === 'speaking' && ttsPlaying) {
       const rms = getMicRms()
       if (rms < ECHO_RMS_THRESHOLD) {
@@ -136,6 +134,9 @@ export function VoiceView({
         return
       }
       console.log(`[voice] User interrupt during TTS (RMS=${rms.toFixed(4)})`)
+    } else if (speakerActive) {
+      console.log('[voice] Ignoring speech start — speaker active')
+      return
     }
     if (state === 'speaking') {
       stopPlayback()

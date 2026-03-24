@@ -38,9 +38,16 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
   const analyserDataRef = useRef<Float32Array<ArrayBuffer> | null>(null)
 
   const getMicRms = (): number => {
+    const ctx = analyserCtxRef.current
     const analyser = analyserRef.current
     const data = analyserDataRef.current
-    if (!analyser || !data) return 0
+    if (!ctx || !analyser || !data) return 0
+    // Suspended AudioContext reads near-zero — resume it so RMS
+    // reflects actual mic input and doesn't suppress real speech.
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {})
+      return 0
+    }
     analyser.getFloatTimeDomainData(data)
     let sum = 0
     for (let i = 0; i < data.length; i++) {
@@ -94,6 +101,7 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
         // Provide mic stream with echo cancellation + noise suppression
         // to filter out speaker output (videos, music, TTS playback)
         getStream: async () => {
+          const streamVersion = versionRef.current
           const stream = await navigator.mediaDevices.getUserMedia({
             audio: {
               sampleRate: SAMPLE_RATE,
@@ -103,9 +111,13 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
               autoGainControl: true
             }
           })
+          // Stale check: if cleanup ran while awaiting getUserMedia,
+          // skip analyser setup — the VAD instance will be discarded.
+          if (streamVersion !== versionRef.current) return stream
           // Tap into the mic stream for real-time RMS monitoring
           cleanupAnalyser()
           const ctx = new AudioContext({ sampleRate: SAMPLE_RATE })
+          await ctx.resume().catch(() => {})
           const source = ctx.createMediaStreamSource(stream)
           const analyser = ctx.createAnalyser()
           analyser.fftSize = 2048
