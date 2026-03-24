@@ -6,23 +6,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // ── Capture IPC callbacks ────────────────────────────────────────────
 
 type AudioCallback = (data: ArrayBuffer) => void
-type FormatCallback = (format: unknown) => void
 type VoidCallback = () => void
 
 let onTtsAudioCb: AudioCallback | null = null
-let _onTtsFormatCb: FormatCallback | null = null
 let onTtsStopCb: VoidCallback | null = null
 let onTtsCancelCb: VoidCallback | null = null
 
 const mockLobster = {
   ttsPlaybackStarted: vi.fn(),
   ttsPlaybackDone: vi.fn(),
-  onTtsFormat: vi.fn((cb: FormatCallback) => {
-    _onTtsFormatCb = cb
-    return () => {
-      _onTtsFormatCb = null
-    }
-  }),
+  onTtsFormat: vi.fn(() => () => {}),
   onTtsAudio: vi.fn((cb: AudioCallback) => {
     onTtsAudioCb = cb
     return () => {
@@ -82,7 +75,6 @@ beforeEach(() => {
   vi.clearAllMocks()
   mockOnEnded = null
   onTtsAudioCb = null
-  _onTtsFormatCb = null
   onTtsStopCb = null
   onTtsCancelCb = null
   ;(window as unknown as { lobster: typeof mockLobster }).lobster = mockLobster

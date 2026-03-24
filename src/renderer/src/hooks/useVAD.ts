@@ -35,7 +35,7 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
   // instant VAD fires onSpeechStart (no latency added).
   const analyserCtxRef = useRef<AudioContext | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
-  const analyserDataRef = useRef<Float32Array | null>(null)
+  const analyserDataRef = useRef<Float32Array<ArrayBuffer> | null>(null)
 
   const getMicRms = (): number => {
     const analyser = analyserRef.current
