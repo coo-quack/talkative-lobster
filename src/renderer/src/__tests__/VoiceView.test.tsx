@@ -9,7 +9,7 @@ import { VoiceView } from '../components/VoiceView'
 // ── Mock hooks ───────────────────────────────────────────────────────
 
 vi.mock('../hooks/useVAD', () => ({
-  useVAD: () => ({ listening: false })
+  useVAD: () => ({ listening: false, loading: false, getMicRms: () => 0 })
 }))
 
 vi.mock('../hooks/useSpeakerMonitor', () => ({
@@ -65,6 +65,7 @@ describe('VoiceView', () => {
       onMicToggle: (on: boolean) => void
       onOpenSettings: () => void
       stopPlayback: () => void
+      ttsPlaying: boolean
     }> = {}
   ) {
     const props = {
@@ -73,6 +74,7 @@ describe('VoiceView', () => {
       onMicToggle: vi.fn(),
       onOpenSettings: vi.fn(),
       stopPlayback: vi.fn(),
+      ttsPlaying: false,
       ...overrides
     }
     const result = render(<VoiceView {...props} />)

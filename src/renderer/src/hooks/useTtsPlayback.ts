@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface PcmFormat {
   type: 'pcm'
@@ -37,6 +37,7 @@ export function useTtsPlayback() {
   const playbackStartedRef = useRef(false)
   const formatRef = useRef<AudioFormat>({ type: 'encoded' })
   const pcmRemainderRef = useRef<Uint8Array | null>(null)
+  const [playing, setPlaying] = useState(false)
 
   const checkPlaybackComplete = () => {
     if (
@@ -47,6 +48,7 @@ export function useTtsPlayback() {
     ) {
       streamDoneRef.current = false
       playbackStartedRef.current = false
+      setPlaying(false)
       console.log('[tts] Playback fully complete')
       window.lobster.ttsPlaybackDone()
     }
@@ -56,6 +58,7 @@ export function useTtsPlayback() {
     const ctx = ctxRef.current
     streamDoneRef.current = false
     playbackStartedRef.current = false
+    setPlaying(false)
     scheduledCountRef.current = 0
     finishedCountRef.current = 0
     pendingDecodesRef.current = 0
@@ -71,6 +74,7 @@ export function useTtsPlayback() {
   const scheduleBuffer = (ctx: AudioContext, buffer: AudioBuffer) => {
     if (!playbackStartedRef.current) {
       playbackStartedRef.current = true
+      setPlaying(true)
       console.log('[tts] Playback started — notifying main process')
       window.lobster.ttsPlaybackStarted()
     }
@@ -173,5 +177,5 @@ export function useTtsPlayback() {
     }
   }, [])
 
-  return { stopPlayback }
+  return { stopPlayback, playing }
 }

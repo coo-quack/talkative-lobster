@@ -16,7 +16,13 @@ interface Props {
   onMicToggle: (on: boolean) => void
   onOpenSettings: () => void
   stopPlayback: () => void
+  ttsPlaying: boolean
 }
+
+// RMS threshold to distinguish direct user speech from TTS echo.
+// Echo-cancelled TTS residual is typically < 0.02 RMS;
+// conversational speech at mic distance is typically > 0.04 RMS.
+const ECHO_RMS_THRESHOLD = 0.03
 
 const STATUS_LABELS: Record<VoiceState, string> = {
   idle: 'Ready',
@@ -34,7 +40,14 @@ const STATE_DOT_COLORS: Record<VoiceState, string> = {
   speaking: 'var(--color-speaking)'
 }
 
-export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayback }: Props) {
+export function VoiceView({
+  state,
+  micOn,
+  onMicToggle,
+  onOpenSettings,
+  stopPlayback,
+  ttsPlaying
+}: Props) {
   const mountedRef = useRef(true)
   useEffect(() => {
     mountedRef.current = true
@@ -114,6 +127,16 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
       console.log('[voice] Ignoring speech start — speaker active')
       return
     }
+    // During TTS playback, check mic RMS to distinguish real user
+    // speech from TTS echo leaking into the microphone.
+    if (state === 'speaking' && ttsPlaying) {
+      const rms = getMicRms()
+      if (rms < ECHO_RMS_THRESHOLD) {
+        console.log(`[voice] Ignoring echo during TTS (RMS=${rms.toFixed(4)})`)
+        return
+      }
+      console.log(`[voice] User interrupt during TTS (RMS=${rms.toFixed(4)})`)
+    }
     if (state === 'speaking') {
       stopPlayback()
     }
@@ -146,7 +169,7 @@ export function VoiceView({ state, micOn, onMicToggle, onOpenSettings, stopPlayb
   // These callbacks capture props/state and change identity each render.
   // useVAD handles this via the "ref for latest callback" pattern because
   // MicVAD stores callbacks at init time (see CLAUDE.md Exception).
-  const { listening: vadListening } = useVAD({
+  const { listening: vadListening, getMicRms } = useVAD({
     enabled: vadEnabled,
     thresholds: calibratedThresholds ?? undefined,
     onSpeechStart: handleSpeechStart,

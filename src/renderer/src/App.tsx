@@ -7,7 +7,7 @@ import { useTtsPlayback } from './hooks/useTtsPlayback'
 import { useVoiceState } from './hooks/useVoiceState'
 
 export default function App() {
-  const { stopPlayback } = useTtsPlayback()
+  const { stopPlayback, playing: ttsPlaying } = useTtsPlayback()
   useAizuchiPlayback()
   const voiceState = useVoiceState()
   const prevStateRef = useRef(voiceState)
@@ -101,6 +101,7 @@ export default function App() {
         onMicToggle={setMicOn}
         onOpenSettings={openSettings}
         stopPlayback={stopPlayback}
+        ttsPlaying={ttsPlaying}
       />
     </div>
   )
