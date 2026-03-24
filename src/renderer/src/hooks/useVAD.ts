@@ -37,16 +37,17 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
   const analyserRef = useRef<AnalyserNode | null>(null)
   const analyserDataRef = useRef<Float32Array<ArrayBuffer> | null>(null)
 
+  /** Returns current mic input RMS, or NaN if unavailable. */
   const getMicRms = (): number => {
     const ctx = analyserCtxRef.current
     const analyser = analyserRef.current
     const data = analyserDataRef.current
-    if (!ctx || !analyser || !data) return 0
-    // Suspended AudioContext reads near-zero — resume it so RMS
-    // reflects actual mic input and doesn't suppress real speech.
+    if (!ctx || !analyser || !data) return NaN
+    // Suspended AudioContext reads near-zero — kick off resume but
+    // signal "unavailable" so callers don't mistake it for echo.
     if (ctx.state === 'suspended') {
       ctx.resume().catch(() => {})
-      return 0
+      return NaN
     }
     analyser.getFloatTimeDomainData(data)
     let sum = 0
@@ -114,15 +115,22 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
           // Stale check: if cleanup ran while awaiting getUserMedia,
           // skip analyser setup — the VAD instance will be discarded.
           if (streamVersion !== versionRef.current) return stream
-          // Tap into the mic stream for real-time RMS monitoring
+          // Tap into the mic stream for real-time RMS monitoring.
+          // Store ctx in ref immediately so concurrent cleanup() can close it.
           cleanupAnalyser()
           const ctx = new AudioContext({ sampleRate: SAMPLE_RATE })
+          analyserCtxRef.current = ctx
           await ctx.resume().catch(() => {})
+          // Re-check after await: cleanup may have run during resume.
+          if (streamVersion !== versionRef.current) {
+            ctx.close().catch(() => {})
+            if (analyserCtxRef.current === ctx) analyserCtxRef.current = null
+            return stream
+          }
           const source = ctx.createMediaStreamSource(stream)
           const analyser = ctx.createAnalyser()
           analyser.fftSize = 2048
           source.connect(analyser)
-          analyserCtxRef.current = ctx
           analyserRef.current = analyser
           analyserDataRef.current = new Float32Array(analyser.fftSize)
           return stream

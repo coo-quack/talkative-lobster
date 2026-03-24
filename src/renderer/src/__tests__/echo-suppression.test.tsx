@@ -146,6 +146,17 @@ describe('Echo suppression during TTS playback', () => {
       expect(props.stopPlayback).toHaveBeenCalled()
       expect(mockLobster.voiceStart).toHaveBeenCalled()
     })
+
+    it('allows interrupt when mic RMS is unavailable (NaN)', () => {
+      mockGetMicRms.mockReturnValue(NaN) // e.g. AudioContext suspended
+      const { props } = renderVoiceView({ state: 'speaking', ttsPlaying: true })
+
+      capturedOnSpeechStart?.()
+
+      // NaN = RMS unavailable — do not suppress, let interrupt through
+      expect(props.stopPlayback).toHaveBeenCalled()
+      expect(mockLobster.voiceStart).toHaveBeenCalled()
+    })
   })
 
   describe('when TTS is NOT playing and state is speaking', () => {

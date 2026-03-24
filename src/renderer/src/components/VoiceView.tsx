@@ -129,11 +129,17 @@ export function VoiceView({
     // and would otherwise block legitimate user interrupts.
     if (state === 'speaking' && ttsPlaying) {
       const rms = getMicRms()
-      if (rms < ECHO_RMS_THRESHOLD) {
+      // NaN means mic RMS is unavailable (e.g. AudioContext suspended).
+      // In that case, skip echo suppression to avoid blocking real speech.
+      if (Number.isFinite(rms) && rms < ECHO_RMS_THRESHOLD) {
         console.log(`[voice] Ignoring echo during TTS (RMS=${rms.toFixed(4)})`)
         return
       }
-      console.log(`[voice] User interrupt during TTS (RMS=${rms.toFixed(4)})`)
+      console.log(
+        Number.isFinite(rms)
+          ? `[voice] User interrupt during TTS (RMS=${rms.toFixed(4)})`
+          : '[voice] User interrupt during TTS (mic RMS unavailable, skipping echo suppression)'
+      )
     } else if (speakerActive) {
       console.log('[voice] Ignoring speech start — speaker active')
       return
