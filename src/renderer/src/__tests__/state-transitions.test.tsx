@@ -104,7 +104,7 @@ const mockLobster = {
 // ── Mock hooks ────────────────────────────────────────────────────────
 
 vi.mock('../hooks/useTtsPlayback', () => ({
-  useTtsPlayback: () => ({ stopPlayback: mockStopPlayback })
+  useTtsPlayback: () => ({ stopPlayback: mockStopPlayback, playing: false })
 }))
 
 vi.mock('../hooks/useAizuchiPlayback', () => ({
@@ -112,7 +112,7 @@ vi.mock('../hooks/useAizuchiPlayback', () => ({
 }))
 
 vi.mock('../hooks/useVAD', () => ({
-  useVAD: () => ({ listening: false })
+  useVAD: () => ({ listening: false, loading: false, getMicRms: () => 0 })
 }))
 
 vi.mock('../hooks/useSpeakerMonitor', () => ({
