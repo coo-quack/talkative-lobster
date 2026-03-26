@@ -17,10 +17,13 @@ export default function App() {
   const [hasError, setHasError] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  // Stop TTS playback when leaving speaking/thinking state
+  // Stop TTS playback when leaving speaking/thinking state due to interruption.
+  // Only act when TTS is still playing — normal completion already handled by
+  // useTtsPlayback (TTS_PLAYBACK_DONE), so we avoid redundant cleanup/IPC.
   useEffect(() => {
     const prev = prevStateRef.current
     prevStateRef.current = voiceState
+    if (!ttsPlaying) return
     if (prev === 'speaking' || prev === 'thinking') {
       if (voiceState !== 'speaking' && voiceState !== 'thinking') {
         console.log(`[tts] Interrupted: ${prev} → ${voiceState}, stopping playback`)
@@ -30,7 +33,7 @@ export default function App() {
         }
       }
     }
-  }, [voiceState, stopPlayback])
+  }, [voiceState, stopPlayback, ttsPlaying])
 
   useEffect(() => {
     window.lobster.getKeys().then((keys: KeyInfo[]) => {
