@@ -30,6 +30,33 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
   const vadRef = useRef<MicVAD | null>(null)
   const versionRef = useRef(0)
 
+  // AnalyserNode on the mic stream for real-time RMS measurement.
+  // Used to distinguish direct user speech from TTS echo at the
+  // instant VAD fires onSpeechStart (no latency added).
+  const analyserCtxRef = useRef<AudioContext | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
+  const analyserDataRef = useRef<Float32Array<ArrayBuffer> | null>(null)
+
+  /** Returns current mic input RMS, or NaN if unavailable. */
+  const getMicRms = (): number => {
+    const ctx = analyserCtxRef.current
+    const analyser = analyserRef.current
+    const data = analyserDataRef.current
+    if (!ctx || !analyser || !data) return NaN
+    // Suspended AudioContext reads near-zero — kick off resume but
+    // signal "unavailable" so callers don't mistake it for echo.
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {})
+      return NaN
+    }
+    analyser.getFloatTimeDomainData(data)
+    let sum = 0
+    for (let i = 0; i < data.length; i++) {
+      sum += data[i] * data[i]
+    }
+    return Math.sqrt(sum / data.length)
+  }
+
   // Refs for latest callbacks — MicVAD stores callbacks at init time,
   // so we need refs to always invoke the latest version.
   const onSpeechStartRef = useRef(onSpeechStart)
@@ -37,12 +64,22 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
   onSpeechStartRef.current = onSpeechStart
   onSpeechEndRef.current = onSpeechEnd
 
+  const cleanupAnalyser = () => {
+    if (analyserCtxRef.current && analyserCtxRef.current.state !== 'closed') {
+      analyserCtxRef.current.close().catch(() => {})
+    }
+    analyserCtxRef.current = null
+    analyserRef.current = null
+    analyserDataRef.current = null
+  }
+
   const cleanup = async () => {
     // Set null synchronously so startVAD() sees it immediately,
     // even though destroy() is async.
     const vad = vadRef.current
     vadRef.current = null
     versionRef.current++
+    cleanupAnalyser()
     if (vad) {
       await vad.destroy()
     }
@@ -64,8 +101,9 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
 
         // Provide mic stream with echo cancellation + noise suppression
         // to filter out speaker output (videos, music, TTS playback)
-        getStream: () =>
-          navigator.mediaDevices.getUserMedia({
+        getStream: async () => {
+          const streamVersion = versionRef.current
+          const stream = await navigator.mediaDevices.getUserMedia({
             audio: {
               sampleRate: SAMPLE_RATE,
               channelCount: 1,
@@ -73,7 +111,30 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
               noiseSuppression: true,
               autoGainControl: true
             }
-          }),
+          })
+          // Stale check: if cleanup ran while awaiting getUserMedia,
+          // skip analyser setup — the VAD instance will be discarded.
+          if (streamVersion !== versionRef.current) return stream
+          // Tap into the mic stream for real-time RMS monitoring.
+          // Store ctx in ref immediately so concurrent cleanup() can close it.
+          cleanupAnalyser()
+          const ctx = new AudioContext({ sampleRate: SAMPLE_RATE })
+          analyserCtxRef.current = ctx
+          await ctx.resume().catch(() => {})
+          // Re-check after await: cleanup may have run during resume.
+          if (streamVersion !== versionRef.current) {
+            ctx.close().catch(() => {})
+            if (analyserCtxRef.current === ctx) analyserCtxRef.current = null
+            return stream
+          }
+          const source = ctx.createMediaStreamSource(stream)
+          const analyser = ctx.createAnalyser()
+          analyser.fftSize = 2048
+          source.connect(analyser)
+          analyserRef.current = analyser
+          analyserDataRef.current = new Float32Array(analyser.fftSize)
+          return stream
+        },
 
         // High thresholds to reduce false positives from ambient noise
         positiveSpeechThreshold: thresholds?.positiveSpeechThreshold ?? 0.85,
@@ -139,5 +200,5 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
     }
   }, [enabled, thresholds?.positiveSpeechThreshold, thresholds?.negativeSpeechThreshold])
 
-  return { listening, loading }
+  return { listening, loading, getMicRms }
 }

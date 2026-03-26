@@ -17,6 +17,7 @@ let _errorCallback: Callback | null = null
 const noop = () => () => {}
 
 const mockStopPlayback = vi.fn()
+let mockTtsPlaying = false
 
 const mockLobster = {
   getKeys: vi.fn().mockResolvedValue([
@@ -104,7 +105,7 @@ const mockLobster = {
 // ── Mock hooks ────────────────────────────────────────────────────────
 
 vi.mock('../hooks/useTtsPlayback', () => ({
-  useTtsPlayback: () => ({ stopPlayback: mockStopPlayback })
+  useTtsPlayback: () => ({ stopPlayback: mockStopPlayback, playing: mockTtsPlaying })
 }))
 
 vi.mock('../hooks/useAizuchiPlayback', () => ({
@@ -112,7 +113,7 @@ vi.mock('../hooks/useAizuchiPlayback', () => ({
 }))
 
 vi.mock('../hooks/useVAD', () => ({
-  useVAD: () => ({ listening: false })
+  useVAD: () => ({ listening: false, loading: false, getMicRms: () => 0 })
 }))
 
 vi.mock('../hooks/useSpeakerMonitor', () => ({
@@ -152,6 +153,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  mockTtsPlaying = false
 })
 
 // ── Helper ───────────────────────────────────────────────────────────
@@ -372,7 +374,8 @@ describe('Voice state transitions', () => {
   })
 
   describe('TTS playback stops on state transition from speaking', () => {
-    it('stopPlayback called when leaving speaking state', async () => {
+    it('stopPlayback called when leaving speaking state while TTS playing', async () => {
+      mockTtsPlaying = true
       await renderApp()
       transitionTo('speaking')
       mockStopPlayback.mockClear()
@@ -382,6 +385,7 @@ describe('Voice state transitions', () => {
     })
 
     it('stopPlayback called when interrupted from speaking to listening', async () => {
+      mockTtsPlaying = true
       await renderApp()
       transitionTo('speaking')
       mockStopPlayback.mockClear()
@@ -390,7 +394,8 @@ describe('Voice state transitions', () => {
       expect(mockStopPlayback).toHaveBeenCalled()
     })
 
-    it('stopPlayback called when leaving thinking state', async () => {
+    it('stopPlayback called when leaving thinking state while TTS playing', async () => {
+      mockTtsPlaying = true
       await renderApp()
       transitionTo('thinking')
       mockStopPlayback.mockClear()
@@ -400,6 +405,7 @@ describe('Voice state transitions', () => {
     })
 
     it('ttsPlaybackDone called when transition speaking/thinking → listening', async () => {
+      mockTtsPlaying = true
       await renderApp()
       transitionTo('speaking')
       mockStopPlayback.mockClear()
@@ -410,6 +416,7 @@ describe('Voice state transitions', () => {
     })
 
     it('ttsPlaybackDone NOT called when transition speaking → idle', async () => {
+      mockTtsPlaying = true
       await renderApp()
       transitionTo('speaking')
       mockLobster.ttsPlaybackDone.mockClear()
@@ -417,6 +424,16 @@ describe('Voice state transitions', () => {
       transitionTo('idle')
       // idle does not trigger ttsPlaybackDone (only listening does)
       expect(mockLobster.ttsPlaybackDone).not.toHaveBeenCalled()
+    })
+
+    it('stopPlayback NOT called when TTS already completed', async () => {
+      mockTtsPlaying = false
+      await renderApp()
+      transitionTo('speaking')
+      mockStopPlayback.mockClear()
+
+      transitionTo('idle')
+      expect(mockStopPlayback).not.toHaveBeenCalled()
     })
   })
 
