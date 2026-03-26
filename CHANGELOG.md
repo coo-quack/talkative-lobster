@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.2.4 (2026-03-26)
+
+### Fixes
+
+- Suppress TTS echo from triggering false VAD interrupts during speaking state using real-time mic RMS analysis
+- Handle unavailable mic RMS (suspended AudioContext) gracefully during echo suppression
+- Skip redundant TTS cleanup on normal playback completion — only run during actual user interruptions
+
+---
+
 ## v1.2.3 (2026-03-16)
 
 ### CI
