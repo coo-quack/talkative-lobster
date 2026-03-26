@@ -17,6 +17,7 @@ let _errorCallback: Callback | null = null
 const noop = () => () => {}
 
 const mockStopPlayback = vi.fn()
+let mockTtsPlaying = false
 
 const mockLobster = {
   getKeys: vi.fn().mockResolvedValue([
@@ -103,8 +104,6 @@ const mockLobster = {
 
 // ── Mock hooks ────────────────────────────────────────────────────────
 
-let mockTtsPlaying = false
-
 vi.mock('../hooks/useTtsPlayback', () => ({
   useTtsPlayback: () => ({ stopPlayback: mockStopPlayback, playing: mockTtsPlaying })
 }))
@@ -155,6 +154,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  mockTtsPlaying = false
 })
 
 // ── Helper ───────────────────────────────────────────────────────────
@@ -376,6 +376,7 @@ describe('Voice state transitions', () => {
 
   describe('TTS playback stops on state transition from speaking', () => {
     it('stopPlayback called when leaving speaking state while TTS is playing', async () => {
+      mockTtsPlaying = true
       await renderApp()
       transitionTo('speaking')
       mockTtsPlaying = true
@@ -396,6 +397,7 @@ describe('Voice state transitions', () => {
     })
 
     it('stopPlayback called when interrupted from speaking to listening', async () => {
+      mockTtsPlaying = true
       await renderApp()
       transitionTo('speaking')
       mockTtsPlaying = true
@@ -406,6 +408,7 @@ describe('Voice state transitions', () => {
     })
 
     it('stopPlayback called when leaving thinking state while TTS is playing', async () => {
+      mockTtsPlaying = true
       await renderApp()
       transitionTo('thinking')
       mockTtsPlaying = true
@@ -416,6 +419,7 @@ describe('Voice state transitions', () => {
     })
 
     it('ttsPlaybackDone called when transition speaking/thinking → listening', async () => {
+      mockTtsPlaying = true
       await renderApp()
       transitionTo('speaking')
       mockTtsPlaying = true
@@ -427,6 +431,7 @@ describe('Voice state transitions', () => {
     })
 
     it('ttsPlaybackDone NOT called when transition speaking → idle', async () => {
+      mockTtsPlaying = true
       await renderApp()
       transitionTo('speaking')
       mockTtsPlaying = true
