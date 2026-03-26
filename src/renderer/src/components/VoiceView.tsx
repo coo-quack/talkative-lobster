@@ -113,6 +113,11 @@ export function VoiceView({
 
   const { speakerActive } = useSpeakerMonitor(micOn)
 
+  // Set when handleSpeechStart accepts a TTS interrupt via RMS check,
+  // so handleSpeechEnd knows to skip the speakerActive guard for that
+  // utterance (speakerActive may still be true due to cooldown delay).
+  const ttsInterruptActiveRef = useRef(false)
+
   // Keep VAD running at all times when mic is on to avoid
   // repeated destroy/re-init cycles that exhaust mic resources.
   // State filtering happens in the callbacks and orchestrator.
@@ -140,6 +145,9 @@ export function VoiceView({
           ? `[voice] User interrupt during TTS (RMS=${rms.toFixed(4)})`
           : '[voice] User interrupt during TTS (mic RMS unavailable, skipping echo suppression)'
       )
+      // Mark this interrupt so handleSpeechEnd skips the speakerActive
+      // guard (which may still be true due to cooldown after TTS stops).
+      ttsInterruptActiveRef.current = true
     } else if (speakerActive) {
       console.log('[voice] Ignoring speech start — speaker active')
       return
@@ -151,11 +159,14 @@ export function VoiceView({
   }
 
   const handleSpeechEnd = (audio: Float32Array) => {
+    const wasInterrupt = ttsInterruptActiveRef.current
+    ttsInterruptActiveRef.current = false
+
     if (!mountedRef.current || !micOn) {
       console.log('[voice] Discarding speech — mic off or unmounted')
       return
     }
-    if (speakerActive) {
+    if (speakerActive && !wasInterrupt) {
       console.log('[voice] Discarding speech — speaker active')
       window.lobster.voiceStop()
       return

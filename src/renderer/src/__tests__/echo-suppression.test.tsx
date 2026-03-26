@@ -22,8 +22,10 @@ vi.mock('../hooks/useVAD', () => ({
   }
 }))
 
+let mockSpeakerActive = false
+
 vi.mock('../hooks/useSpeakerMonitor', () => ({
-  useSpeakerMonitor: () => ({ speakerActive: false })
+  useSpeakerMonitor: () => ({ speakerActive: mockSpeakerActive })
 }))
 
 // ── Mock lobster API ─────────────────────────────────────────────────
@@ -50,6 +52,7 @@ beforeEach(() => {
   capturedOnSpeechStart = null
   capturedOnSpeechEnd = null
   mockGetMicRms = vi.fn(() => 0)
+  mockSpeakerActive = false
   ;(window as unknown as { lobster: typeof mockLobster }).lobster = mockLobster
   HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
     clearRect: vi.fn(),
@@ -231,6 +234,57 @@ describe('Echo suppression during TTS playback', () => {
       capturedOnSpeechEnd?.(audio)
 
       expect(mockLobster.sendAudioChunk).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('TTS interrupt + speakerActive cooldown interaction', () => {
+    it('speech end delivers audio after TTS interrupt even when speakerActive is true', () => {
+      // Simulate: speakerActive is still true due to cooldown after TTS stops
+      mockSpeakerActive = true
+      mockGetMicRms.mockReturnValue(0.06) // real user speech
+      renderVoiceView({ state: 'speaking', ttsPlaying: true })
+
+      // Speech start accepted via RMS check (bypasses speakerActive)
+      capturedOnSpeechStart?.()
+      expect(mockLobster.voiceStart).toHaveBeenCalled()
+
+      // Speech end should NOT be discarded by speakerActive guard
+      const audio = audioWithRms(0.08, 16000)
+      capturedOnSpeechEnd?.(audio)
+      expect(mockLobster.sendAudioChunk).toHaveBeenCalledWith(audio)
+      expect(mockLobster.voiceStop).not.toHaveBeenCalled()
+    })
+
+    it('speech end discards audio when speakerActive is true without prior TTS interrupt', () => {
+      mockSpeakerActive = true
+      renderVoiceView({ state: 'idle', ttsPlaying: false })
+
+      // Normal speech start is blocked by speakerActive
+      capturedOnSpeechStart?.()
+      expect(mockLobster.voiceStart).not.toHaveBeenCalled()
+
+      // Speech end also blocked
+      const audio = audioWithRms(0.08, 16000)
+      capturedOnSpeechEnd?.(audio)
+      expect(mockLobster.sendAudioChunk).not.toHaveBeenCalled()
+      expect(mockLobster.voiceStop).toHaveBeenCalled()
+    })
+
+    it('ttsInterruptActive flag resets after speech end', () => {
+      mockSpeakerActive = true
+      mockGetMicRms.mockReturnValue(0.06)
+      renderVoiceView({ state: 'speaking', ttsPlaying: true })
+
+      // First cycle: TTS interrupt accepted
+      capturedOnSpeechStart?.()
+      capturedOnSpeechEnd?.(audioWithRms(0.08, 16000))
+      expect(mockLobster.sendAudioChunk).toHaveBeenCalledTimes(1)
+
+      // Second cycle: no TTS interrupt, speakerActive should block
+      mockLobster.sendAudioChunk.mockClear()
+      capturedOnSpeechEnd?.(audioWithRms(0.08, 16000))
+      expect(mockLobster.sendAudioChunk).not.toHaveBeenCalled()
+      expect(mockLobster.voiceStop).toHaveBeenCalled()
     })
   })
 })
