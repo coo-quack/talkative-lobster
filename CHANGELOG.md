@@ -1,3 +1,14 @@
+## v1.2.5 (2026-03-31)
+
+### Security
+
+- Add `minimumReleaseAge` to renovate.json to prevent supply chain attacks
+  - Waits 7 days before auto-merging dependency updates
+  - Reduces risk of package takeover attacks
+  - Blocks immediate auto-merge of newly published packages
+
+---
+
 # Changelog
 
 ## v1.2.4 (2026-03-26)
