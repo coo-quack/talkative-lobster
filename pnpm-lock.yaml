@@ -25,7 +25,7 @@ importers:
         version: 4.0.0(electron@41.1.0)
       '@elevenlabs/elevenlabs-js':
         specifier: ^2.39.0
-        version: 2.41.0(encoding@0.1.13)
+        version: 2.41.1(encoding@0.1.13)
       '@ricky0123/vad-react':
         specifier: ^0.0.36
         version: 0.0.36(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -498,8 +498,8 @@ packages:
     engines: {node: '>=14.14'}
     hasBin: true
 
-  '@elevenlabs/elevenlabs-js@2.41.0':
-    resolution: {integrity: sha512-aP1B8f9j3XeCwKJFgWGChD/VIJBXW64lm1RJAB+BFf0/pVUfhmtyDCEalZRbcqFu2jShpsQtTFQWqI1uNsX5kQ==}
+  '@elevenlabs/elevenlabs-js@2.41.1':
+    resolution: {integrity: sha512-rYpQq49avDjpTtgeOI2sYoMmjyj01egCaPx/bzxemtX8TP1AXOJt3jLYAydOcTz/SBQDBWIOIoNW1tozLROUoA==}
     engines: {node: '>=18.0.0'}
 
   '@esbuild/aix-ppc64@0.25.12':
@@ -4155,7 +4155,7 @@ snapshots:
       - supports-color
     optional: true
 
-  '@elevenlabs/elevenlabs-js@2.41.0(encoding@0.1.13)':
+  '@elevenlabs/elevenlabs-js@2.41.1(encoding@0.1.13)':
     dependencies:
       command-exists: 1.2.9
       node-fetch: 2.7.0(encoding@0.1.13)
