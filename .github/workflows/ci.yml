@@ -98,26 +98,26 @@ jobs:
         with:
           node-version: 24
       - run: pnpm install --frozen-lockfile
-      - name: force-download electron binary
+      - name: ensure electron binary is extracted
         shell: bash
         run: |
-          set +e
+          set -e
           ELECTRON_DIR=$(ls -d node_modules/.pnpm/electron@*/node_modules/electron | head -1)
-          echo "=== electron dir: $ELECTRON_DIR ==="
-          echo "=== install.js contents ==="
-          cat "$ELECTRON_DIR/install.js"
-          echo ""
-          echo "=== remove stale dist + cache ==="
-          rm -rf "$ELECTRON_DIR/dist" ~/.cache/electron
+          # install.js (postinstall) downloads the zip but extract-zip fails silently
+          # on pnpm's symlinked layout — extract it ourselves.
+          (cd "$ELECTRON_DIR" && node install.js) || true
+          ZIP=$(find ~/.cache/electron -name "electron-v*-linux-x64.zip" | head -1)
+          if [ -z "$ZIP" ]; then
+            echo "ERROR: electron zip not found in cache"
+            exit 1
+          fi
+          rm -rf "$ELECTRON_DIR/dist"
           mkdir -p "$ELECTRON_DIR/dist"
-          echo "=== run install.js from electron dir ==="
-          (cd "$ELECTRON_DIR" && DEBUG=electron*,@electron* node install.js) 2>&1
-          echo "exit=$?"
-          echo "=== dist after ==="
-          ls -la "$ELECTRON_DIR/dist/" 2>&1
-          echo "=== path.txt after ==="
-          cat "$ELECTRON_DIR/path.txt" 2>&1
-          true
+          unzip -q -o "$ZIP" -d "$ELECTRON_DIR/dist"
+          echo "electron" > "$ELECTRON_DIR/path.txt"
+          # Verify
+          test -x "$ELECTRON_DIR/dist/electron"
+          ls "$ELECTRON_DIR/dist/" | head -10
       - run: npx playwright install-deps
       - uses: actions/download-artifact@v8
         with:
