@@ -98,6 +98,19 @@ jobs:
         with:
           node-version: 24
       - run: pnpm install --frozen-lockfile
+      - name: debug electron install
+        run: |
+          echo "=== electron path resolution ==="
+          node -p "require('electron')"
+          echo "=== electron module dir ==="
+          ls -la node_modules/.pnpm/electron@*/node_modules/electron/ 2>&1 || true
+          echo "=== electron dist ==="
+          ls -la node_modules/.pnpm/electron@*/node_modules/electron/dist/ 2>&1 || true
+          echo "=== path.txt ==="
+          cat node_modules/.pnpm/electron@*/node_modules/electron/path.txt 2>&1 || true
+          echo "=== try electron directly ==="
+          node node_modules/.pnpm/electron@*/node_modules/electron/install.js 2>&1 || true
+          ls -la node_modules/.pnpm/electron@*/node_modules/electron/dist/ 2>&1 || true
       - run: npx playwright install-deps
       - uses: actions/download-artifact@v8
         with:
