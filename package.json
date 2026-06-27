@@ -1,6 +1,6 @@
 {
   "name": "talkative-lobster",
-  "version": "1.2.5",
+  "version": "1.3.0",
   "description": "Talk to your AI \u2014 literally. A desktop voice conversation app.",
   "main": "./out/main/index.js",
   "license": "MIT",
