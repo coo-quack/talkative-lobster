@@ -18,8 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
-        with:
-          version: latest
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -34,8 +32,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
-        with:
-          version: latest
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -50,8 +46,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
-        with:
-          version: latest
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -66,8 +60,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
-        with:
-          version: latest
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -82,8 +74,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
-        with:
-          version: latest
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -104,14 +94,30 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
-        with:
-          version: latest
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: npx playwright install --with-deps
+      - name: ensure electron binary is extracted
+        shell: bash
+        run: |
+          set -e
+          ELECTRON_DIR=$(ls -d node_modules/.pnpm/electron@*/node_modules/electron | head -1)
+          # install.js (postinstall) downloads the zip but extract-zip fails silently
+          # on pnpm's symlinked layout — extract it ourselves.
+          (cd "$ELECTRON_DIR" && node install.js) || true
+          ZIP=$(find ~/.cache/electron -name "electron-v*-linux-x64.zip" | head -1)
+          if [ -z "$ZIP" ]; then
+            echo "ERROR: electron zip not found in cache"
+            exit 1
+          fi
+          rm -rf "$ELECTRON_DIR/dist"
+          mkdir -p "$ELECTRON_DIR/dist"
+          unzip -q -o "$ZIP" -d "$ELECTRON_DIR/dist"
+          # path.txt must be the platform-relative path with NO trailing newline
+          printf "electron" > "$ELECTRON_DIR/path.txt"
+          test -x "$ELECTRON_DIR/dist/electron"
+      - run: npx playwright install-deps
       - uses: actions/download-artifact@v8
         with:
           name: build-output
