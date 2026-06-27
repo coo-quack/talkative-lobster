@@ -28,7 +28,7 @@ importers:
         version: 2.45.0(encoding@0.1.13)
       '@ricky0123/vad-react':
         specifier: ^0.0.36
-        version: 0.0.36(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+        version: 0.0.36(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@ricky0123/vad-web':
         specifier: ^0.0.30
         version: 0.0.30
@@ -37,19 +37,19 @@ importers:
         version: 4.2.4(vite@7.3.2(@types/node@22.19.21)(jiti@2.7.0)(lightningcss@1.32.0))
       '@xstate/react':
         specifier: ^6.1.0
-        version: 6.1.0(@types/react@19.2.17)(react@19.2.5)(xstate@5.31.0)
+        version: 6.1.0(@types/react@19.2.17)(react@19.2.7)(xstate@5.31.0)
       lucide-react:
         specifier: ^1.0.0
-        version: 1.14.0(react@19.2.5)
+        version: 1.14.0(react@19.2.7)
       onnxruntime-web:
         specifier: ^1.24.3
         version: 1.25.1
       react:
         specifier: ^19.2.4
-        version: 19.2.5
+        version: 19.2.7
       react-dom:
         specifier: ^19.2.4
-        version: 19.2.5(react@19.2.5)
+        version: 19.2.7(react@19.2.7)
       tailwindcss:
         specifier: ^4.2.1
         version: 4.2.4
@@ -74,7 +74,7 @@ importers:
         version: 6.9.1
       '@testing-library/react':
         specifier: ^16.3.2
-        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@types/node':
         specifier: ^22.19.1
         version: 22.19.21
@@ -122,7 +122,7 @@ importers:
         version: 3.4.0(vite@7.3.2(@types/node@22.19.21)(jiti@2.7.0)(lightningcss@1.32.0))
       vitepress:
         specifier: ^1.6.4
-        version: 1.6.4(@algolia/client-search@5.50.0)(@types/node@22.19.21)(@types/react@19.2.17)(lightningcss@1.32.0)(postcss@8.5.8)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(search-insights@2.17.3)(typescript@5.9.3)
+        version: 1.6.4(@algolia/client-search@5.50.0)(@types/node@22.19.21)(@types/react@19.2.17)(lightningcss@1.32.0)(postcss@8.5.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(search-insights@2.17.3)(typescript@5.9.3)
       vitest:
         specifier: ^4.1.0
         version: 4.1.9(@types/node@22.19.21)(@vitest/coverage-v8@4.1.9)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.14.6(@types/node@22.19.21)(typescript@5.9.3))(vite@7.3.2(@types/node@22.19.21)(jiti@2.7.0)(lightningcss@1.32.0))
@@ -2923,10 +2923,10 @@ packages:
     resolution: {integrity: sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==}
     engines: {node: '>=10'}
 
-  react-dom@19.2.5:
-    resolution: {integrity: sha512-J5bAZz+DXMMwW/wV3xzKke59Af6CHY7G4uYLN1OvBcKEsWOs4pQExj86BBKamxl/Ik5bx9whOrvBlSDfWzgSag==}
+  react-dom@19.2.7:
+    resolution: {integrity: sha512-t0BRVXvbiE/o20Hfw669rLbMCDWtYZLvmJigy2f0MxsXF+71pxhR3xOkspmsO8h3ZlNzyibAmtCa3l4lYKk6gQ==}
     peerDependencies:
-      react: ^19.2.5
+      react: ^19.2.7
 
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
@@ -2935,8 +2935,8 @@ packages:
     resolution: {integrity: sha512-QgT5//D3jfjJb6Gsjxv0Slpj23ip+HtOpnNgnb2S5zU3CB26G/IDPGoy4RJB42wzFE46DRsstbW6tKHoKbhAxw==}
     engines: {node: '>=0.10.0'}
 
-  react@19.2.5:
-    resolution: {integrity: sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA==}
+  react@19.2.7:
+    resolution: {integrity: sha512-HNe9WslTbXmFK8o8cmwgAeJFSBvt1bPdHCVKtaaV+WlAN36mpT4hcRpwbf3fY56ar2oIXzsBpOAiIRHAdY0OlQ==}
     engines: {node: '>=0.10.0'}
 
   read-binary-file-arch@1.0.6:
@@ -3913,9 +3913,9 @@ snapshots:
 
   '@docsearch/css@3.8.2': {}
 
-  '@docsearch/js@3.8.2(@algolia/client-search@5.50.0)(@types/react@19.2.17)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(search-insights@2.17.3)':
+  '@docsearch/js@3.8.2(@algolia/client-search@5.50.0)(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(search-insights@2.17.3)':
     dependencies:
-      '@docsearch/react': 3.8.2(@algolia/client-search@5.50.0)(@types/react@19.2.17)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(search-insights@2.17.3)
+      '@docsearch/react': 3.8.2(@algolia/client-search@5.50.0)(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(search-insights@2.17.3)
       preact: 10.29.0
     transitivePeerDependencies:
       - '@algolia/client-search'
@@ -3924,7 +3924,7 @@ snapshots:
       - react-dom
       - search-insights
 
-  '@docsearch/react@3.8.2(@algolia/client-search@5.50.0)(@types/react@19.2.17)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(search-insights@2.17.3)':
+  '@docsearch/react@3.8.2(@algolia/client-search@5.50.0)(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(search-insights@2.17.3)':
     dependencies:
       '@algolia/autocomplete-core': 1.17.7(@algolia/client-search@5.50.0)(algoliasearch@5.50.0)(search-insights@2.17.3)
       '@algolia/autocomplete-preset-algolia': 1.17.7(@algolia/client-search@5.50.0)(algoliasearch@5.50.0)
@@ -3932,8 +3932,8 @@ snapshots:
       algoliasearch: 5.50.0
     optionalDependencies:
       '@types/react': 19.2.17
-      react: 19.2.5
-      react-dom: 19.2.5(react@19.2.5)
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
       search-insights: 2.17.3
     transitivePeerDependencies:
       - '@algolia/client-search'
@@ -4434,12 +4434,12 @@ snapshots:
 
   '@protobufjs/utf8@1.1.1': {}
 
-  '@ricky0123/vad-react@0.0.36(react-dom@19.2.5(react@19.2.5))(react@19.2.5)':
+  '@ricky0123/vad-react@0.0.36(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
       '@ricky0123/vad-web': 0.0.30
       onnxruntime-web: 1.25.1
-      react: 19.2.5
-      react-dom: 19.2.5(react@19.2.5)
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
 
   '@ricky0123/vad-web@0.0.30':
     dependencies:
@@ -4658,12 +4658,12 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
 
-  '@testing-library/react@16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)':
+  '@testing-library/react@16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
       '@babel/runtime': 7.29.2
       '@testing-library/dom': 10.4.1
-      react: 19.2.5
-      react-dom: 19.2.5(react@19.2.5)
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
     optionalDependencies:
       '@types/react': 19.2.17
       '@types/react-dom': 19.2.3(@types/react@19.2.17)
@@ -4952,11 +4952,11 @@ snapshots:
 
   '@xmldom/xmldom@0.8.13': {}
 
-  '@xstate/react@6.1.0(@types/react@19.2.17)(react@19.2.5)(xstate@5.31.0)':
+  '@xstate/react@6.1.0(@types/react@19.2.17)(react@19.2.7)(xstate@5.31.0)':
     dependencies:
-      react: 19.2.5
-      use-isomorphic-layout-effect: 1.2.1(@types/react@19.2.17)(react@19.2.5)
-      use-sync-external-store: 1.6.0(react@19.2.5)
+      react: 19.2.7
+      use-isomorphic-layout-effect: 1.2.1(@types/react@19.2.17)(react@19.2.7)
+      use-sync-external-store: 1.6.0(react@19.2.7)
     optionalDependencies:
       xstate: 5.31.0
     transitivePeerDependencies:
@@ -6017,9 +6017,9 @@ snapshots:
     dependencies:
       yallist: 4.0.0
 
-  lucide-react@1.14.0(react@19.2.5):
+  lucide-react@1.14.0(react@19.2.7):
     dependencies:
-      react: 19.2.5
+      react: 19.2.7
 
   lz-string@1.5.0: {}
 
@@ -6336,16 +6336,16 @@ snapshots:
 
   quick-lru@5.1.1: {}
 
-  react-dom@19.2.5(react@19.2.5):
+  react-dom@19.2.7(react@19.2.7):
     dependencies:
-      react: 19.2.5
+      react: 19.2.7
       scheduler: 0.27.0
 
   react-is@17.0.2: {}
 
   react-refresh@0.18.0: {}
 
-  react@19.2.5: {}
+  react@19.2.7: {}
 
   read-binary-file-arch@1.0.6:
     dependencies:
@@ -6716,15 +6716,15 @@ snapshots:
       escalade: 3.2.0
       picocolors: 1.1.1
 
-  use-isomorphic-layout-effect@1.2.1(@types/react@19.2.17)(react@19.2.5):
+  use-isomorphic-layout-effect@1.2.1(@types/react@19.2.17)(react@19.2.7):
     dependencies:
-      react: 19.2.5
+      react: 19.2.7
     optionalDependencies:
       '@types/react': 19.2.17
 
-  use-sync-external-store@1.6.0(react@19.2.5):
+  use-sync-external-store@1.6.0(react@19.2.7):
     dependencies:
-      react: 19.2.5
+      react: 19.2.7
 
   utf8-byte-length@1.0.5: {}
 
@@ -6772,10 +6772,10 @@ snapshots:
       jiti: 2.7.0
       lightningcss: 1.32.0
 
-  vitepress@1.6.4(@algolia/client-search@5.50.0)(@types/node@22.19.21)(@types/react@19.2.17)(lightningcss@1.32.0)(postcss@8.5.8)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(search-insights@2.17.3)(typescript@5.9.3):
+  vitepress@1.6.4(@algolia/client-search@5.50.0)(@types/node@22.19.21)(@types/react@19.2.17)(lightningcss@1.32.0)(postcss@8.5.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(search-insights@2.17.3)(typescript@5.9.3):
     dependencies:
       '@docsearch/css': 3.8.2
-      '@docsearch/js': 3.8.2(@algolia/client-search@5.50.0)(@types/react@19.2.17)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(search-insights@2.17.3)
+      '@docsearch/js': 3.8.2(@algolia/client-search@5.50.0)(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(search-insights@2.17.3)
       '@iconify-json/simple-icons': 1.2.75
       '@shikijs/core': 2.5.0
       '@shikijs/transformers': 2.5.0
