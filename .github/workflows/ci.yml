@@ -99,18 +99,29 @@ jobs:
           node-version: 24
       - run: pnpm install --frozen-lockfile
       - name: debug electron install
+        shell: bash
         run: |
-          echo "=== electron path resolution ==="
-          node -p "require('electron')"
+          set +e
+          echo "=== env ==="
+          env | grep -iE "electron|cache|npm|pnpm" || true
           echo "=== electron module dir ==="
-          ls -la node_modules/.pnpm/electron@*/node_modules/electron/ 2>&1 || true
-          echo "=== electron dist ==="
-          ls -la node_modules/.pnpm/electron@*/node_modules/electron/dist/ 2>&1 || true
-          echo "=== path.txt ==="
-          cat node_modules/.pnpm/electron@*/node_modules/electron/path.txt 2>&1 || true
-          echo "=== try electron directly ==="
-          node node_modules/.pnpm/electron@*/node_modules/electron/install.js 2>&1 || true
-          ls -la node_modules/.pnpm/electron@*/node_modules/electron/dist/ 2>&1 || true
+          ls -la node_modules/.pnpm/electron@*/node_modules/electron/ 2>&1
+          echo "=== electron dist (before) ==="
+          ls -la node_modules/.pnpm/electron@*/node_modules/electron/dist/ 2>&1
+          echo "=== path.txt (before) ==="
+          cat node_modules/.pnpm/electron@*/node_modules/electron/path.txt 2>&1
+          echo "=== ~/.cache/electron ==="
+          ls -la ~/.cache/electron/ 2>&1
+          echo "=== run install.js with verbose ==="
+          ELECTRON_GET_USE_PROXY=0 DEBUG=electron* node node_modules/.pnpm/electron@*/node_modules/electron/install.js 2>&1
+          echo "exit=$?"
+          echo "=== electron dist (after install.js) ==="
+          ls -la node_modules/.pnpm/electron@*/node_modules/electron/dist/ 2>&1
+          echo "=== path.txt (after) ==="
+          cat node_modules/.pnpm/electron@*/node_modules/electron/path.txt 2>&1
+          echo "=== try require ==="
+          node -p "require('electron')" 2>&1
+          true
       - run: npx playwright install-deps
       - uses: actions/download-artifact@v8
         with:
