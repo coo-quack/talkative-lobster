@@ -114,10 +114,11 @@ jobs:
           rm -rf "$ELECTRON_DIR/dist"
           mkdir -p "$ELECTRON_DIR/dist"
           unzip -q -o "$ZIP" -d "$ELECTRON_DIR/dist"
-          echo "electron" > "$ELECTRON_DIR/path.txt"
+          # path.txt must be the platform-relative path with NO trailing newline
+          printf "electron" > "$ELECTRON_DIR/path.txt"
           # Verify
           test -x "$ELECTRON_DIR/dist/electron"
-          ls "$ELECTRON_DIR/dist/" | head -10
+          node -e "console.log('resolved:', require('$ELECTRON_DIR'))"
       - run: npx playwright install-deps
       - uses: actions/download-artifact@v8
         with:
