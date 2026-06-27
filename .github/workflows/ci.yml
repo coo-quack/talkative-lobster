@@ -99,7 +99,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: npx playwright install --with-deps
+      - run: npx playwright install-deps
       - uses: actions/download-artifact@v8
         with:
           name: build-output
