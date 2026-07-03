@@ -1,7 +1,7 @@
 {
   "name": "talkative-lobster",
   "version": "1.3.0",
-  "description": "Talk to your AI \u2014 literally. A desktop voice conversation app.",
+  "description": "Talk to your AI — literally. A desktop voice conversation app.",
   "main": "./out/main/index.js",
   "license": "MIT",
   "author": "coo-quack",
@@ -67,7 +67,7 @@
     "typescript": "^6.0.0",
     "vite": "^8.1.3",
     "vite-plugin-static-copy": "^4.0.0",
-    "vitepress": "^1.6.4",
+    "vitepress": "2.0.0-alpha.17",
     "vitest": "^4.1.0"
   },
   "packageManager": "pnpm@11.9.0"
