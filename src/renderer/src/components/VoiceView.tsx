@@ -141,10 +141,7 @@ export function VoiceView({
     // because speakerActive may also be true during TTS (loopback capture)
     // and would otherwise block legitimate user interrupts.
     if (state === 'speaking' && ttsPlaying) {
-      let rms: number | undefined
-      if (typeof getMicRms === 'function') {
-        rms = getMicRms()
-      }
+      const rms = getMicRms?.()
       // NaN or undefined means mic RMS is unavailable (e.g. AudioContext
       // suspended or VAD/mic not yet initialized). In that case, skip echo
       // suppression to avoid blocking real speech.

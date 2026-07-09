@@ -43,18 +43,21 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
     const analyser = analyserRef.current
     const data = analyserDataRef.current
     if (!ctx || !analyser || !data) return NaN
+    const { buffer } = data
+    if (!(buffer instanceof ArrayBuffer)) return NaN
     // Suspended AudioContext reads near-zero — kick off resume but
     // signal "unavailable" so callers don't mistake it for echo.
     if (ctx.state === 'suspended') {
       ctx.resume().catch(() => {})
       return NaN
     }
-    analyser.getFloatTimeDomainData(data as Float32Array<ArrayBuffer>)
+    const analyserData = new Float32Array(buffer, data.byteOffset, data.length)
+    analyser.getFloatTimeDomainData(analyserData)
     let sum = 0
-    for (let i = 0; i < data.length; i++) {
-      sum += data[i] * data[i]
+    for (let i = 0; i < analyserData.length; i++) {
+      sum += analyserData[i] * analyserData[i]
     }
-    return Math.sqrt(sum / data.length)
+    return Math.sqrt(sum / analyserData.length)
   }
 
   // Refs for latest callbacks — MicVAD stores callbacks at init time,
