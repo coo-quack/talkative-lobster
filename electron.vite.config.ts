@@ -1,7 +1,6 @@
 import { resolve } from 'path'
 import { defineConfig } from 'electron-vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
-import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 import type { Plugin } from 'vite'
 import { readFileSync, cpSync, mkdirSync } from 'fs'
@@ -108,8 +107,7 @@ export default defineConfig({
       }
     },
     plugins: [
-      react(),
-      babel({ presets: [reactCompilerPreset()] }),
+      react({ babel: { presets: [reactCompilerPreset()] } } as never),
       tailwindcss(),
       serveNativeAssets()
     ]
