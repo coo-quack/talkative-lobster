@@ -108,7 +108,7 @@ export default defineConfig({
     },
     plugins: [
       // @vitejs/plugin-react's current Options type omits `babel`, but runtime supports passing it through.
-      react({ babel: { presets: [reactCompilerPreset()] } } as any),
+      react(({ babel: { presets: [reactCompilerPreset()] } } as unknown) as Parameters<typeof react>[0]),
       tailwindcss(),
       serveNativeAssets()
     ]
