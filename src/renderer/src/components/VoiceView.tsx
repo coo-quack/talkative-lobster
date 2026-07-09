@@ -10,6 +10,12 @@ import { useSpeakerMonitor } from '../hooks/useSpeakerMonitor'
 import { useVAD } from '../hooks/useVAD'
 import { Waveform } from './Waveform'
 
+// Audio processing assumptions: VAD emits 16kHz mono audio, and utterances
+// shorter than 300ms are treated as misfires/noise and discarded.
+const SAMPLE_RATE_HZ = 16000
+const MIN_AUDIO_DURATION_SECONDS = 0.3
+const MIN_AUDIO_SAMPLES = SAMPLE_RATE_HZ * MIN_AUDIO_DURATION_SECONDS
+
 interface Props {
   state: VoiceState
   micOn: boolean
@@ -22,6 +28,8 @@ interface Props {
 // RMS threshold to distinguish direct user speech from TTS echo.
 // Echo-cancelled TTS residual is typically < 0.02 RMS;
 // conversational speech at mic distance is typically > 0.04 RMS.
+// 0.03 was chosen empirically as a margin between these ranges: high enough
+// to ignore residual echo while still reliably detecting normal speech.
 const ECHO_RMS_THRESHOLD = 0.03
 
 const STATUS_LABELS: Record<VoiceState, string> = {
@@ -133,15 +141,19 @@ export function VoiceView({
     // because speakerActive may also be true during TTS (loopback capture)
     // and would otherwise block legitimate user interrupts.
     if (state === 'speaking' && ttsPlaying) {
-      const rms = getMicRms()
-      // NaN means mic RMS is unavailable (e.g. AudioContext suspended).
-      // In that case, skip echo suppression to avoid blocking real speech.
-      if (Number.isFinite(rms) && rms < ECHO_RMS_THRESHOLD) {
+      let rms: number | undefined
+      if (typeof getMicRms === 'function') {
+        rms = getMicRms()
+      }
+      // NaN or undefined means mic RMS is unavailable (e.g. AudioContext
+      // suspended or VAD/mic not yet initialized). In that case, skip echo
+      // suppression to avoid blocking real speech.
+      if (rms !== undefined && Number.isFinite(rms) && rms < ECHO_RMS_THRESHOLD) {
         console.log(`[voice] Ignoring echo during TTS (RMS=${rms.toFixed(4)})`)
         return
       }
       console.log(
-        Number.isFinite(rms)
+        rms !== undefined && Number.isFinite(rms)
           ? `[voice] User interrupt during TTS (RMS=${rms.toFixed(4)})`
           : '[voice] User interrupt during TTS (mic RMS unavailable, skipping echo suppression)'
       )
@@ -177,7 +189,7 @@ export function VoiceView({
       console.log(`[voice] Discarding audio in ${state} state`)
       return
     }
-    if (audio.length < 16000 * 0.3) {
+    if (audio.length < MIN_AUDIO_SAMPLES) {
       window.lobster.voiceStop()
       return
     }

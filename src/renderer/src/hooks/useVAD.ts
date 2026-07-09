@@ -35,7 +35,7 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
   // instant VAD fires onSpeechStart (no latency added).
   const analyserCtxRef = useRef<AudioContext | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
-  const analyserDataRef = useRef<Float32Array<ArrayBuffer> | null>(null)
+  const analyserDataRef = useRef<Float32Array | null>(null)
 
   /** Returns current mic input RMS, or NaN if unavailable. */
   const getMicRms = (): number => {
@@ -49,7 +49,7 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
       ctx.resume().catch(() => {})
       return NaN
     }
-    analyser.getFloatTimeDomainData(data)
+    analyser.getFloatTimeDomainData(data as Float32Array<ArrayBuffer>)
     let sum = 0
     for (let i = 0; i < data.length; i++) {
       sum += data[i] * data[i]

@@ -13,12 +13,17 @@ import { VoiceView } from '../components/VoiceView'
 let capturedOnSpeechStart: (() => void) | null = null
 let capturedOnSpeechEnd: ((audio: Float32Array) => void) | null = null
 let mockGetMicRms = vi.fn(() => 0)
+let getMicRmsAvailable = true
 
 vi.mock('../hooks/useVAD', () => ({
   useVAD: (opts: { onSpeechStart: () => void; onSpeechEnd: (audio: Float32Array) => void }) => {
     capturedOnSpeechStart = opts.onSpeechStart
     capturedOnSpeechEnd = opts.onSpeechEnd
-    return { listening: true, loading: false, getMicRms: mockGetMicRms }
+    return {
+      listening: true,
+      loading: false,
+      getMicRms: getMicRmsAvailable ? mockGetMicRms : undefined
+    }
   }
 }))
 
@@ -52,6 +57,7 @@ beforeEach(() => {
   capturedOnSpeechStart = null
   capturedOnSpeechEnd = null
   mockGetMicRms = vi.fn(() => 0)
+  getMicRmsAvailable = true
   mockSpeakerActive = false
   ;(window as unknown as { lobster: typeof mockLobster }).lobster = mockLobster
   HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
@@ -157,6 +163,16 @@ describe('Echo suppression during TTS playback', () => {
       capturedOnSpeechStart?.()
 
       // NaN = RMS unavailable — do not suppress, let interrupt through
+      expect(props.stopPlayback).toHaveBeenCalled()
+      expect(mockLobster.voiceStart).toHaveBeenCalled()
+    })
+
+    it('allows interrupt when mic RMS callback is unavailable', () => {
+      getMicRmsAvailable = false
+      const { props } = renderVoiceView({ state: 'speaking', ttsPlaying: true })
+
+      capturedOnSpeechStart?.()
+
       expect(props.stopPlayback).toHaveBeenCalled()
       expect(mockLobster.voiceStart).toHaveBeenCalled()
     })
