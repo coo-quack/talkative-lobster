@@ -33,7 +33,7 @@ Runs Whisper locally on your machine. No data leaves your device.
 
 - **Binary**: You need the `whisper-cli` binary — build from [whisper.cpp](https://github.com/ggerganov/whisper.cpp) or install via Homebrew: `brew install whisper-cpp`
 - **Model**: `ggml-medium.bin` — automatically downloaded to `~/.config/lobster/models/` on first use
-- **Language**: Hardcoded to Japanese (`--language ja`)
+- **Language**: Default Japanese (`--language ja`), configurable to other supported languages
 - **Timeout**: 60 seconds
 - **Best for**: Privacy-conscious use, offline operation
 
@@ -92,7 +92,7 @@ Free, open-source Japanese TTS engine. Runs as a local HTTP server.
 - **Output format**: WAV
 
 ::: warning
-VOICEVOX must be running before you start TalkLob. The app connects to its HTTP API.
+VOICEVOX must be running before you start Talkative Lobster. The app connects to its HTTP API.
 :::
 
 ### Kokoro
