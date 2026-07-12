@@ -35,7 +35,7 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
   // instant VAD fires onSpeechStart (no latency added).
   const analyserCtxRef = useRef<AudioContext | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
-  const analyserDataRef = useRef<Float32Array | null>(null)
+  const analyserDataRef = useRef<Float32Array<ArrayBuffer> | null>(null)
 
   /** Returns current mic input RMS, or NaN if unavailable. */
   const getMicRms = (): number => {
@@ -43,21 +43,18 @@ export function useVAD({ enabled, thresholds, onSpeechStart, onSpeechEnd }: UseV
     const analyser = analyserRef.current
     const data = analyserDataRef.current
     if (!ctx || !analyser || !data) return NaN
-    const { buffer } = data
-    if (!(buffer instanceof ArrayBuffer)) return NaN
     // Suspended AudioContext reads near-zero — kick off resume but
     // signal "unavailable" so callers don't mistake it for echo.
     if (ctx.state === 'suspended') {
       ctx.resume().catch(() => {})
       return NaN
     }
-    const analyserData = new Float32Array(buffer, data.byteOffset, data.length)
-    analyser.getFloatTimeDomainData(analyserData)
+    analyser.getFloatTimeDomainData(data)
     let sum = 0
-    for (let i = 0; i < analyserData.length; i++) {
-      sum += analyserData[i] * analyserData[i]
+    for (let i = 0; i < data.length; i++) {
+      sum += data[i] * data[i]
     }
-    return Math.sqrt(sum / analyserData.length)
+    return Math.sqrt(sum / data.length)
   }
 
   // Refs for latest callbacks — MicVAD stores callbacks at init time,

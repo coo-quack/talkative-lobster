@@ -13,8 +13,8 @@ import { Waveform } from './Waveform'
 // Audio processing assumptions: VAD emits 16kHz mono audio, and utterances
 // shorter than 300ms are treated as misfires/noise and discarded.
 const SAMPLE_RATE_HZ = 16000
-const MIN_AUDIO_DURATION_SECONDS = 0.3
-const MIN_AUDIO_SAMPLES = SAMPLE_RATE_HZ * MIN_AUDIO_DURATION_SECONDS
+const MIN_AUDIO_DURATION_MS = 300
+const MIN_AUDIO_SAMPLES = (SAMPLE_RATE_HZ * MIN_AUDIO_DURATION_MS) / 1000
 
 interface Props {
   state: VoiceState
