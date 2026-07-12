@@ -1,6 +1,7 @@
 import { resolve } from 'path'
 import { defineConfig } from 'electron-vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 import type { Plugin } from 'vite'
 import { readFileSync, cpSync, mkdirSync } from 'fs'
@@ -107,8 +108,8 @@ export default defineConfig({
       }
     },
     plugins: [
-      // @vitejs/plugin-react's current Options type omits `babel`, but runtime supports passing it through.
-      react(({ babel: { presets: [reactCompilerPreset()] } } as unknown) as Parameters<typeof react>[0]),
+      react(),
+      babel({ presets: [reactCompilerPreset()] }),
       tailwindcss(),
       serveNativeAssets()
     ]
