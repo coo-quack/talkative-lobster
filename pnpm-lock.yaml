@@ -28,7 +28,7 @@ importers:
         version: 2.59.0
       '@ricky0123/vad-react':
         specifier: ^0.0.36
-        version: 0.0.36(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        version: 0.0.36(react-dom@19.2.8(react@19.2.7))(react@19.2.7)
       '@ricky0123/vad-web':
         specifier: ^0.0.30
         version: 0.0.30
@@ -49,7 +49,7 @@ importers:
         version: 19.2.7
       react-dom:
         specifier: ^19.2.4
-        version: 19.2.7(react@19.2.7)
+        version: 19.2.8(react@19.2.7)
       tailwindcss:
         specifier: ^4.2.1
         version: 4.3.3
@@ -80,7 +80,7 @@ importers:
         version: 7.0.0(@testing-library/dom@10.4.1)
       '@testing-library/react':
         specifier: ^16.3.2
-        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.7))(react@19.2.7)
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5
@@ -2653,10 +2653,10 @@ packages:
     resolution: {integrity: sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==}
     engines: {node: '>=10'}
 
-  react-dom@19.2.7:
-    resolution: {integrity: sha512-t0BRVXvbiE/o20Hfw669rLbMCDWtYZLvmJigy2f0MxsXF+71pxhR3xOkspmsO8h3ZlNzyibAmtCa3l4lYKk6gQ==}
+  react-dom@19.2.8:
+    resolution: {integrity: sha512-rVprimfGBG3DR+Tq0IQG2DT5PxKth1WIGDmj5yPmlzr4YBe7uyE+Du4oVqTDXZSHGGGXRtTJEGSSePyQCMBglQ==}
     peerDependencies:
-      react: ^19.2.7
+      react: ^19.2.8
 
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
@@ -3892,12 +3892,12 @@ snapshots:
 
   '@protobufjs/utf8@1.1.2': {}
 
-  '@ricky0123/vad-react@0.0.36(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@ricky0123/vad-react@0.0.36(react-dom@19.2.8(react@19.2.7))(react@19.2.7)':
     dependencies:
       '@ricky0123/vad-web': 0.0.30
       onnxruntime-web: 1.27.0
       react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      react-dom: 19.2.8(react@19.2.7)
 
   '@ricky0123/vad-web@0.0.30':
     dependencies:
@@ -4105,12 +4105,12 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
 
-  '@testing-library/react@16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@testing-library/react@16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.7))(react@19.2.7)':
     dependencies:
       '@babel/runtime': 7.29.7
       '@testing-library/dom': 10.4.1
       react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      react-dom: 19.2.8(react@19.2.7)
     optionalDependencies:
       '@types/react': 19.2.17
       '@types/react-dom': 19.2.3(@types/react@19.2.17)
@@ -5738,7 +5738,7 @@ snapshots:
 
   quick-lru@5.1.1: {}
 
-  react-dom@19.2.7(react@19.2.7):
+  react-dom@19.2.8(react@19.2.7):
     dependencies:
       react: 19.2.7
       scheduler: 0.27.0
