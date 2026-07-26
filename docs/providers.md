@@ -8,7 +8,7 @@ Talkative Lobster supports multiple speech-to-text (STT) and text-to-speech (TTS
 |----------|------|-----------|---------|---------|
 | ElevenLabs Scribe | Cloud | Multilingual | Required | Low |
 | OpenAI Whisper | Cloud | Multilingual | Required | Low |
-| whisper.cpp | Local | Multilingual | Not needed | Medium |
+| whisper.cpp | Local | Japanese (hardcoded) | Not needed | Medium |
 
 ### ElevenLabs Scribe
 
@@ -92,7 +92,7 @@ Free, open-source Japanese TTS engine. Runs as a local HTTP server.
 - **Output format**: WAV
 
 ::: warning
-VOICEVOX must be running before you start TalkLob. The app connects to its HTTP API.
+VOICEVOX must be running before you start Talkative Lobster. The app connects to its HTTP API.
 :::
 
 ### Kokoro

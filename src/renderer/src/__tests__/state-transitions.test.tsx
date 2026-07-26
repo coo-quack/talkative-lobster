@@ -144,9 +144,6 @@ beforeEach(() => {
   vi.clearAllMocks()
   voiceStateCallback = null
   mockTtsPlaying = false
-  // Read before reset to satisfy noUnusedLocals
-  void _connectionStatusCallback
-  void _errorCallback
   _connectionStatusCallback = null
   _errorCallback = null
   ;(window as unknown as { lobster: typeof mockLobster }).lobster = mockLobster
@@ -376,7 +373,6 @@ describe('Voice state transitions', () => {
 
   describe('TTS playback stops on state transition from speaking', () => {
     it('stopPlayback called when leaving speaking state while TTS is playing', async () => {
-      mockTtsPlaying = true
       await renderApp()
       transitionTo('speaking')
       mockTtsPlaying = true
@@ -395,9 +391,7 @@ describe('Voice state transitions', () => {
       transitionTo('idle')
       expect(mockStopPlayback).not.toHaveBeenCalled()
     })
-
     it('stopPlayback called when interrupted from speaking to listening', async () => {
-      mockTtsPlaying = true
       await renderApp()
       transitionTo('speaking')
       mockTtsPlaying = true
@@ -406,9 +400,7 @@ describe('Voice state transitions', () => {
       transitionTo('listening')
       expect(mockStopPlayback).toHaveBeenCalled()
     })
-
     it('stopPlayback called when leaving thinking state while TTS is playing', async () => {
-      mockTtsPlaying = true
       await renderApp()
       transitionTo('thinking')
       mockTtsPlaying = true
@@ -417,9 +409,7 @@ describe('Voice state transitions', () => {
       transitionTo('idle')
       expect(mockStopPlayback).toHaveBeenCalled()
     })
-
     it('ttsPlaybackDone called when transition speaking/thinking → listening', async () => {
-      mockTtsPlaying = true
       await renderApp()
       transitionTo('speaking')
       mockTtsPlaying = true
@@ -446,6 +436,10 @@ describe('Voice state transitions', () => {
   describe('onVoiceStateChanged subscription', () => {
     it('registers callback on mount', async () => {
       await renderApp()
+      expect(mockLobster.onConnectionStatus).toHaveBeenCalled()
+      expect(_connectionStatusCallback).not.toBeNull()
+      expect(mockLobster.onError).toHaveBeenCalled()
+      expect(_errorCallback).not.toBeNull()
       expect(mockLobster.onVoiceStateChanged).toHaveBeenCalled()
       expect(voiceStateCallback).not.toBeNull()
     })
