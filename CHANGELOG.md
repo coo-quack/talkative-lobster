@@ -1,3 +1,32 @@
+# Changelog
+
+## v1.3.1 (2026-07-26)
+
+### Security
+
+- Move `fast-uri` off the host-confusion advisory (>= 3.0.0 <= 3.1.3 reads a
+  literal backslash as an authority delimiter, so a URL's apparent host and
+  its parsed host can differ)
+
+### Fixes
+
+- Let a TTS interrupt through when the microphone RMS reading is unavailable,
+  rather than blocking legitimate speech
+- Correct the VAD analyser data ref type to `Float32Array | null`
+
+### Internal
+
+- Name the 16 kHz / 300 ms minimum-utterance constants instead of writing
+  `16000 * 0.3` inline, and explain why the echo cutoff is `0.03`
+- Drop the `void` reads and redundant assignments that the state-transition
+  tests used to work around unused-local warnings
+- Pin every GitHub Action to a commit digest, and adopt the shared Renovate
+  preset
+
+### Docs
+
+- Resolve provider naming and language inconsistencies on the providers page
+
 ## v1.2.5 (2026-03-31)
 
 ### Security
@@ -6,10 +35,6 @@
   - Waits 7 days before auto-merging dependency updates
   - Reduces risk of package takeover attacks
   - Blocks immediate auto-merge of newly published packages
-
----
-
-# Changelog
 
 ## v1.2.4 (2026-03-26)
 
