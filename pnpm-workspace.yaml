@@ -18,7 +18,7 @@ overrides:
   # has no patched release below 5.0.8. Lifting the whole line is the only way
   # to reach a fixed version; verified that electron-builder still packages
   # and signs with it.
-  minimatch@>=5 <6: 10.2.5
+  minimatch@>=5 <6: 10.2.6
   tar@<7.5.11: 7.5.22
   esbuild@<0.25.0: 0.28.1
   undici@>=7.0.0 <7.24.0: 8.9.0
