@@ -11,7 +11,7 @@ allowBuilds:
 # target has to remain inside what the declaring package asked for.
 overrides:
   minimatch@<3.1.4: 10.2.6
-  minimatch@>=9 <9.0.7: 10.2.5
+  minimatch@>=9 <9.0.7: 10.2.6
   minimatch@>=10 <10.2.3: 10.2.5
   # Not an advisory on minimatch itself — 5.1.9 is outside every window. It is
   # here because minimatch 5 pulls brace-expansion 2.1.2, and brace-expansion
