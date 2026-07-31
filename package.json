@@ -59,7 +59,7 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "@types/ws": "8.18.1",
-    "@vitejs/plugin-react": "6.0.4",
+    "@vitejs/plugin-react": "6.0.5",
     "@vitest/coverage-v8": "4.1.10",
     "babel-plugin-react-compiler": "1.0.0",
     "electron": "43.2.0",
@@ -68,7 +68,7 @@
     "jsdom": "30.0.1",
     "msw": "2.15.0",
     "typescript": "7.0.2",
-    "vite": "8.1.5",
+    "vite": "8.2.0",
     "vite-plugin-static-copy": "4.1.1",
     "vitepress": "2.0.0-alpha.18",
     "vitest": "4.1.10"
