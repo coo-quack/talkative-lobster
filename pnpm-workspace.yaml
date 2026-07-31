@@ -30,7 +30,7 @@ overrides:
   # GHSA-mh99-v99m-4gvg, CVSS 7.5. Patched only in 5.0.8; no 1.x through 4.x
   # release is fixed. GitHub auto-dismissed the alert, so it surfaced through
   # `pnpm audit` rather than through Dependabot.
-  brace-expansion@>=5.0.0 <5.0.8: 5.0.8
+  brace-expansion@>=5.0.0 <5.0.8: 5.0.9
 
 # Supply-chain policy: reject packages published less than 1 day ago (minutes)
 minimumReleaseAge: 1440
