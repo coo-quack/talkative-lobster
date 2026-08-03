@@ -133,8 +133,8 @@ importers:
         specifier: 4.1.1
         version: 4.1.1(vite@8.2.0(@types/node@24.13.3)(jiti@2.7.0))
       vitepress:
-        specifier: 2.0.0-alpha.18
-        version: 2.0.0-alpha.18(@types/node@24.13.3)(jiti@2.7.0)(postcss@8.5.25)(typescript@7.0.2)
+        specifier: 2.0.0-alpha.19
+        version: 2.0.0-alpha.19(@types/node@24.13.3)(jiti@2.7.0)(postcss@8.5.25)(typescript@7.0.2)
       vitest:
         specifier: 4.1.10
         version: 4.1.10(@types/node@24.13.3)(@vitest/coverage-v8@4.1.10)(jsdom@30.0.1(@noble/hashes@2.2.0))(msw@2.15.0(@types/node@24.13.3)(typescript@7.0.2))(vite@8.2.0(@types/node@24.13.3)(jiti@2.7.0))
@@ -3141,8 +3141,8 @@ packages:
       yaml:
         optional: true
 
-  vitepress@2.0.0-alpha.18:
-    resolution: {integrity: sha512-Lk1G2/QqSf+MwNLICl9fmzWOtoCEwjZoWgaQy41QvWTfcGpLE9XwJDbcCyES/9rj6R2g1zFqFvLVkYKLLDALFw==}
+  vitepress@2.0.0-alpha.19:
+    resolution: {integrity: sha512-WnBsb0Bwr43kXKyiis+lld/7ri3hnMbthS8N3hpFtjjwsdLO4IRmiAE08D7aud4q6oMDf9uwRowxzNqRFe/amw==}
     hasBin: true
     peerDependencies:
       markdown-it-mathjax3: ^4
@@ -5184,7 +5184,7 @@ snapshots:
       es6-error: 4.1.1
       matcher: 3.0.0
       roarr: 2.15.4
-      semver: 7.7.4
+      semver: 7.8.5
       serialize-error: 7.0.1
     optional: true
 
@@ -5655,11 +5655,11 @@ snapshots:
 
   node-abi@4.33.0:
     dependencies:
-      semver: 7.7.4
+      semver: 7.8.5
 
   node-api-version@0.2.1:
     dependencies:
-      semver: 7.7.4
+      semver: 7.8.5
 
   node-fetch@2.7.0:
     dependencies:
@@ -5672,7 +5672,7 @@ snapshots:
       graceful-fs: 4.2.11
       nopt: 9.0.0
       proc-log: 6.1.0
-      semver: 7.7.4
+      semver: 7.8.5
       tar: 7.5.22
       tinyglobby: 0.2.17
       undici: 6.28.0
@@ -6256,7 +6256,7 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.7.0
 
-  vitepress@2.0.0-alpha.18(@types/node@24.13.3)(jiti@2.7.0)(postcss@8.5.25)(typescript@7.0.2):
+  vitepress@2.0.0-alpha.19(@types/node@24.13.3)(jiti@2.7.0)(postcss@8.5.25)(typescript@7.0.2):
     dependencies:
       '@docsearch/css': 4.7.0
       '@docsearch/js': 4.7.0
