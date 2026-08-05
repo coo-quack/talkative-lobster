@@ -62,7 +62,7 @@
     "@vitejs/plugin-react": "6.0.5",
     "@vitest/coverage-v8": "4.1.10",
     "babel-plugin-react-compiler": "1.0.0",
-    "electron": "43.2.0",
+    "electron": "43.3.0",
     "electron-builder": "26.15.3",
     "electron-vite": "5.0.0",
     "jsdom": "30.0.1",

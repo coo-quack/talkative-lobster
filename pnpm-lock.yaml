@@ -22,10 +22,10 @@ importers:
     dependencies:
       '@electron-toolkit/preload':
         specifier: 3.0.2
-        version: 3.0.2(electron@43.2.0(supports-color@7.2.0))
+        version: 3.0.2(electron@43.3.0(supports-color@7.2.0))
       '@electron-toolkit/utils':
         specifier: 4.0.0
-        version: 4.0.0(electron@43.2.0(supports-color@7.2.0))
+        version: 4.0.0(electron@43.3.0(supports-color@7.2.0))
       '@elevenlabs/elevenlabs-js':
         specifier: 2.60.0
         version: 2.60.0
@@ -109,8 +109,8 @@ importers:
         specifier: 1.0.0
         version: 1.0.0
       electron:
-        specifier: 43.2.0
-        version: 43.2.0(supports-color@7.2.0)
+        specifier: 43.3.0
+        version: 43.3.0(supports-color@7.2.0)
       electron-builder:
         specifier: 26.15.3
         version: 26.15.3(electron-builder-squirrel-windows@26.15.3)(supports-color@7.2.0)
@@ -1819,8 +1819,8 @@ packages:
     resolution: {integrity: sha512-bO3y10YikuUwUuDUQRM4KfwNkKhnpVO7IPdbsrejwN9/AABJzzTQ4GeHwyzNSrVO+tEH3/Np255a3sVZpZDjvg==}
     engines: {node: '>=8.0.0'}
 
-  electron@43.2.0:
-    resolution: {integrity: sha512-80zvrgG7ZRXD+tD0IyLvrnN9n+veSxadMRsMaC9wKKP3iUbtC7rGM8+dVuCmOb0Rrwwv8ESW4awnUZh9Hbp1fA==}
+  electron@43.3.0:
+    resolution: {integrity: sha512-nLlvu0WFjftWsSaTkV2B/c4NDuJBspTyXu8vKSQ6vLvFt8uG3NgN49LLKcXddwX0GqVvAQDhciWp+4xOdTdhew==}
     engines: {node: '>= 22.12.0'}
     hasBin: true
 
@@ -3595,17 +3595,17 @@ snapshots:
 
   '@electron-internal/extract-zip@1.0.5': {}
 
-  '@electron-toolkit/preload@3.0.2(electron@43.2.0(supports-color@7.2.0))':
+  '@electron-toolkit/preload@3.0.2(electron@43.3.0(supports-color@7.2.0))':
     dependencies:
-      electron: 43.2.0(supports-color@7.2.0)
+      electron: 43.3.0(supports-color@7.2.0)
 
   '@electron-toolkit/tsconfig@2.0.0(@types/node@24.13.3)':
     dependencies:
       '@types/node': 24.13.3
 
-  '@electron-toolkit/utils@4.0.0(electron@43.2.0(supports-color@7.2.0))':
+  '@electron-toolkit/utils@4.0.0(electron@43.3.0(supports-color@7.2.0))':
     dependencies:
-      electron: 43.2.0(supports-color@7.2.0)
+      electron: 43.3.0(supports-color@7.2.0)
 
   '@electron/asar@3.4.1':
     dependencies:
@@ -4957,7 +4957,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@43.2.0(supports-color@7.2.0):
+  electron@43.3.0(supports-color@7.2.0):
     dependencies:
       '@electron-internal/extract-zip': 1.0.5
       '@electron/get': 5.1.0(supports-color@7.2.0)
