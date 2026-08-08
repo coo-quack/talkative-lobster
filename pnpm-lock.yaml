@@ -57,8 +57,8 @@ importers:
         specifier: 4.3.3
         version: 4.3.3
       ws:
-        specifier: 8.21.2
-        version: 8.21.2
+        specifier: 8.21.3
+        version: 8.21.3
       xstate:
         specifier: 5.32.5
         version: 5.32.5
@@ -3258,8 +3258,8 @@ packages:
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
-  ws@8.21.2:
-    resolution: {integrity: sha512-54dMVAo4WIe6SKy3vBgN+9bJZqqQ8IMRevAkOLQALhi49qkkQDQfWdAZ8KQlXiEabw88ARXXdUrlvtbKQX+aKw==}
+  ws@8.21.3:
+    resolution: {integrity: sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -3703,7 +3703,7 @@ snapshots:
     dependencies:
       command-exists: 1.2.9
       node-fetch: 2.7.0
-      ws: 8.21.2
+      ws: 8.21.3
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -6408,7 +6408,7 @@ snapshots:
 
   wrappy@1.0.2: {}
 
-  ws@8.21.2: {}
+  ws@8.21.3: {}
 
   xml-name-validator@5.0.0: {}
 
