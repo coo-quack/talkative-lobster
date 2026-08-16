@@ -33,7 +33,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "3.0.2",
     "@electron-toolkit/utils": "4.0.0",
-    "@elevenlabs/elevenlabs-js": "2.62.0",
+    "@elevenlabs/elevenlabs-js": "2.64.0",
     "@ricky0123/vad-react": "0.0.36",
     "@ricky0123/vad-web": "0.0.30",
     "@tailwindcss/vite": "4.3.3",
