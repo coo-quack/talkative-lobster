@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@babel/core": "8.0.1",
-    "@biomejs/biome": "2.5.7",
+    "@biomejs/biome": "2.5.8",
     "@electron-toolkit/tsconfig": "2.0.0",
     "@playwright/test": "1.62.1",
     "@rolldown/plugin-babel": "0.2.3",
@@ -62,7 +62,7 @@
     "@vitejs/plugin-react": "6.0.5",
     "@vitest/coverage-v8": "4.1.10",
     "babel-plugin-react-compiler": "1.0.0",
-    "electron": "43.3.0",
+    "electron": "43.4.0",
     "electron-builder": "26.15.3",
     "electron-vite": "5.0.0",
     "jsdom": "30.0.1",
