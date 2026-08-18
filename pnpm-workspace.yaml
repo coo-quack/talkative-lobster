@@ -9,28 +9,26 @@ allowBuilds:
 # advisory window. Each is scoped to that window so it stays a guard rather
 # than a standing version choice, and none of them may take a major: the
 # target has to remain inside what the declaring package asked for.
+# fast-uri needs no entry: ajv declares ^3.0.1 and its own resolution already
+# lands on the patched 3.1.5, so the tree is left to resolve it naturally.
 overrides:
-  minimatch@<3.1.4: 10.2.5
-  minimatch@>=9 <9.0.7: 10.2.5
-  minimatch@>=10 <10.2.3: 10.2.5
+  minimatch@<3.1.4: 10.2.6
+  minimatch@>=9 <9.0.7: 10.2.6
+  minimatch@>=10 <10.2.3: 10.2.6
   # Not an advisory on minimatch itself — 5.1.9 is outside every window. It is
   # here because minimatch 5 pulls brace-expansion 2.1.2, and brace-expansion
   # has no patched release below 5.0.8. Lifting the whole line is the only way
   # to reach a fixed version; verified that electron-builder still packages
   # and signs with it.
-  minimatch@>=5 <6: 10.2.5
+  minimatch@>=5 <6: 10.2.6
   tar@<7.5.11: 7.5.22
-  esbuild@<0.25.0: 0.28.1
-  undici@>=7.0.0 <7.24.0: 8.9.0
+  esbuild@<0.25.0: 0.28.2
+  undici@>=7.0.0 <7.24.0: 8.10.0
   yauzl@<3.2.1: 3.4.0
-  # ajv declares fast-uri ^3.0.1 and its newest release still does, so 3.1.4
-  # is the whole fix: the first release outside all four advisory windows and
-  # inside what the parent supports.
-  fast-uri@<3.1.4: 3.1.4
   # GHSA-mh99-v99m-4gvg, CVSS 7.5. Patched only in 5.0.8; no 1.x through 4.x
   # release is fixed. GitHub auto-dismissed the alert, so it surfaced through
   # `pnpm audit` rather than through Dependabot.
-  brace-expansion@>=5.0.0 <5.0.8: 5.0.8
+  brace-expansion@>=5.0.0 <5.0.8: 5.0.9
 
 # Supply-chain policy: reject packages published less than 1 day ago (minutes)
 minimumReleaseAge: 1440
