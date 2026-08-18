@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.3.2 (2026-08-18)
+
+### Security
+
+- Drop the `fast-uri` override entirely: ajv's own declared range now resolves
+  the patched 3.1.5, so the tree no longer carries a standing override that
+  kept attracting major-bump PRs (#280). Behavior tests now guard the ajv
+  `$ref` resolution fast-uri provides, replacing the earlier version-pin
+  approach (#277, #278)
+
+### Fixes
+
+- Update @elevenlabs/elevenlabs-js to 2.64.0 (#271) and lucide-react to
+  1.31.0 (#268)
+
+### Maintenance
+
+- Update pnpm to 11.22.0 (#272); devDependency updates (#269, #270); lock
+  file maintenance (#273, #276, #281)
+
 ## v1.3.1 (2026-07-26)
 
 ### Security
