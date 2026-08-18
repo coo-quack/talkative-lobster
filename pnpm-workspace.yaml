@@ -7,9 +7,10 @@ allowBuilds:
 
 # Every entry below lifts a transitive package of electron-builder out of an
 # advisory window. Each is scoped to that window so it stays a guard rather
-# than a standing version choice. Targets stay inside what the declaring
-# package asked for, except where the entry's comment records a deliberate
-# exception backed by behavior tests.
+# than a standing version choice, and none of them may take a major: the
+# target has to remain inside what the declaring package asked for.
+# fast-uri needs no entry: ajv declares ^3.0.1 and its own resolution already
+# lands on the patched 3.1.5, so the tree is left to resolve it naturally.
 overrides:
   minimatch@<3.1.4: 10.2.6
   minimatch@>=9 <9.0.7: 10.2.6
@@ -24,12 +25,6 @@ overrides:
   esbuild@<0.25.0: 0.28.2
   undici@>=7.0.0 <7.24.0: 8.10.0
   yauzl@<3.2.1: 3.4.0
-  # Lifts ajv's transitive fast-uri out of four advisory windows (< 3.1.4).
-  # Tracks v4 on purpose, outside ajv's declared ^3.0.1: the ajv $ref
-  # resolution this repo relies on is guarded by behavior tests
-  # (src/main/__tests__/fast-uri-override.test.ts), and the full suite was
-  # verified green on 4.x before adopting it.
-  fast-uri@<3.1.4: 4.1.2
   # GHSA-mh99-v99m-4gvg, CVSS 7.5. Patched only in 5.0.8; no 1.x through 4.x
   # release is fixed. GitHub auto-dismissed the alert, so it surfaced through
   # `pnpm audit` rather than through Dependabot.
