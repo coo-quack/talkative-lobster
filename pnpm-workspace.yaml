@@ -26,7 +26,7 @@ overrides:
   # ajv declares fast-uri ^3.0.1 and its newest release still does, so 3.1.4
   # is the whole fix: the first release outside all four advisory windows and
   # inside what the parent supports.
-  fast-uri@<3.1.4: 3.1.5
+  fast-uri@<3.1.4: 4.1.2
   # GHSA-mh99-v99m-4gvg, CVSS 7.5. Patched only in 5.0.8; no 1.x through 4.x
   # release is fixed. GitHub auto-dismissed the alert, so it surfaced through
   # `pnpm audit` rather than through Dependabot.
