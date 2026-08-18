@@ -53,7 +53,7 @@ describe('fast-uri URI semantics ajv relies on', () => {
   })
 })
 
-describe('ajv $ref resolution through the overridden fast-uri', () => {
+describe('ajv $ref resolution through the resolved fast-uri', () => {
   it('resolves a subschema id containing a space', () => {
     const ajv = new Ajv({ strict: false })
     ajv.addSchema({
