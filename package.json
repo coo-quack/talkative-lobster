@@ -39,7 +39,7 @@
     "@tailwindcss/vite": "4.3.3",
     "@xstate/react": "6.1.0",
     "lucide-react": "1.33.0",
-    "onnxruntime-web": "1.27.0",
+    "onnxruntime-web": "1.29.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "tailwindcss": "4.3.3",
