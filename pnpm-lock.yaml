@@ -39,7 +39,7 @@ importers:
         version: 4.3.3(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0))
       '@xstate/react':
         specifier: 6.1.0
-        version: 6.1.0(@types/react@19.2.18)(react@19.2.8)(xstate@5.32.5)
+        version: 6.1.0(@types/react@19.2.18)(react@19.2.8)(xstate@5.32.6)
       lucide-react:
         specifier: 1.34.0
         version: 1.34.0(react@19.2.8)
@@ -59,8 +59,8 @@ importers:
         specifier: 8.21.3
         version: 8.21.3
       xstate:
-        specifier: 5.32.5
-        version: 5.32.5
+        specifier: 5.32.6
+        version: 5.32.6
     devDependencies:
       '@babel/core':
         specifier: 8.0.1
@@ -3274,8 +3274,8 @@ packages:
   xmlchars@2.2.0:
     resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
 
-  xstate@5.32.5:
-    resolution: {integrity: sha512-ULazi1oe6wGrXl0Frb6otSlkm5HLifbbVTkMk5kkSKqz4TkxJaVpnl6jOJwKeid3ORPxYyZQgNLUSYX9q65SIA==}
+  xstate@5.32.6:
+    resolution: {integrity: sha512-WfA8WNrh6r9osuGwVm+aIPM4jmMW2LKHV1Yv9thYpOtL4HVF/kobh95K/O8v2jDCpDmP2EoY+6uvuqHXCZ6ZLw==}
 
   y18n@5.0.8:
     resolution: {integrity: sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==}
@@ -4474,13 +4474,13 @@ snapshots:
 
   '@xmldom/xmldom@0.8.15': {}
 
-  '@xstate/react@6.1.0(@types/react@19.2.18)(react@19.2.8)(xstate@5.32.5)':
+  '@xstate/react@6.1.0(@types/react@19.2.18)(react@19.2.8)(xstate@5.32.6)':
     dependencies:
       react: 19.2.8
       use-isomorphic-layout-effect: 1.2.1(@types/react@19.2.18)(react@19.2.8)
       use-sync-external-store: 1.6.0(react@19.2.8)
     optionalDependencies:
-      xstate: 5.32.5
+      xstate: 5.32.6
     transitivePeerDependencies:
       - '@types/react'
 
@@ -6379,7 +6379,7 @@ snapshots:
 
   xmlchars@2.2.0: {}
 
-  xstate@5.32.5: {}
+  xstate@5.32.6: {}
 
   y18n@5.0.8: {}
 
