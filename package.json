@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@babel/core": "8.0.1",
-    "@biomejs/biome": "2.5.12",
+    "@biomejs/biome": "2.5.13",
     "@electron-toolkit/tsconfig": "2.0.0",
     "@playwright/test": "1.63.0",
     "@rolldown/plugin-babel": "0.2.4",
@@ -69,7 +69,7 @@
     "jsdom": "30.0.1",
     "msw": "2.15.0",
     "typescript": "7.0.2",
-    "vite": "8.2.2",
+    "vite": "8.3.0",
     "vite-plugin-static-copy": "4.1.1",
     "vitepress": "2.0.0-alpha.19",
     "vitest": "5.0.0"
