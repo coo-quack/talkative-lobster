@@ -190,8 +190,8 @@ importers:
         specifier: 0.0.36
         version: 0.0.36(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@ricky0123/vad-web':
-        specifier: 0.0.30
-        version: 0.0.30
+        specifier: 0.0.31
+        version: 0.0.31
       '@tailwindcss/vite':
         specifier: 4.3.3
         version: 4.3.3(vite@8.3.0(@types/node@24.13.4)(jiti@2.7.0))
@@ -951,6 +951,9 @@ packages:
 
   '@ricky0123/vad-web@0.0.30':
     resolution: {integrity: sha512-cJyYrh4YeeUBJcbR9Bic/bFDyB9qBkAepvpuWM3vLxnAi7bC3VHzf51UeNdT+OtY4D7MLAgV8iJMc4z41ZnaWg==}
+
+  '@ricky0123/vad-web@0.0.31':
+    resolution: {integrity: sha512-ePVq8TvB21sdHSxVMZOEIf9JVa7MAYpaIaNXeGgsPOiMCN8xbPCdF2LS5aYj7VRR3ZxzutedgV9ZplV65IA1Fg==}
 
   '@rolldown/binding-android-arm-eabi@1.2.7':
     resolution: {integrity: sha512-EypzgnYCwyVY4NDHKzGmNJT5b+XaQEBniHxsMdeIQLB/tcCzZnhqrzHpZFbX9iaxx+5RiB8caATBtfvZP7zVxQ==}
@@ -4091,6 +4094,10 @@ snapshots:
       react-dom: 19.3.0(react@19.3.0)
 
   '@ricky0123/vad-web@0.0.30':
+    dependencies:
+      onnxruntime-web: 1.29.0
+
+  '@ricky0123/vad-web@0.0.31':
     dependencies:
       onnxruntime-web: 1.29.0
 
