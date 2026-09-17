@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@babel/core": "8.0.5",
-    "@biomejs/biome": "2.5.13",
+    "@biomejs/biome": "2.5.14",
     "@electron-toolkit/tsconfig": "2.0.0",
     "@playwright/test": "1.63.0",
     "@rolldown/plugin-babel": "0.2.4",
