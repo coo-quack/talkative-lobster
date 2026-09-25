@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.3 (2026-09-26)
+
+### Maintenance
+
+- Update @elevenlabs/elevenlabs-js to 2.68.0 (#338); lucide-react to 1.45.0 (#337); @babel/core to 8.0.5 (#336); pnpm to 12.4.1 (#335); react to 19.3.0 (#332)
+- devDependency updates (#333, #331)
+- Remove completed implementation plans
+
 ## v1.3.2 (2026-08-18)
 
 ### Security
