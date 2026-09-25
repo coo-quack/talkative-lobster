@@ -184,8 +184,8 @@ importers:
         specifier: 4.0.0
         version: 4.0.0(electron@44.4.5(supports-color@7.2.0))
       '@elevenlabs/elevenlabs-js':
-        specifier: 2.68.0
-        version: 2.68.0
+        specifier: 2.69.0
+        version: 2.69.0
       '@ricky0123/vad-react':
         specifier: 0.0.37
         version: 0.0.37(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -619,8 +619,8 @@ packages:
     engines: {node: '>=14.14'}
     hasBin: true
 
-  '@elevenlabs/elevenlabs-js@2.68.0':
-    resolution: {integrity: sha512-X4woj/NPL5qLeuudubZERiA1xEnl8lLerqWOi3LMGDCwWJN+dLERTIQIowPhxeJ+gQcKPNxzG/SIeF9Uz5lPIQ==}
+  '@elevenlabs/elevenlabs-js@2.69.0':
+    resolution: {integrity: sha512-J6f52+133rOwknlv6cgKP0AaFSyxazGHZIZdipC+UBRqN3xLmca627vj5wMoxC5jUhxlAL7KQmBLVOrvwRbO7Q==}
     engines: {node: '>=18.0.0'}
 
   '@esbuild/aix-ppc64@0.25.12':
@@ -3825,7 +3825,7 @@ snapshots:
       - supports-color
     optional: true
 
-  '@elevenlabs/elevenlabs-js@2.68.0':
+  '@elevenlabs/elevenlabs-js@2.69.0':
     dependencies:
       command-exists: 1.2.9
       node-fetch: 2.7.0
