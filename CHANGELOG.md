@@ -2,11 +2,21 @@
 
 ## v1.3.3 (2026-09-26)
 
+### Fixes
+
+- Update runtime dependencies: react and react-dom to 19.3.0 (#332),
+  xstate to 5.33.2 (#297, #342, #350), onnxruntime-web to 1.30.0 (#295,
+  #346), @ricky0123/vad-web to 0.0.31 (#341) and vad-react to 0.0.37
+  (#340), @elevenlabs/elevenlabs-js to 2.68.0 (#298, #313, #327, #338),
+  lucide-react to 1.47.0 (#286 through #354)
+
 ### Maintenance
 
-- Update @elevenlabs/elevenlabs-js to 2.68.0 (#338); lucide-react to 1.45.0 (#337); @babel/core to 8.0.5 (#336); pnpm to 12.4.1 (#335); react to 19.3.0 (#332)
-- devDependency updates (#333, #331)
-- Remove completed implementation plans
+- Update Electron to 44.4.5, Vitest to 5.0.1 and other devDependencies
+  (#285, #317, #347, #349); pnpm to 12.6.0 (#293 through #364); lock file
+  maintenance
+- Bump the undici and brace-expansion overrides within their patched ranges
+- Remove the completed implementation plans
 
 ## v1.3.2 (2026-08-18)
 
