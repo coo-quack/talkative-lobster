@@ -43,7 +43,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "tailwindcss": "4.3.3",
-    "ws": "8.21.3",
+    "ws": "8.22.0",
     "xstate": "5.33.2"
   },
   "devDependencies": {
