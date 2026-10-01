@@ -179,10 +179,10 @@ importers:
     dependencies:
       '@electron-toolkit/preload':
         specifier: 3.0.2
-        version: 3.0.2(electron@44.4.5(supports-color@7.2.0))
+        version: 3.0.2(electron@44.5.0(supports-color@7.2.0))
       '@electron-toolkit/utils':
         specifier: 4.0.0
-        version: 4.0.0(electron@44.4.5(supports-color@7.2.0))
+        version: 4.0.0(electron@44.5.0(supports-color@7.2.0))
       '@elevenlabs/elevenlabs-js':
         specifier: 2.70.0
         version: 2.70.0
@@ -254,8 +254,8 @@ importers:
         specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
       '@types/ws':
-        specifier: 8.18.1
-        version: 8.18.1
+        specifier: 8.18.2
+        version: 8.18.2
       '@vitejs/plugin-react':
         specifier: 6.1.1
         version: 6.1.1(@rolldown/plugin-babel@0.2.4(@babel/core@8.0.6)(@babel/runtime@7.29.7)(rolldown@1.2.11)(vite@8.3.1(@types/node@24.19.0)(jiti@2.7.0)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.1(@types/node@24.19.0)(jiti@2.7.0))
@@ -269,8 +269,8 @@ importers:
         specifier: 1.0.0
         version: 1.0.0
       electron:
-        specifier: 44.4.5
-        version: 44.4.5(supports-color@7.2.0)
+        specifier: 44.5.0
+        version: 44.5.0(supports-color@7.2.0)
       electron-builder:
         specifier: 26.15.3
         version: 26.15.3(electron-builder-squirrel-windows@26.15.3)(supports-color@7.2.0)
@@ -1314,8 +1314,8 @@ packages:
   '@types/web-bluetooth@0.0.21':
     resolution: {integrity: sha512-oIQLCGWtcFZy2JW77j9k8nHzAOpqMHLQejDA48XXMWH6tjCQHz5RCFz1bzsmROyL6PUm+LLnUiI4BCn221inxA==}
 
-  '@types/ws@8.18.1':
-    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
+  '@types/ws@8.18.2':
+    resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
@@ -1963,8 +1963,8 @@ packages:
     resolution: {integrity: sha512-bO3y10YikuUwUuDUQRM4KfwNkKhnpVO7IPdbsrejwN9/AABJzzTQ4GeHwyzNSrVO+tEH3/Np255a3sVZpZDjvg==}
     engines: {node: '>=8.0.0'}
 
-  electron@44.4.5:
-    resolution: {integrity: sha512-SjgoaeYsSWZfJzubgQU7juvuXMTvn6/e1gAHdGFA/yuMbpF+I+skYqIJ6DdXBXHeWbkbpNpmwZCTpiivtlWZSw==}
+  electron@44.5.0:
+    resolution: {integrity: sha512-gVUJ6DZcRY80Alh/krc7uwjjCfxjZ3T2suvpBmHsN6zE4ShAc4vzG14kbMgT+ZteaPLddoKg4Pie0CjDdIDdyg==}
     engines: {node: '>= 22.12.0'}
     hasBin: true
 
@@ -3715,17 +3715,17 @@ snapshots:
 
   '@electron-internal/extract-zip@1.0.5': {}
 
-  '@electron-toolkit/preload@3.0.2(electron@44.4.5(supports-color@7.2.0))':
+  '@electron-toolkit/preload@3.0.2(electron@44.5.0(supports-color@7.2.0))':
     dependencies:
-      electron: 44.4.5(supports-color@7.2.0)
+      electron: 44.5.0(supports-color@7.2.0)
 
   '@electron-toolkit/tsconfig@2.0.0(@types/node@24.19.0)':
     dependencies:
       '@types/node': 24.19.0
 
-  '@electron-toolkit/utils@4.0.0(electron@44.4.5(supports-color@7.2.0))':
+  '@electron-toolkit/utils@4.0.0(electron@44.5.0(supports-color@7.2.0))':
     dependencies:
-      electron: 44.4.5(supports-color@7.2.0)
+      electron: 44.5.0(supports-color@7.2.0)
 
   '@electron/asar@3.4.1':
     dependencies:
@@ -4378,7 +4378,7 @@ snapshots:
 
   '@types/web-bluetooth@0.0.21': {}
 
-  '@types/ws@8.18.1':
+  '@types/ws@8.18.2':
     dependencies:
       '@types/node': 24.19.0
 
@@ -5024,7 +5024,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@44.4.5(supports-color@7.2.0):
+  electron@44.5.0(supports-color@7.2.0):
     dependencies:
       '@electron-internal/extract-zip': 1.0.5
       '@electron/get': 5.1.0(supports-color@7.2.0)
