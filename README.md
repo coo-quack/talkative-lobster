@@ -3,6 +3,9 @@
 [![Release](https://github.com/coo-quack/talkative-lobster/actions/workflows/release.yml/badge.svg)](https://github.com/coo-quack/talkative-lobster/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+> [!WARNING]
+> **This project is no longer maintained, and the repository is archived.**
+
 **Talk to your AI — literally.**
 
 A desktop voice conversation app. Speak into your mic, and an AI responds out loud. No typing, no copy-pasting — just natural back-and-forth conversation on your desktop.
